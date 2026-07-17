@@ -7,9 +7,9 @@ goal: >-
 summary:
   origin: human
   pinned: false
-  updatedAt: 2026-07-17T14:10:00Z
+  updatedAt: 2026-07-17T14:15:00Z
 createdAt: 2026-07-17T13:46:20Z
-updatedAt: 2026-07-17T14:10:00Z
+updatedAt: 2026-07-17T14:15:00Z
 ```
 # code_tracer
 
@@ -23,9 +23,26 @@ OSS, and (b) FINOS-native projects. Verification runs hermetically inside the
 bank (offline, re-runnable by a regulator): `in-toto-verify` checks the pipeline
 is structurally sound, then a Rego/Witness policy checks the contract's meaning.
 
+## The contract
+
+The accepting organization (a bank) signs a contract with an external party to
+deliver software. The contract touches upon: the **original state** of the
+software (before the party touched it), the **specific changes** being
+requested, the **tests expected to run**, and the **acceptance levels**
+(test-result thresholds). The contract needs to be **automated and
+transparent** — a smart-contract concept — so admission is mechanical, not a PDF
+a human reads.
+
+## Two zones
+
+- **Outside** — build, test. The external party's infrastructure; the
+  evidence-*production* half.
+- **Inside** — accept, re-test, deploy, adopt. The bank's on-prem gate and
+  ledger; the evidence-*consumption* half.
+
 The product surface is five components that don't exist off-the-shelf; the rest
-integrates proven OSS (in-toto-verify, cosign, Archivista). See the proposed
-goal decomposition in `edges/` (pending acceptance).
+integrates proven OSS (in-toto-verify, cosign, Archivista). The accepted goal
+decomposition lives in `nodes/` and `edges/`.
 
 Index: `nodes/`, `concepts/`, `noteworthy/`, `artifacts/`, `waypoints/`,
 `edges/`.
