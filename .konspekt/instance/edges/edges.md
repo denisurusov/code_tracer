@@ -21,3 +21,4 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-dec-thegate-resolver | decomposes | node:goal-the-gate | node:task-attestation-resolver | |
 | e-dec-thegate-harness | decomposes | node:goal-the-gate | node:task-acceptance-harness | |
 | e-dec-thegate-tracker | decomposes | node:goal-the-gate | node:task-exposure-tracker | |
+| e-prod-gate-arch | produces | node:goal-admission-gate | artifact:artifact-architecture | |
