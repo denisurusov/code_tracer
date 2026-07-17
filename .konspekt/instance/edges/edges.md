@@ -35,3 +35,5 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-prod-gate-sbom | produces | node:goal-admission-gate | noteworthy:noteworthy-sbom-format | |
 | e-notes-sbom-datamodel | notes | noteworthy:noteworthy-sbom-format | artifact:artifact-data-model | |
 | e-notes-sbom-arch | notes | noteworthy:noteworthy-sbom-format | artifact:artifact-architecture | |
+| e-prod-gate-candkey | produces | node:goal-admission-gate | noteworthy:noteworthy-candidate-key | |
+| e-notes-candkey-datamodel | notes | noteworthy:noteworthy-candidate-key | artifact:artifact-data-model | |

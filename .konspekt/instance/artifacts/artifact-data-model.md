@@ -117,7 +117,7 @@ mixins); only `asserts` differs per level:
 
 | Level | subject | `asserts` (distinctive fields) |
 |---|---|---|
-| L-1 contract | contract digest | contractId, version, baseline.digest, scope.cvesInScope[], explicitlyOutOfScope[], acceptanceCriteria.testCorpus.digest, schedule |
+| L-1 contract | contract digest | contractId, version, baseline.digest, osera.line, scope.cvesInScope[], explicitlyOutOfScope[], acceptanceCriteria.testCorpus.digest, schedule |
 | L0 baseline | baseline_digest | source_ref (commit SHA), coordinates — anchor, publicly re-derivable |
 | L1 vuln assessment | baseline_digest | baselineSbomRef, cves[]:{id, component} |
 | L2 transformation | baseline→hardened | recipeSet.digest \| patch.digest |
@@ -140,18 +140,28 @@ verdict                                        policy-object
 ```
 
 The **supersedes link** is not a separate record; it is the `supersedes` field
-on `candidate-version`, projected into the graph as a `supersedes` edge.
+on `candidate-version`, projected into the graph as a `supersedes` edge. A
+renewal's contract carries the *same* `osera.line` as its predecessor; a line
+change means a new lineage, not a supersede — so the `supersedes` edge and the
+shared `osera.line` must agree (a checkable admission invariant).
 
 ## 5. Mutable elements
 
 ```
 state-pointer  { key: candidateKey, current: <cand id>, state: <lifecycle state>, updatedAt }
                # the one element spanning phases — its whole job is to track motion
-ledger-row     { key: appId+cand, ref: <cand id>, issuedAt, expiresAt,
+ledger-row     { key: (appId, candidateKey), ref: <cand id>, issuedAt, expiresAt,
                  coveredCves[] (from L-1 scope), updatedAt }
 application    { key: appId, name, owner, deployed:[<cand id>…], source: CMDB }
 verifier-entry { key: verifierId, keys[], status: active|revoked, rotationRef, signed: root }
 ```
+
+`candidateKey` = the version-less upstream purl + `contract.osera.line` — the
+handle for one **bridge lineage**, constant across the supersedes chain so the
+pointer and ledger follow renewals. `app` is deliberately *not* in it: a bridge
+is built and verified once regardless of how many apps adopt it, so the per-app
+dimension lives only in the ledger's composite `(appId, candidateKey)`. See
+`noteworthy-candidate-key`.
 
 Two rules fixed inside the model:
 
@@ -182,5 +192,7 @@ Open:
   demand; VEX stays OpenVEX at L7. See `noteworthy-sbom-format`.
 - **Event-log substrate** for the ledger (and whether the verifier registry is
   event-sourced too, given TUF rotation).
-- **candidateKey definition** — the stable key the state-pointer/ledger use
-  (app + component + upstream-coordinate, independent of osera version).
+- **candidateKey — decided.** = version-less upstream purl + `contract.osera.line`;
+  constant across a bridge lineage (the supersedes chain); `app` dropped from the
+  key (it lives in the ledger's `(appId, candidateKey)`). The line is declared in
+  L-1 and verified with the contract. See `noteworthy-candidate-key`.
