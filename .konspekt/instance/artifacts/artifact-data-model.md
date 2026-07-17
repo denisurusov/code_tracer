@@ -168,13 +168,15 @@ Two rules fixed inside the model:
 - `artifact-product-lifecycle` — the state set (§2) and superseding-version rule
   (§5) are this model's fixed inputs; each state names the element(s) it owns.
 - `artifact-architecture` §3 — the L-1…L9 chain this model gives record shapes
-  to. Pending: demote `artifact-architecture` to the integrating overview that
-  cross-references chain, lifecycle, and data model (held as a separate step).
+  to; `artifact-architecture` is now the integrating overview cross-referencing
+  all three axes.
 
 Open:
 
-- **purl namespace** — the `1.2.3` vs `1.2.3-osera.1` decision (architecture §7)
-  determines `candidate-version.purl` and how supersedes chains read.
+- **purl namespace — decided (Option B).** Backpatched artifacts carry a distinct
+  suffixed purl `@<upstream>-osera.N`; digest stays identity, the hardening
+  relationship is declared in L2/L6/L7. Fixes `candidate-version.purl` (§4). See
+  `noteworthy-purl-namespace`.
 - **CycloneDX vs SPDX** — fixes the L6 `sbom` sub-schema (architecture §9).
 - **Event-log substrate** for the ledger (and whether the verifier registry is
   event-sourced too, given TUF rotation).

@@ -29,3 +29,6 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-prod-gate-datamodel | produces | node:goal-admission-gate | artifact:artifact-data-model | |
 | e-rel-lifecycle-datamodel | relates | artifact:artifact-product-lifecycle | artifact:artifact-data-model | 0.95 |
 | e-rel-arch-datamodel | relates | artifact:artifact-architecture | artifact:artifact-data-model | 0.85 |
+| e-prod-gate-purl | produces | node:goal-admission-gate | noteworthy:noteworthy-purl-namespace | |
+| e-notes-purl-datamodel | notes | noteworthy:noteworthy-purl-namespace | artifact:artifact-data-model | |
+| e-notes-purl-arch | notes | noteworthy:noteworthy-purl-namespace | artifact:artifact-architecture | |
