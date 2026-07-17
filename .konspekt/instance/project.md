@@ -6,10 +6,10 @@ goal: >-
   ledger at the end of the supply chain, not the supply chain itself.
 summary:
   origin: human
-  pinned: false
-  updatedAt: 2026-07-17T14:15:00Z
+  pinned: true
+  updatedAt: 2026-07-17T16:45:00Z
 createdAt: 2026-07-17T13:46:20Z
-updatedAt: 2026-07-17T14:15:00Z
+updatedAt: 2026-07-17T16:45:00Z
 ```
 # code_tracer
 

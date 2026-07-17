@@ -5,14 +5,14 @@ title: Two ingest classes
 status: active
 summary:
   origin: machine
-  pinned: false
-  updatedAt: 2026-07-17T14:15:00Z
+  pinned: true
+  updatedAt: 2026-07-17T16:45:00Z
 review: accepted
 provenance:
   conversationId: finos-osera-project-lookup
   timestamp: 2026-07-16T00:00:00Z
 createdAt: 2026-07-17T14:15:00Z
-updatedAt: 2026-07-17T14:15:00Z
+updatedAt: 2026-07-17T16:45:00Z
 ```
 # Investigation: Two ingest classes
 

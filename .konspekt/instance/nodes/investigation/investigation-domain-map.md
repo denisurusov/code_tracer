@@ -5,14 +5,14 @@ title: Domain map
 status: active
 summary:
   origin: machine
-  pinned: false
-  updatedAt: 2026-07-17T14:15:00Z
+  pinned: true
+  updatedAt: 2026-07-17T16:45:00Z
 review: accepted
 provenance:
   conversationId: finos-osera-project-lookup
   timestamp: 2026-07-15T00:00:00Z
 createdAt: 2026-07-17T14:15:00Z
-updatedAt: 2026-07-17T14:15:00Z
+updatedAt: 2026-07-17T16:45:00Z
 ```
 # Investigation: Domain map
 
