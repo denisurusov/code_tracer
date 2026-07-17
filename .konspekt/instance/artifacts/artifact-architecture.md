@@ -7,7 +7,7 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-17T16:00:00Z
+  updatedAt: 2026-07-17T18:15:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   inputs:
@@ -15,19 +15,27 @@ provenance:
     - osera-bank-schematic.svg      # artifact #2
     - osera-standards-register.md   # artifact #3
 createdAt: 2026-07-17T00:00:00Z
-updatedAt: 2026-07-17T16:00:00Z
+updatedAt: 2026-07-17T18:15:00Z
 ```
 
 # code_tracer — Architecture & Design
 
-**Status:** accepted (`review: accepted`). Persisted to the konspekt instance at
-`.konspekt/instance/artifacts/artifact-architecture.md`.
+**Status:** accepted (`review: accepted`). **Integrating overview.** The design is
+factored into three axes; this document ties them together and is the home of the
+evidence-chain axis:
 
-> This document supersedes and inlines the three earlier per-conversation
-> artifacts (attestation chain, solution schematic, standards register). Those
-> were session outputs that do not persist; treat them as historical. The
-> attestation chain — previously a standalone document — is reproduced here in
-> full (§3) and is now the single source of truth for the chain.
+- **Evidence chain** — the L-1…L9 attestation format the gate consumes. §3 below.
+- **Product lifecycle** — the candidate state machine (Commissioned…Sunset).
+  `artifact-product-lifecycle`.
+- **Data model** — the records backing each state. `artifact-data-model`.
+
+§4–§8 are the cross-cutting concerns that bind the three: the gate, the ledger,
+the component register, the standards binding, and the regulatory narrative.
+
+> Historical note: this document supersedes and inlines three earlier
+> per-conversation artifacts (attestation chain, solution schematic, standards
+> register) that did not persist. The attestation chain is reproduced in full in
+> §3 and is the single source of truth for the chain.
 
 ---
 
@@ -82,7 +90,10 @@ They share a gate but exercise different parts of it: class (a) leans on the
 baseline/transformation/vuln-proof levels (L0–L7) that only make sense against a
 prior artifact; class (b) collapses those to a provenance-and-health check but
 keeps the same verification, quorum, and acceptance machinery (§3.6, §4). The
-gate is parameterized by ingest class, not forked into two tools.
+gate is parameterized by ingest class, not forked into two tools. The lifecycle
+fixes this as an invariant — the a/b divergence is isolated to the Built/Verified
+states and the machine is class-agnostic from Resolved inward
+(`artifact-product-lifecycle` §4).
 
 ---
 
@@ -332,7 +343,10 @@ inside the bank, hermetic and offline, in two passes over a candidate artifact:
    requires.
 
 Both passes consume the same resolved attestation set and produce a single
-promote / reject verdict. The four build components that make this work:
+promote / reject verdict — the `Gate` state in the lifecycle, recorded as an
+immutable `verdict` over the compiled `policy-object`s in the data model
+(`artifact-product-lifecycle`, `artifact-data-model` §4). The four build
+components that make this work:
 
 - **① Contract → in-toto layout compiler.** Compiles the accepted L-1 contract
   into the in-toto layout the verifier enforces. OSERA-specific; exists nowhere
@@ -363,6 +377,10 @@ promote / reject verdict. The four build components that make this work:
 This is deliberately downstream of the gate: the gate decides *whether* an
 artifact is admissible; the ledger tracks *what the bank is now exposed to* once
 it is admitted, and drives the sunset/re-verification cycle.
+
+The ledger backs the `Active`/`Sunset` states of the lifecycle; its record shape
+is the event-sourced `ledger-row` (`artifact-data-model` §5), with `Expiring`
+derived, not stored.
 
 ---
 
@@ -419,6 +437,9 @@ reason the maker/checker split, the L-1 contract, and the quorum all exist.
 ---
 
 ## 9. Open questions / decisions
+
+Cross-cutting; several are now load-bearing elsewhere — the data model
+(`artifact-data-model` §6) and the lifecycle (`artifact-product-lifecycle` §8).
 
 - **CycloneDX vs SPDX** for L6 — one SBOM format, chosen early; CycloneDX carries
   VEX inline, SPDX has the stronger license-ID story. Consequential; unresolved.
