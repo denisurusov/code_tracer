@@ -7,7 +7,7 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-17T18:15:00Z
+  updatedAt: 2026-07-17T20:15:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   inputs:
@@ -15,7 +15,7 @@ provenance:
     - osera-bank-schematic.svg      # artifact #2
     - osera-standards-register.md   # artifact #3
 createdAt: 2026-07-17T00:00:00Z
-updatedAt: 2026-07-17T18:15:00Z
+updatedAt: 2026-07-17T20:15:00Z
 ```
 
 # code_tracer — Architecture & Design
@@ -370,17 +370,48 @@ components that make this work:
 
 - **⑤ Exposure + sunset tracker.** Tracks bridge-expiry per application — which
   apps run a time-bound backpatch and when it lapses. The "ledger" half: least
-  "supply chain," most "your existing CMDB plus a date field," cheap to
-  prototype, and the piece the risk function feels day-to-day.
+  "supply chain," most day-to-day risk-function tooling. The app inventory it
+  reads from is the bank's existing CMDB (an external-mutable `application`
+  record); the ledger proper adds only a thin append-only substrate on top — so
+  it is cheap to prototype and the piece the risk function feels every day.
   *(task-exposure-tracker)*
 
 This is deliberately downstream of the gate: the gate decides *whether* an
 artifact is admissible; the ledger tracks *what the bank is now exposed to* once
 it is admitted, and drives the sunset/re-verification cycle.
 
-The ledger backs the `Active`/`Sunset` states of the lifecycle; its record shape
-is the event-sourced `ledger-row` (`artifact-data-model` §5), with `Expiring`
-derived, not stored.
+The ledger backs the `Active`/`Sunset` states of the lifecycle. Its durable
+substrate is an **append-only, hash-chained event log** — `ledger-event`s, each
+carrying its own `sha256` and chaining to the prior event for its `candidateKey`
+(`issued → renewed → expired → retired`); `ledger-row` and `state-pointer` are
+**projections replayed** from that chain, not authoritative state, and `Expiring`
+is a computed view, never a stored status (`artifact-data-model` §2–§5). Event
+sourcing, not last-write, is what lets the bank answer "which bridge was in force
+in March, and what did it cover?" — the audit question a mutable row cannot.
+
+### 5.1 Three replay-logs, one pattern
+
+The hash-chained ledger is one instance of a discipline the whole architecture
+shares: every durable log is **append-only and replayable to a past state**, and
+everything else is a projection over it. There is not one mechanism but three,
+each specialized for its side, unified by the pattern:
+
+| Log | Side | Mechanism |
+|---|---|---|
+| Attestation chain | production | Merkle / Rekor-style transparency |
+| Ledger | operational | hash-chained `ledger-event`s |
+| Verifier registry | trust | TUF metadata |
+
+**Hash-linking everywhere, consensus nowhere.** Each log is tamper-evident
+(break one hash and the whole tail is invalid) without any distributed-consensus
+machinery — no p2p canonical-chain agreement, no tokens, no mining. That is
+deliberate, on the same reasoning as the quorum (§3.6): a single writer per log,
+no double-spend, a trusted neutral venue, and latency a bank SLA cannot absorb.
+Even the one multi-party moment — the k-of-n VSA set — reaches agreement by
+Schelling point (reproducible builds converge without coordinating), not by a
+consensus protocol. The verifier registry keeps the pattern via TUF specifically
+because TUF additionally handles the one thing a bare event log cannot: trust
+recovery after key compromise (`noteworthy-ledger-substrate`).
 
 ---
 
@@ -391,7 +422,7 @@ derived, not stored.
 | **Build** (ours; nowhere off-the-shelf) | ① layout compiler · ② Rego semantic policy · ③ attestation resolver · ④ acceptance inspection harness · ⑤ exposure/sunset tracker |
 | **Integrate** (proven OSS, wired in) | `in-toto-verify` (structural) · Witness/OPA (Rego eval) · cosign / Sigstore (resolution + signature) · Archivista (attestation store, optional) · the bank's existing CMDB (ledger substrate) |
 | **Not ours** (upstream, integrated-against) | Moderne's patching pipeline (L0–L7 production) · the verifier quorum's rebuild infra (L8) · Maven Central / public upstream repos (the anchor) |
-| **The gap** (unresolved) | Trust-root governance & key rotation for the verifier registry (TUF-shaped) · CycloneDX-vs-SPDX decision (§7) |
+| **The gap** (unresolved) | Trust-root governance & key rotation for the verifier registry (TUF-shaped) — who curates the registry, how keys rotate, what happens on compromise |
 
 ---
 
@@ -402,7 +433,7 @@ The load-bearing standards, mapped to the level or component that consumes each.
 
 | Standard | Consumed at | Role |
 |---|---|---|
-| ★ **purl** | all subjects | Attestation subject identity (`pkg:maven/…`) + digest; drives the `1.2.3` vs `1.2.3-osera.1` namespace decision |
+| ★ **purl** | all subjects | Attestation subject identity (`pkg:maven/…`) + digest. Backpatched artifacts carry a distinct suffixed coordinate `@<upstream>-osera.N` (digest stays identity; the purl is the legible label) — decided, `noteworthy-purl-namespace` |
 | ★ **OCI Image/Artifact + Referrers API** | ③ resolver, L6/L7 | Digest-binding; "attached = referrer, not a link" — subject digest → attestation set, no out-of-band lookup |
 | ★ **in-toto** + Attestation Framework | ① compiler, gate | The framework the whole chain compiles to: layout + links + `in-toto-verify`; thresholds = the k-of-n quorum; inspections = ④ acceptance |
 | ★ **SLSA** | L3 | Build-provenance predicate + levels; the vocabulary the risk function already knows |
@@ -410,12 +441,12 @@ The load-bearing standards, mapped to the level or component that consumes each.
 | ★ **DSSE** | all | The signing envelope in-toto / Sigstore attestations ride in |
 | ★ **Sigstore** (Cosign/Fulcio/Rekor) | ③ resolver | Keyless signing, cert authority, transparency log; `cosign download attestation <digest>` is the resolution path |
 | ★ **Reproducible Builds** | L8, §3.6 | Bit-for-bit rebuild → digest equality; the Schelling point behind the quorum |
-| ★ **CycloneDX** / **SPDX** | L6 | SBOM (+ inline VEX for CycloneDX); SPDX for license IDs. **Choosing between them is a consequential early decision (§9).** |
-| ★ **OpenVEX** / **CSAF 2.0** | L7 | "fixed, not exploitable, here's the evidence" — must reference L5 to be evidence, not a claim; CSAF is the regulator-facing variant |
+| ★ **CycloneDX** (authoritative) / **SPDX** (projection) | L6 | CycloneDX is the source of truth — security/backpatch-native, purl-first, its `pedigree` models the is-hardening-of link directly; SPDX license IDs are embedded inside it, and an SPDX view is emitted on demand. VEX is **not** carried inline — it stays OpenVEX at L7. Decided, `noteworthy-sbom-format` |
+| ★ **OpenVEX** / **CSAF 2.0** | L7 | "fixed, not exploitable, here's the evidence" — must reference L5 to be evidence, not a claim; CSAF is the regulator-facing variant. Authoritative VEX layer (not CycloneDX-VEX) |
 | ★ **Rego / OPA** (via Witness) | ② policy | The semantic gate the meaning-checks run in |
 | **OSV schema** | L1, ⑤ ledger | Vuln records keyed by `purl` — cleaner than CPE for the exposure graph |
-| **TUF** | the-gap | Trust-root, key rotation, compromise recovery for the verifier registry — the unresolved governance question |
-| **CPE** | *trap* | Why scanners still fire on a backpatched artifact — CPE match ignores the patch. A problem to suppress (via VEX), not a tool to use |
+| **TUF** | the-gap | Trust-root, key rotation, compromise recovery for the verifier registry — the unresolved governance question; also the registry's replay-log mechanism (§5.1) |
+| **CPE** | *trap* | Why scanners still fire on a backpatched artifact — CPE match ignores the patch. The `-osera.N` purl turns that mismatch into an explicit, machine-readable is-hardening-of relationship (declared in L2/L6/L7) rather than a hidden coordinate collision. A problem to suppress (via VEX), not a tool to use |
 
 ---
 
@@ -441,8 +472,9 @@ reason the maker/checker split, the L-1 contract, and the quorum all exist.
 Cross-cutting; several are now load-bearing elsewhere — the data model
 (`artifact-data-model` §6) and the lifecycle (`artifact-product-lifecycle` §8).
 
-- **CycloneDX vs SPDX** for L6 — one SBOM format, chosen early; CycloneDX carries
-  VEX inline, SPDX has the stronger license-ID story. Consequential; unresolved.
+- **CycloneDX vs SPDX** for L6 — **decided: CycloneDX authoritative**, SPDX
+  license IDs embedded, SPDX projection emitted on demand; VEX stays OpenVEX at
+  L7. See `noteworthy-sbom-format`.
 - **Trust-root governance (TUF-shaped)** — who curates the verifier registry,
   how keys rotate, what happens on compromise. The biggest open gap.
 - **Admission ruleset review** — §3.7 rules 1–12 are reconstructed (rules 2', 5',
