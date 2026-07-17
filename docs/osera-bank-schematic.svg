@@ -1,0 +1,146 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 780' font-family='Helvetica, Arial, sans-serif'>
+  <defs>
+    <marker id='arw' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='7' markerHeight='7' orient='auto-start-reverse'><path d='M0,0 L10,5 L0,10 z' fill='#64748b'/></marker>
+    <marker id='arwD' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='7' markerHeight='7' orient='auto-start-reverse'><path d='M0,0 L10,5 L0,10 z' fill='#94a3b8'/></marker>
+    <marker id='arwG' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M0,0 L10,5 L0,10 z' fill='#2f8f4e'/></marker>
+    <filter id='soft' x='-20%' y='-20%' width='140%' height='140%'><feDropShadow dx='0' dy='1.5' stdDeviation='2.5' flood-color='#1a2332' flood-opacity='0.12'/></filter>
+    <filter id='glow' x='-40%' y='-40%' width='180%' height='180%'><feDropShadow dx='0' dy='0' stdDeviation='3.5' flood-color='#e11d48' flood-opacity='0.55'/></filter>
+  </defs>
+  <rect width='1200' height='780' fill='#fbfcfd'/>
+  <text x='36' y='38' font-size='22' font-weight='700' fill='#1a2332'>OSERA &#8594; Regulated Bank</text>
+  <text x='36' y='58' font-size='13' fill='#64748b'>Trust zones &#183; parties &#183; attestation lifecycle &#8212; how a patched OSS artifact reaches an app, provably. Red = what our tool builds.</text>
+
+  <!-- Contract bar -->
+  <g filter='url(#soft)'><rect x='150' y='74' width='1014' height='34' rx='7' fill='#1a2332'/></g>
+  <text x='168' y='95' font-size='12' font-weight='700' fill='#ffffff'>&#9312; OSERA BACKPATCH CONTRACT (L-1)  &#8212;  issued by alliance, accepted by maker before work starts  &#183;  compiles to the in-toto layout the gate checks against</text>
+
+  <!-- lifecycle overlay -->
+  <text x='150' y='130' font-size='11' font-weight='700' fill='#94a3b8' letter-spacing='2'>PRODUCE</text>
+  <text x='410' y='130' font-size='11' font-weight='700' fill='#94a3b8' letter-spacing='2'>VERIFY</text>
+  <text x='640' y='130' font-size='11' font-weight='700' fill='#94a3b8' letter-spacing='2'>DISTRIBUTE</text>
+  <text x='840' y='130' font-size='11' font-weight='700' fill='#94a3b8' letter-spacing='2'>ADMIT</text>
+  <text x='1060' y='130' font-size='11' font-weight='700' fill='#94a3b8' letter-spacing='2'>CONSUME</text>
+
+  <!-- ZONE 1: public upstream -->
+  <rect x='24' y='142' width='1152' height='120' rx='10' fill='#f1f5f9' stroke='#e2e8f0'/>
+  <text x='40' y='162' font-size='12' font-weight='700' fill='#475569'>PUBLIC UPSTREAM &#183; the anchor (nobody in the alliance controls it)</text>
+  <g filter='url(#soft)'>
+    <rect x='60' y='176' width='150' height='66' rx='8' fill='#fff' stroke='#cbd5e1'/>
+    <rect x='230' y='176' width='150' height='66' rx='8' fill='#fff' stroke='#cbd5e1'/>
+    <rect x='400' y='176' width='150' height='66' rx='8' fill='#fff' stroke='#cbd5e1'/>
+  </g>
+  <text x='135' y='205' font-size='12' font-weight='600' fill='#334155' text-anchor='middle'>Maven Central</text>
+  <text x='135' y='222' font-size='10' fill='#64748b' text-anchor='middle'>baseline artifact</text>
+  <text x='305' y='205' font-size='12' font-weight='600' fill='#334155' text-anchor='middle'>Upstream git</text>
+  <text x='305' y='222' font-size='10' fill='#64748b' text-anchor='middle'>source commit SHA</text>
+  <text x='475' y='205' font-size='12' font-weight='600' fill='#334155' text-anchor='middle'>OSV / NVD</text>
+  <text x='475' y='222' font-size='10' fill='#64748b' text-anchor='middle'>CVE set</text>
+  <text x='720' y='212' font-size='10.5' font-style='italic' fill='#94a3b8'>L0 baseline digest &amp; L1 CVE set must be re-derivable from here</text>
+  <text x='720' y='228' font-size='10.5' font-style='italic' fill='#94a3b8'>&#8212; or the whole chain is a self-claim.</text>
+
+  <!-- ZONE 2: FINOS-neutral -->
+  <rect x='24' y='272' width='1152' height='210' rx='10' fill='#fef6ec' stroke='#f3ddc0'/>
+  <text x='40' y='292' font-size='12' font-weight='700' fill='#a1651a'>FINOS-NEUTRAL &#183; maker mint chain + peer-verifier quorum</text>
+
+  <!-- mint chain L0-L7 -->
+  <g filter='url(#soft)'><rect x='60' y='306' width='470' height='150' rx='9' fill='#fff' stroke='#e6c9a0'/></g>
+  <text x='80' y='328' font-size='12' font-weight='700' fill='#c2691a'>Patching vendor &#8212; mint chain (L0&#8211;L7)</text>
+  <g font-size='10.5' fill='#7c5314'>
+    <text x='80' y='350'>L0 Baseline &#183; L1 Vuln-assessment &#183; L2 Transformation</text>
+    <text x='80' y='368'>L3 Build-provenance (SLSA) &#183; L4 Test-results</text>
+    <text x='80' y='386'>L5 Vuln-proof &#183; L6 SBOM+diff &#183; L7 VEX</text>
+  </g>
+  <text x='80' y='414' font-size='10' font-style='italic' fill='#a1651a'>the maker claims &#8212; signed links, one per step</text>
+  <rect x='80' y='424' width='200' height='18' rx='9' fill='#fff7ed' stroke='#e6c9a0'/>
+  <text x='180' y='437' font-size='9.5' fill='#a1651a' text-anchor='middle'>someone else builds &#183; not ours</text>
+
+  <!-- quorum -->
+  <g filter='url(#soft)'><rect x='560' y='306' width='300' height='150' rx='9' fill='#fff' stroke='#9fd8ce'/></g>
+  <text x='580' y='328' font-size='12' font-weight='700' fill='#0f8a7a'>Peer-verifier quorum &#8212; L8 VSA</text>
+  <g font-size='10.5' fill='#0f6f63'>
+    <text x='580' y='350'>k-of-n independent rebuild &#8594; digest match;</text>
+    <text x='580' y='368'>re-run L4/L5 &#8594; result match; policy vX passed.</text>
+    <text x='580' y='392' font-weight='700' fill='#b91c1c'>dissent is disqualifying, not outvoted.</text>
+  </g>
+  <rect x='580' y='406' width='256' height='40' rx='7' fill='#f0fdfa' stroke='#9fd8ce' stroke-dasharray='4 3'/>
+  <text x='708' y='424' font-size='9.5' fill='#0f6f63' text-anchor='middle'>same signed VSA whether it runs here in</text>
+  <text x='708' y='438' font-size='9.5' fill='#0f6f63' text-anchor='middle'>FINOS-neutral or in peer / bank on-prem (hybrid)</text>
+
+  <!-- neutral repo -->
+  <g filter='url(#soft)'><rect x='890' y='356' width='250' height='60' rx='9' fill='#fff' stroke='#e6c9a0'/></g>
+  <text x='1015' y='382' font-size='12' font-weight='600' fill='#334155' text-anchor='middle'>Neutral repo (Nexus)</text>
+  <text x='1015' y='400' font-size='10' fill='#64748b' text-anchor='middle'>signed artifact + attestations as referrers</text>
+
+  <!-- ZONE 3: bank on-prem -->
+  <rect x='24' y='492' width='1152' height='220' rx='10' fill='#f2f0fb' stroke='#ddd6f3'/>
+  <text x='40' y='512' font-size='12' font-weight='700' fill='#5b3fa8'>BANK ON-PREM &#183; the admission gate + the ledger (hermetic, offline, regulator-replayable)</text>
+
+  <!-- resolver -->
+  <g filter='url(#soft)'><rect x='60' y='528' width='150' height='150' rx='9' fill='#fff' stroke='#e11d48' stroke-width='1.5'/></g>
+  <rect x='72' y='540' width='126' height='17' rx='8' fill='#e11d48'/>
+  <text x='135' y='552' font-size='9.5' font-weight='700' fill='#fff' text-anchor='middle'>BUILD &#9314;</text>
+  <text x='135' y='580' font-size='11.5' font-weight='700' fill='#334155' text-anchor='middle'>Attestation</text>
+  <text x='135' y='596' font-size='11.5' font-weight='700' fill='#334155' text-anchor='middle'>resolver</text>
+  <text x='135' y='620' font-size='9.5' fill='#64748b' text-anchor='middle'>referrers &#8594; gate</text>
+  <text x='135' y='636' font-size='9.5' fill='#64748b' text-anchor='middle'>(maybe Archivista)</text>
+
+  <!-- gate stage 1: in-toto -->
+  <g filter='url(#soft)'><rect x='240' y='528' width='210' height='150' rx='9' fill='#fff' stroke='#c7bced'/></g>
+  <text x='345' y='552' font-size='12' font-weight='700' fill='#5b3fa8' text-anchor='middle'>in-toto-verify</text>
+  <text x='345' y='570' font-size='10' fill='#6b5aa5' text-anchor='middle'>STRUCTURE: right steps, right</text>
+  <text x='345' y='584' font-size='10' fill='#6b5aa5' text-anchor='middle'>signers, DAG intact, not expired</text>
+  <rect x='258' y='598' width='174' height='66' rx='7' fill='#faf9ff' stroke='#e11d48' stroke-width='1.3'/>
+  <rect x='270' y='604' width='120' height='16' rx='8' fill='#e11d48'/>
+  <text x='330' y='615' font-size='9' font-weight='700' fill='#fff' text-anchor='middle'>BUILD &#9315;</text>
+  <text x='345' y='636' font-size='10' fill='#334155' text-anchor='middle'>bank-acceptance</text>
+  <text x='345' y='650' font-size='10' fill='#334155' text-anchor='middle'>inspection (L9, in-gate)</text>
+
+  <!-- gate stage 2: rego -->
+  <g filter='url(#soft)'><rect x='480' y='528' width='210' height='150' rx='9' fill='#fff' stroke='#e11d48' stroke-width='1.5'/></g>
+  <rect x='492' y='540' width='126' height='17' rx='8' fill='#e11d48'/>
+  <text x='555' y='552' font-size='9.5' font-weight='700' fill='#fff' text-anchor='middle'>BUILD &#9313;</text>
+  <text x='585' y='578' font-size='12' font-weight='700' fill='#334155' text-anchor='middle'>Rego / Witness</text>
+  <text x='585' y='596' font-size='10' fill='#64748b' text-anchor='middle'>MEANING: CVEs-fixed &#8839; scope</text>
+  <text x='585' y='610' font-size='10' fill='#64748b' text-anchor='middle'>digestMatch across k</text>
+  <text x='585' y='624' font-size='10' fill='#64748b' text-anchor='middle'>coverage &#8805; 0.90 &#183; conformance==FULL</text>
+  <text x='585' y='650' font-size='9.5' font-style='italic' fill='#64748b' text-anchor='middle'>the meaning in-toto cannot read</text>
+
+  <!-- golden repo -->
+  <g filter='url(#soft)'><rect x='720' y='540' width='170' height='60' rx='9' fill='#eaf7ee' stroke='#8fce9f'/></g>
+  <text x='805' y='566' font-size='12' font-weight='700' fill='#2f8f4e' text-anchor='middle'>Golden repo</text>
+  <text x='805' y='584' font-size='10' fill='#3f8f5a' text-anchor='middle'>promoted, ingestible</text>
+
+  <!-- sunset tracker -->
+  <g filter='url(#soft)'><rect x='720' y='612' width='170' height='66' rx='9' fill='#fff' stroke='#e11d48' stroke-width='1.5'/></g>
+  <rect x='732' y='618' width='120' height='16' rx='8' fill='#e11d48'/>
+  <text x='792' y='629' font-size='9' font-weight='700' fill='#fff' text-anchor='middle'>BUILD &#9316;</text>
+  <text x='805' y='650' font-size='11' font-weight='700' fill='#334155' text-anchor='middle'>Exposure + sunset</text>
+  <text x='805' y='666' font-size='9.5' fill='#64748b' text-anchor='middle'>bridge-expiry debt clock per app</text>
+
+  <!-- consume -->
+  <g filter='url(#soft)'><rect x='920' y='540' width='220' height='138' rx='9' fill='#fff' stroke='#c7bced'/></g>
+  <text x='1030' y='566' font-size='12' font-weight='700' fill='#5b3fa8' text-anchor='middle'>App teams</text>
+  <text x='1030' y='586' font-size='10' fill='#64748b' text-anchor='middle'>consume from golden repo only;</text>
+  <text x='1030' y='600' font-size='10' fill='#64748b' text-anchor='middle'>Central never shadows the</text>
+  <text x='1030' y='614' font-size='10' fill='#64748b' text-anchor='middle'>hardened artifact</text>
+  <text x='1030' y='644' font-size='10' fill='#2f8f4e' text-anchor='middle' font-weight='700'>exit 0 &#8594; promote</text>
+  <text x='1030' y='662' font-size='10' fill='#b91c1c' text-anchor='middle' font-weight='700'>exit &#8800;0 &#8594; quarantine, raise finding</text>
+
+  <!-- flow arrows -->
+  <g stroke='#64748b' stroke-width='1.4' fill='none' marker-end='url(#arw)'>
+    <line x1='210' y1='603' x2='238' y2='603'/>
+    <line x1='450' y1='603' x2='478' y2='603'/>
+    <line x1='690' y1='570' x2='718' y2='570'/>
+  </g>
+  <g stroke='#2f8f4e' stroke-width='1.6' fill='none' marker-end='url(#arwG)'><line x1='890' y1='570' x2='918' y2='570'/></g>
+  <g stroke='#94a3b8' stroke-width='1.2' stroke-dasharray='5 3' fill='none' marker-end='url(#arwD)'>
+    <line x1='135' y1='242' x2='135' y2='304'/>
+    <line x1='475' y1='242' x2='300' y2='304'/>
+  </g>
+
+  <!-- one-gap panel -->
+  <rect x='24' y='724' width='1152' height='44' rx='8' fill='#fff5f5' stroke='#f3c7c7'/>
+  <text x='40' y='742' font-size='11.5' font-weight='700' fill='#b91c1c'>THE ONE GAP:</text>
+  <text x='150' y='742' font-size='11' fill='#7f1d1d'>in-toto proves the pipeline ran untampered by authorized parties. It does NOT prove the patch is correct or benign &#8212;</text>
+  <text x='150' y='758' font-size='11' fill='#7f1d1d'>a malicious patch, faithfully &amp; reproducibly built, still passes every check. Source review stays a separate control. No cryptography replaces it.</text>
+</svg>
