@@ -26,3 +26,6 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-mark-kickoff-arch | marks | waypoint:waypoint-kickoff | artifact:artifact-architecture | |
 | e-prod-gate-lifecycle | produces | node:goal-admission-gate | artifact:artifact-product-lifecycle | |
 | e-rel-arch-lifecycle | relates | artifact:artifact-architecture | artifact:artifact-product-lifecycle | 0.9 |
+| e-prod-gate-datamodel | produces | node:goal-admission-gate | artifact:artifact-data-model | |
+| e-rel-lifecycle-datamodel | relates | artifact:artifact-product-lifecycle | artifact:artifact-data-model | 0.95 |
+| e-rel-arch-datamodel | relates | artifact:artifact-architecture | artifact:artifact-data-model | 0.85 |
