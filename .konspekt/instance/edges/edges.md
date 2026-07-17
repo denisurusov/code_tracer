@@ -24,3 +24,5 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-prod-gate-arch | produces | node:goal-admission-gate | artifact:artifact-architecture | |
 | e-mark-kickoff-gate | marks | waypoint:waypoint-kickoff | node:goal-admission-gate | |
 | e-mark-kickoff-arch | marks | waypoint:waypoint-kickoff | artifact:artifact-architecture | |
+| e-prod-gate-lifecycle | produces | node:goal-admission-gate | artifact:artifact-product-lifecycle | |
+| e-rel-arch-lifecycle | relates | artifact:artifact-architecture | artifact:artifact-product-lifecycle | 0.9 |
