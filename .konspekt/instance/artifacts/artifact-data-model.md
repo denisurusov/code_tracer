@@ -177,7 +177,9 @@ Open:
   suffixed purl `@<upstream>-osera.N`; digest stays identity, the hardening
   relationship is declared in L2/L6/L7. Fixes `candidate-version.purl` (§4). See
   `noteworthy-purl-namespace`.
-- **CycloneDX vs SPDX** — fixes the L6 `sbom` sub-schema (architecture §9).
+- **SBOM format — decided (CycloneDX).** L6 `sbom` is CycloneDX (authoritative),
+  purl-first, with SPDX license IDs embedded and an SPDX projection emitted on
+  demand; VEX stays OpenVEX at L7. See `noteworthy-sbom-format`.
 - **Event-log substrate** for the ledger (and whether the verifier registry is
   event-sourced too, given TUF rotation).
 - **candidateKey definition** — the stable key the state-pointer/ledger use
