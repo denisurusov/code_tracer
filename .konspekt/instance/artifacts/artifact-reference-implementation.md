@@ -7,12 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-17T20:45:00Z
+  updatedAt: 2026-07-17T21:40:00Z
 provenance:
   conversationId: konspekt-ri-scoping
+  sourceRef: 73d4e7b0880a1a1fb720911ac7360c99f54583f9
+  contentHash: 73d4e7b0880a1a1fb720911ac7360c99f54583f9
   timestamp: 2026-07-17T20:45:00Z
 createdAt: 2026-07-17T20:45:00Z
-updatedAt: 2026-07-17T20:45:00Z
+updatedAt: 2026-07-17T21:40:00Z
 ```
 # code_tracer — Reference implementation scope
 

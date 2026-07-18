@@ -7,12 +7,14 @@ review: proposed
 summary:
   origin: machine
   pinned: false
-  updatedAt: 2026-07-17T21:20:00Z
+  updatedAt: 2026-07-17T21:40:00Z
 provenance:
   conversationId: konspekt-ri-scoping
-  timestamp: 2026-07-17T21:20:00Z
+  sourceRef: 60ce5a5b288716680b0ccc022e7398031cbb88d5
+  contentHash: 60ce5a5b288716680b0ccc022e7398031cbb88d5
+  timestamp: 2026-07-17T21:00:00Z
 createdAt: 2026-07-17T21:00:00Z
-updatedAt: 2026-07-17T21:20:00Z
+updatedAt: 2026-07-17T21:40:00Z
 ```
 # code_tracer — RI Phase 0 fixture spec
 
@@ -208,4 +210,3 @@ Stored as overlays (`fixtures/bad/<variant>/`) so the diff documents the test.
   synthetic provenance graph deep enough to actually exercise rule 6?
 - **japicmp label.** Keep the real tool name the fixture never runs, or
   genericize so Phase 0 doesn't imply invocation.
-```

@@ -7,12 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-17T21:20:00Z
+  updatedAt: 2026-07-17T21:40:00Z
 provenance:
   conversationId: konspekt-ri-scoping
+  sourceRef: 60ce5a5b288716680b0ccc022e7398031cbb88d5
+  contentHash: 60ce5a5b288716680b0ccc022e7398031cbb88d5
   timestamp: 2026-07-17T21:20:00Z
 createdAt: 2026-07-17T21:20:00Z
-updatedAt: 2026-07-17T21:20:00Z
+updatedAt: 2026-07-17T21:40:00Z
 ```
 # Decision: binding external referents (anchor the immutable, snapshot the mutable)
 
