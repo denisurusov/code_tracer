@@ -7,7 +7,7 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-17T20:15:00Z
+  updatedAt: 2026-07-17T20:45:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   inputs:
@@ -15,7 +15,7 @@ provenance:
     - osera-bank-schematic.svg      # artifact #2
     - osera-standards-register.md   # artifact #3
 createdAt: 2026-07-17T00:00:00Z
-updatedAt: 2026-07-17T20:15:00Z
+updatedAt: 2026-07-17T20:45:00Z
 ```
 
 # code_tracer — Architecture & Design
@@ -419,7 +419,7 @@ recovery after key compromise (`noteworthy-ledger-substrate`).
 
 | Bucket | Items |
 |---|---|
-| **Build** (ours; nowhere off-the-shelf) | ① layout compiler · ② Rego semantic policy · ③ attestation resolver · ④ acceptance inspection harness · ⑤ exposure/sunset tracker |
+| **Build** (ours; nowhere off-the-shelf) | ① layout compiler · ② Rego semantic policy · ③ attestation resolver · ④ acceptance inspection harness · ⑤ exposure/sunset tracker · ⑥ lifecycle console (UI over the mutable projections; `task-lifecycle-ui`) |
 | **Integrate** (proven OSS, wired in) | `in-toto-verify` (structural) · Witness/OPA (Rego eval) · cosign / Sigstore (resolution + signature) · Archivista (attestation store, optional) · the bank's existing CMDB (ledger substrate) |
 | **Not ours** (upstream, integrated-against) | Moderne's patching pipeline (L0–L7 production) · the verifier quorum's rebuild infra (L8) · Maven Central / public upstream repos (the anchor) |
 | **The gap** (unresolved) | Trust-root governance & key rotation for the verifier registry (TUF-shaped) — who curates the registry, how keys rotate, what happens on compromise |

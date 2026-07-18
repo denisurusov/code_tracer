@@ -40,3 +40,12 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-prod-gate-ledger | produces | node:goal-admission-gate | noteworthy:noteworthy-ledger-substrate | |
 | e-notes-ledger-datamodel | notes | noteworthy:noteworthy-ledger-substrate | artifact:artifact-data-model | |
 | e-notes-ledger-arch | notes | noteworthy:noteworthy-ledger-substrate | artifact:artifact-architecture | |
+| e-dec-gate-ri | decomposes | node:goal-admission-gate | node:goal-reference-implementation | |
+| e-dec-ri-fixtures | decomposes | node:goal-reference-implementation | node:task-fixtures | |
+| e-dec-ri-ui | decomposes | node:goal-reference-implementation | node:task-lifecycle-ui | |
+| e-rel-ri-thegate | relates | node:goal-reference-implementation | node:goal-the-gate | 0.9 |
+| e-prod-ri-artifact | produces | node:goal-reference-implementation | artifact:artifact-reference-implementation | |
+| e-prod-ri-stack | produces | node:goal-reference-implementation | noteworthy:noteworthy-ri-stack | |
+| e-rel-riart-arch | relates | artifact:artifact-reference-implementation | artifact:artifact-architecture | 0.85 |
+| e-notes-ristack-arch | notes | noteworthy:noteworthy-ri-stack | artifact:artifact-architecture | |
+| e-notes-ristack-riart | notes | noteworthy:noteworthy-ri-stack | artifact:artifact-reference-implementation | |
