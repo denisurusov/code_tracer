@@ -7,20 +7,20 @@ review: proposed
 summary:
   origin: machine
   pinned: false
-  updatedAt: 2026-07-17T21:00:00Z
+  updatedAt: 2026-07-17T21:20:00Z
 provenance:
   conversationId: konspekt-ri-scoping
-  timestamp: 2026-07-17T21:00:00Z
+  timestamp: 2026-07-17T21:20:00Z
 createdAt: 2026-07-17T21:00:00Z
-updatedAt: 2026-07-17T21:00:00Z
+updatedAt: 2026-07-17T21:20:00Z
 ```
 # code_tracer — RI Phase 0 fixture spec
 
-**Status:** proposed, un-pinned — a living draft being iterated on (currently the
-baseline/CVE referent question, §9). Details the corpus `task-fixtures` emits and
-the target the Phase 1 ADMIT path is built against. Exit criteria for
-`waypoint-ri-fixtures`: the conforming bundle verifies to ADMIT under a stock
-verifier, and each known-bad variant (§7) drives REJECT naming its rule.
+**Status:** proposed, un-pinned — a living draft being iterated on (remaining
+open items in §9). Details the corpus `task-fixtures` emits and the target the
+Phase 1 ADMIT path is built against. Exit criteria for `waypoint-ri-fixtures`:
+the conforming bundle verifies to ADMIT under a stock verifier, and each
+known-bad variant (§7) drives REJECT naming its rule.
 
 ## 1. Scenario — one backpatch, every value fixed
 
@@ -67,9 +67,12 @@ needs *a* trust root, not the *right* one (the deferred TUF gap).
 
 ## 4. The conforming contract (L-1)
 
-Schema from `osera-backpatch-contract.md` §3, filled in. `source` URIs on the
-CVEs are the live, publicly re-derivable locators; `recordDigest` is the open
-extension under discussion (§9).
+Schema from `osera-backpatch-contract.md` §3, filled in. Per
+`noteworthy-referent-binding`, referents bind by their nature: the **baseline**
+is the immutable-anchor case (digest + re-derivable purl/sourceRef, must-match-
+live); **in-scope CVEs** are the mutable-snapshot case — `source` (live OSV
+locator, advisory) + `recordDigest` (frozen snapshot of the record at
+commissioning) + `affectedRange` checked against that snapshot.
 
 ```jsonc
 {
@@ -90,16 +93,16 @@ extension under discussion (§9).
       "cvesInScope": [
         { "id": "CVE-2025-40142",
           "affectedComponent": "pkg:maven/org.apache.commons/commons-collections",
-          "affectedRange": ">=3.0,<3.2.2",
-          "source": "https://osv.dev/vulnerability/CVE-2025-40142",  // live locator
-          "recordDigest": { "sha256": "<osv_record_digest>" }         // OPEN — see §9
+          "affectedRange": ">=3.0,<3.2.2",           // must match the pinned snapshot
+          "source": "https://osv.dev/vulnerability/CVE-2025-40142",  // live locator, advisory
+          "recordDigest": { "sha256": "<osv_record_digest>" }         // frozen OSV snapshot — noteworthy-referent-binding
         }
       ],
       "explicitlyOutOfScope": [
         { "id": "CVE-2024-40099",
           "affectedComponent": "pkg:maven/org.apache.commons/commons-collections",
           "reason": "no upstream fix path",
-          "source": "https://osv.dev/vulnerability/CVE-2024-40099" }
+          "source": "https://osv.dev/vulnerability/CVE-2024-40099" }  // locator only; not load-bearing for L5/L7
       ],
       "noNewFeatures": true,
       "apiAbiStability": "required"
@@ -109,7 +112,7 @@ extension under discussion (§9).
       "digest": { "sha256": "<baseline_digest>" },
       "sourceRef": "git+https://github.com/apache/commons-collections@<synthetic-sha>",
       "anchorPublic": true,
-      "dependencyLock": { "digest": { "sha256": "<deps_digest>" } }
+      "dependencyLock": { "digest": { "sha256": "<deps_digest>" } }  // immutable manifest, blob emitted (§6)
     },
     "acceptanceCriteria": {
       "testCorpus": {
@@ -161,9 +164,11 @@ fixtures/conforming/
   contract/   osera-2026-0142.intoto.jsonl
   chain/      L0.jsonl … L7.jsonl  L8.verifier-{1..4}.jsonl  L9.jsonl
   keys/       osera-root.pub  moderne.pub  verifier-{1..4}.pub  bank.pub
-  anchor/     maven-central/commons-collections-3.2.1.jar   # faked public anchor
-              osv/CVE-2025-40142.json  osv/CVE-2024-40099.json  # faked advisory records
-  manifest.json                                   # digest → path index
+  deps/       resolved-manifest.json                # dependencyLock.digest target (immutable)
+  anchor/     maven-central/commons-collections-3.2.1.jar   # faked public anchor (must-match-live)
+              osv/CVE-2025-40142.json               # frozen snapshot recordDigest pins
+              osv/CVE-2024-40099.json               # out-of-scope advisory (locator only)
+  manifest.json                                     # digest → path index
 ```
 
 ## 7. Known-bad variants — the Phase 0 test matrix
@@ -179,6 +184,7 @@ Stored as overlays (`fixtures/bad/<variant>/`) so the diff documents the test.
 | `expired-layout` | bridgeExpiry in the past | layout expired | expiry |
 | `missing-l5` | drop L5 for the in-scope CVE | vuln-proof incomplete | 9 |
 | `undeclared-sbom` | L6 lists a component absent from the diff | SBOM integrity | 11 |
+| `cve-record-tampered` | OSV snapshot digest ≠ contract recordDigest (or affectedRange contradicts the snapshot) | CVE-record integrity | 13-ext / referent-binding |
 
 ## 8. Fidelity caveats — stated, not hidden
 
@@ -187,16 +193,17 @@ Stored as overlays (`fixtures/bad/<variant>/`) so the diff documents the test.
   anchor re-pull is out of RI v1 scope — this is where that boundary bites.
 - **Static keys, not keyless.** No Fulcio/Rekor; `osera-root` stands in for the
   whole trust root (the deferred TUF gap).
+- **CVE live-pull is faked too.** Per `noteworthy-referent-binding` the `source`
+  pointer is advisory-only in production; in the fixture it resolves to the local
+  `anchor/osv/` snapshot, and only `recordDigest` gates.
 
 ## 9. Open items
 
-- **Baseline / CVE referents (active).** Baseline already carries identity
-  (digest) + re-derivable locators (purl, sourceRef, dependencyLock.digest). For
-  CVEs: `source` URI restored (canonical, live-re-derivable). Undecided whether
-  each in-scope CVE also carries a `recordDigest` freezing the advisory snapshot
-  the scope was written against — the freeze-discipline the contract applies to
-  baseline/corpus, extended to the vuln definition. If adopted, adds a seventh
-  bad variant (`cve-record-tampered`).
+- **Baseline / CVE referents — decided.** Baseline is the immutable-anchor case
+  (digest + purl + sourceRef, must-match-live). In-scope CVEs are the mutable-
+  snapshot case: `source` (live OSV) + `recordDigest` (frozen snapshot) +
+  checkable `affectedRange`. Adds the `cve-record-tampered` variant (§7). See
+  `noteworthy-referent-binding`.
 - **SLSA materials depth (L3).** Reference the blobs by digest only, or carry a
   synthetic provenance graph deep enough to actually exercise rule 6?
 - **japicmp label.** Keep the real tool name the fixture never runs, or

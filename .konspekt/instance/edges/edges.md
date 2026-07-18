@@ -51,3 +51,6 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-notes-ristack-riart | notes | noteworthy:noteworthy-ri-stack | artifact:artifact-reference-implementation | |
 | e-rel-fixspec-fixtures | relates | artifact:artifact-ri-fixtures-spec | node:task-fixtures | 0.95 |
 | e-rel-fixspec-riart | relates | artifact:artifact-ri-fixtures-spec | artifact:artifact-reference-implementation | 0.85 |
+| e-prod-gate-referent | produces | node:goal-admission-gate | noteworthy:noteworthy-referent-binding | |
+| e-notes-referent-fixspec | notes | noteworthy:noteworthy-referent-binding | artifact:artifact-ri-fixtures-spec | |
+| e-notes-referent-arch | notes | noteworthy:noteworthy-referent-binding | artifact:artifact-architecture | |
