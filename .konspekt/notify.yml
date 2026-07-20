@@ -107,7 +107,22 @@ version: 1
 # component is not the same as opting a person into it. Uncomment and edit.
 # ---------------------------------------------------------------------------
 
-subscriptions: []
+subscriptions:
+
+  # Node lifecycle watch. `types` is ENTITY type, so this covers goals and
+  # investigations as well as tasks — there is no node-type granularity.
+  #
+  # Three events in one block, deliberately:
+  #   proposed        fires when a node lands as a proposal (the review queue)
+  #   accepted        fires when it is blessed — and when a node is BORN accepted
+  #   status_changed  narrowed by status_to below to transitions INTO open
+  #
+  # status_changed needs a predecessor, so a node created already `open` does
+  # not fire it; `proposed`/`accepted` are what catch a newly added task.
+  - types: [node]
+    events: [proposed, accepted, status_changed]
+    status_to: [open]
+    to: [denisurusov]
 
 #  - types: [noteworthy]
 #    events: [accepted]
