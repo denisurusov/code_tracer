@@ -6,14 +6,14 @@ status: open
 summary:
   origin: machine
   pinned: false
-  updatedAt: 2026-07-20T00:00:00Z
-review: proposed
+  updatedAt: 2026-07-20T19:45:00Z
+review: accepted
 provenance:
   conversationId: konspekt-conformance-install
   confidence: 0.6
   timestamp: 2026-07-20T00:00:00Z
 createdAt: 2026-07-20T00:00:00Z
-updatedAt: 2026-07-20T00:00:00Z
+updatedAt: 2026-07-20T19:45:00Z
 ```
 # Task: Lifecycle mockup — one candidate, end to end
 
