@@ -574,6 +574,101 @@
   img, svg { display: block; max-width: 100%; }
   button { font: inherit; color: inherit; }
 </style>
+
+<style>
+  /* ---------------------------------------------------------------
+     Print / PDF.
+
+     Landscape, because the board and the lifecycle rail are eight
+     columns wide and reflowing them to fewer would destroy the one
+     thing they encode — the outside/inside boundary falling between
+     columns three and four.
+
+     Two things must survive the transition to paper:
+       1. Colour and hatching. The perimeter is drawn as texture, so
+          print-color-adjust:exact is load-bearing, not cosmetic.
+       2. The hover values. They cannot hover on paper, so each one
+          is numbered and collected into an appendix built at load.
+     --------------------------------------------------------------- */
+
+  .tip-appendix { display: none; }
+
+  @page { size: A4 landscape; margin: 12mm; }
+
+  @media print {
+    /* Paper is light. Pin the tokens rather than trusting the renderer. */
+    :root, :root[data-theme="dark"], :root[data-theme="light"] {
+      --ground: #FFFFFF;   --surface: #FFFFFF;  --surface-2: #EFF2F6;
+      --ink: #101720;      --ink-2: #3D4854;    --ink-3: #626E7C;
+      --line: #D2D9E1;     --line-2: #B4BEC9;
+      --accent: #33447E;   --accent-soft: #E6EAF5;
+      --good: #14603C;     --good-soft: #E1EFE7;
+      --warn: #7A5600;     --warn-soft: #F6EDD8;
+      --crit: #8C2626;     --crit-soft: #F6E3E2;
+      --hatch: #C4CDD8;
+    }
+
+    html, body {
+      background: #FFFFFF;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+
+    .wrap { max-width: none; padding: 0; gap: 2rem; }
+
+    /* Nothing interactive survives; don't imply otherwise. */
+    .tip { display: none !important; }
+    .btn { box-shadow: none; }
+
+    /* Scroll containers have no meaning on paper. */
+    .scroller { overflow: visible; }
+
+    /* Keep small units intact, but never whole sections — the detail
+       screen is taller than a page, and an avoid rule it cannot honour
+       just pushes it to a fresh page and leaves the previous one half
+       empty. Protect the pieces, let the sections flow. */
+    .note, .stage, .card, .vsa, .gen, .chain-row,
+    .sla-step, .gloss, .keyline, .verdict, tr { break-inside: avoid; }
+    thead { break-after: avoid; }
+    h1, h2, h3, .subhead { break-after: avoid-page; }
+    .section > header { break-inside: avoid-page; }
+
+    /* The inset underline that marks the current state does not print. */
+    .stop.now { box-shadow: none; outline: 2px solid var(--accent); outline-offset: -2px; }
+
+    /* Hover targets become numbered references into the appendix. */
+    .hov { text-decoration: none; }
+    .hov[data-tipn]::after,
+    .std[data-tipn]::after {
+      content: attr(data-tipn);
+      font-family: var(--sans);
+      font-size: 0.55em;
+      font-weight: 700;
+      vertical-align: super;
+      color: var(--accent);
+      margin-left: 0.15em;
+    }
+    .std { cursor: auto; }
+
+    .tip-appendix { display: block; break-before: page; }
+    .tip-appendix h2 { font-size: var(--step-2); font-family: var(--serif); }
+    .tip-appendix .grp { break-inside: avoid-page; margin-top: 1.1rem; }
+    .tip-appendix .grp-h {
+      font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+      font-weight: 700; color: var(--ink-3);
+      padding-bottom: 0.3rem; border-bottom: 1px solid var(--line-2);
+    }
+    .tip-appendix .ent {
+      display: grid; grid-template-columns: 2rem 13rem 1fr; gap: 0.5rem;
+      padding: 0.4rem 0; border-bottom: 1px solid var(--line);
+      break-inside: avoid-page;
+    }
+    .tip-appendix .ent-n { font-family: var(--sans); font-size: 0.7rem; font-weight: 700; color: var(--accent); }
+    .tip-appendix .ent-l { font-size: var(--step--1); font-weight: 600; }
+    .tip-appendix .ent-v { font-family: var(--mono); font-size: 0.68rem; color: var(--ink-2); line-height: 1.5; }
+    .tip-appendix .ent-v b { font-family: var(--sans); font-weight: 600; color: var(--ink-3); }
+  }
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -1905,6 +2000,122 @@ Hook:: the third-party risk regime the bank's risk function applies first, befor
   });
   window.addEventListener("scroll", function () { if (current) place(current); }, true);
   window.addEventListener("resize", hide);
+})();
+
+/* -------------------------------------------------------------------
+   Print appendix.
+
+   A hover cannot happen on paper, so every [data-tip] is numbered in
+   document order and its contents collected into an appendix that is
+   hidden on screen and shown only when printing. Grouped by the
+   section each reference sits in, so a reader can find one without
+   scanning the whole list.
+   ------------------------------------------------------------------- */
+(function () {
+  var nodes = document.querySelectorAll("[data-tip]");
+  if (!nodes.length) return;
+
+  var wrap = document.querySelector(".wrap");
+  if (!wrap) return;
+
+  var appendix = document.createElement("section");
+  appendix.className = "tip-appendix section";
+
+  var head = document.createElement("header");
+  var eyebrow = document.createElement("span");
+  eyebrow.className = "eyebrow";
+  eyebrow.textContent = "Appendix";
+  var h2 = document.createElement("h2");
+  h2.textContent = "The values behind each reference";
+  var intro = document.createElement("p");
+  intro.textContent =
+    "On screen these appear on hover. On paper each one carries a small number; " +
+    "the underlying values are collected here, in the order they appear.";
+  head.appendChild(eyebrow);
+  head.appendChild(h2);
+  head.appendChild(intro);
+  appendix.appendChild(head);
+
+  function sectionTitle(el) {
+    var sec = el.closest("section.section");
+    if (!sec) return "Page";
+    var h = sec.querySelector("header h2");
+    return h ? h.textContent.trim() : "Page";
+  }
+
+  var groups = [];
+  var byTitle = {};
+  var n = 0;
+
+  Array.prototype.forEach.call(nodes, function (el) {
+    n += 1;
+    el.setAttribute("data-tipn", n);
+
+    var title = sectionTitle(el);
+    if (!byTitle[title]) {
+      byTitle[title] = [];
+      groups.push(title);
+    }
+    byTitle[title].push({
+      n: n,
+      label: el.getAttribute("data-tip-label") || el.textContent.trim().slice(0, 60),
+      body: el.getAttribute("data-tip") || ""
+    });
+  });
+
+  groups.forEach(function (title) {
+    var grp = document.createElement("div");
+    grp.className = "grp";
+
+    var gh = document.createElement("div");
+    gh.className = "grp-h";
+    gh.textContent = title;
+    grp.appendChild(gh);
+
+    byTitle[title].forEach(function (item) {
+      var row = document.createElement("div");
+      row.className = "ent";
+
+      var num = document.createElement("span");
+      num.className = "ent-n";
+      num.textContent = item.n;
+
+      var lab = document.createElement("span");
+      lab.className = "ent-l";
+      lab.textContent = item.label;
+
+      var val = document.createElement("span");
+      val.className = "ent-v";
+
+      item.body.split("\n").forEach(function (line) {
+        line = line.trim();
+        if (!line) return;
+        var split = line.indexOf("::");
+        var piece = document.createElement("div");
+        if (split === -1) {
+          piece.textContent = line;
+        } else {
+          var k = document.createElement("b");
+          k.textContent = line.slice(0, split).trim() + " ";
+          var text = line.slice(split + 2).trim()
+            .replace(/^\[ok\]\s*/, "✓ ")
+            .replace(/^\[bad\]\s*/, "✗ ");
+          piece.appendChild(k);
+          piece.appendChild(document.createTextNode(text));
+        }
+        val.appendChild(piece);
+      });
+
+      row.appendChild(num);
+      row.appendChild(lab);
+      row.appendChild(val);
+      grp.appendChild(row);
+    });
+
+    appendix.appendChild(grp);
+  });
+
+  wrap.appendChild(appendix);
 })();
 </script>
 </body>
