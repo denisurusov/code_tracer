@@ -3,18 +3,18 @@ id: goal-issuer-side
 type: goal
 title: Issuer side — alliance tooling
 status: open
-review: proposed
+review: accepted
 summary:
   origin: machine
-  pinned: false
-  updatedAt: 2026-07-21T14:00:00Z
+  pinned: true
+  updatedAt: 2026-07-21T17:20:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   sourceRef: c284e12b3f1e77a4f712644a85aba7e8195b4648
   contentHash: c284e12b3f1e77a4f712644a85aba7e8195b4648
   timestamp: 2026-07-21T14:00:00Z
 createdAt: 2026-07-21T14:00:00Z
-updatedAt: 2026-07-21T14:00:00Z
+updatedAt: 2026-07-21T17:20:00Z
 ```
 # Goal: Issuer side — alliance tooling
 
@@ -30,3 +30,7 @@ addition rather than a silent rewrite.
 Decomposes into three components: ⑦ contract authoring, ⑧ contract issuance,
 ⑨ verifier registry and trust root. Component ① (layout compiler) is shared
 rather than owned here — it is dual-sited by `noteworthy-compiler-siting`.
+
+Explicitly **not** in scope: alliance governance. We build the mechanism; the
+alliance settles who may issue, who sits in the trust-root threshold, and what
+the quorum parameters are (`artifact-architecture` §6, §9).

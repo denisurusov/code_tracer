@@ -3,30 +3,33 @@ id: noteworthy-compiler-siting
 type: noteworthy
 title: Decision — layout compiler is dual-sited; digest agreement is an admission rule
 status: active
-review: proposed
+review: accepted
 summary:
   origin: machine
-  pinned: false
-  updatedAt: 2026-07-21T14:00:00Z
+  pinned: true
+  updatedAt: 2026-07-21T17:20:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   sourceRef: c284e12b3f1e77a4f712644a85aba7e8195b4648
   contentHash: c284e12b3f1e77a4f712644a85aba7e8195b4648
   timestamp: 2026-07-21T14:00:00Z
 createdAt: 2026-07-21T14:00:00Z
-updatedAt: 2026-07-21T14:00:00Z
+updatedAt: 2026-07-21T17:20:00Z
 ```
 # Decision: layout compiler dual-sited, digest agreement admissible
 
 **Decision.** Component ① (contract → in-toto layout compiler) is **not moved**
 to the issuer side. It runs on **both sides**, the compile is **deterministic**,
-and **agreement between the two compiled layout digests becomes an admission
-check**.
+and **agreement between the two compiled layout digests is an admission check**.
 
 ```
-  14. Recompile layout L' from the signed L-1 contract C.
-      digest(L') == digest(L) as distributed.        [layout-compile agreement]
+  14. Recompile layout L' locally from the signed contract C; digest(L') equals
+      the digest of the layout as distributed.       [layout-compile agreement]
 ```
+
+**Applied** to `artifact-architecture` §3.7 as rule 14 and §4 component ①
+(commit `55d85de`); `artifact-data-model` `policy-object` gained
+`compilerVersion` (commit `4e699f4`).
 
 **Why not simply move it.** If the alliance compiles and signs the layout and
 the bank merely verifies the signature, a **trusted compiler** has been inserted
@@ -49,5 +52,4 @@ correct and loud failure. The compiler version therefore rides in the
 `policy-object` record alongside the layout it produced.
 
 **Binds:** `task-layout-compiler` (①) gains an issuer-side siting and a
-determinism spec; `artifact-architecture` §3.7 gains rule 14; `artifact-data-model`
-`policy-object` gains `compilerVersion`.
+determinism spec — outstanding.

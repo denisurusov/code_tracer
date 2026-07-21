@@ -3,18 +3,18 @@ id: noteworthy-threshold-everywhere
 type: noteworthy
 title: Principle — no single key is load-bearing
 status: active
-review: proposed
+review: accepted
 summary:
   origin: machine
-  pinned: false
-  updatedAt: 2026-07-21T14:00:00Z
+  pinned: true
+  updatedAt: 2026-07-21T17:20:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   sourceRef: c284e12b3f1e77a4f712644a85aba7e8195b4648
   contentHash: c284e12b3f1e77a4f712644a85aba7e8195b4648
   timestamp: 2026-07-21T14:00:00Z
 createdAt: 2026-07-21T14:00:00Z
-updatedAt: 2026-07-21T14:00:00Z
+updatedAt: 2026-07-21T17:20:00Z
 ```
 # Principle: no single key is load-bearing
 
@@ -46,5 +46,5 @@ design exists to produce.
 on a *single* key or a *single* checker is, by this principle, incorrectly
 designed — raise it rather than accept it.
 
-**Notes:** `artifact-architecture`, `noteworthy-compiler-siting`,
+**Notes:** `artifact-architecture` §3.6, `noteworthy-compiler-siting`,
 `noteworthy-trust-root-ownership`, `noteworthy-ledger-substrate`.
