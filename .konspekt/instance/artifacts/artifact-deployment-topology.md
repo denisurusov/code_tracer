@@ -7,20 +7,21 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-21T21:50:00Z
+  updatedAt: 2026-07-21T20:35:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   sourceRef: a587d0575d65f1fb3c3ef862c269af41ea2e94df
   contentHash: a587d0575d65f1fb3c3ef862c269af41ea2e94df
   timestamp: 2026-07-21T21:00:00Z
 createdAt: 2026-07-21T21:00:00Z
-updatedAt: 2026-07-21T21:50:00Z
+updatedAt: 2026-07-21T20:35:00Z
 ```
 # code_tracer — Physical topology
 
 **Status:** accepted. The **fifth axis: deployment.** The other four describe what
 the system *means*; this one describes where the bytes actually live, who writes
-them, who reads them, and when. Diagram: `docs/code-tracer-topology.svg`.
+them, who reads them, and when. Diagram: `docs/resource/code-tracer-topology.svg`
+(page 4 of the set indexed in `docs/resource/README.md`).
 
 **Every store named here must be physically real** — a file at a path in a named
 repository, an object in a bucket, a table in a database, or a running third-party
@@ -76,7 +77,8 @@ Anchor strength is not uniform — npm and PyPI permit deletion, so those need a
 | **TUF metadata** | **static files over HTTPS** — object storage + CDN (S3/GCS/R2). TUF is inherently a file tree, not a service | `root.json`, `timestamp.json`, `snapshot.json`, `targets.json`, `delegations/{bank}.json` |
 | **Rekor** | a **FINOS-operated Rekor server** — which means Trillian plus a backing SQL database, an availability commitment, and a key custody obligation. Not a small operational undertaking | append-only Merkle log |
 | **Fulcio / CA** | either the public Sigstore Fulcio, or a FINOS-operated instance. **UNDECIDED** — public is simpler; a private CA fits embargo handling | X.509 chain |
-| **Neutral artifact registry** | an **OCI registry with Referrers API support** — Harbor, zot, Artifactory, or a cloud registry. See §6: plain Nexus Maven hosting is *not* sufficient | artifact blob + attestations as referrers |
+| **Artifact store** | the ecosystem-native repository for the purl type. Artifact bytes are **never duplicated** into OCI | native repo |
+| **Attestation store + index** | attestations as OCI blobs / Archivista, plus the **digest → attestation index**. The index is **untrusted** — a lookup, never evidence — and rebuildable by replaying Rekor (`noteworthy-attestation-index`) | OCI blobs + index |
 | Maker build infra, recipe repo | maker's own CI and git | not ours |
 | Verifier rebuild infra × n | each verifier's own CI — mostly peer on-prem | not ours; harness must be distributable (§7) |
 
@@ -90,6 +92,10 @@ protocol; a container, never a credential.
 authoritative for schemas and policy, is *never read at verify time*: the schema
 and its matching policy bundle ship **pinned by digest inside the bundle**, with
 the repo as the publication source and re-derivation target.
+
+**Resolution is online; verification is offline.** The attestation index is read
+by ③ *before* the bundle is sealed, which is why a central index does not breach
+hermeticity.
 
 Freshness: TUF snapshot ≤ 7 days, checkpoint set ≤ 24 hours.
 
@@ -108,39 +114,26 @@ Freshness: TUF snapshot ≤ 7 days, checkpoint set ≤ 24 hours.
 | **CMDB** | the bank's existing system (ServiceNow or equivalent) | read-only to us |
 | **Console** | a web app plus API over the projections | writes nothing durable |
 
-## 6. The awkward finding — Maven repos are not OCI registries
+## 6. Artifact and attestation live apart — resolved
 
-Making the stores concrete surfaces a real conflict the logical design conceals.
+Making the stores concrete surfaced a real conflict. Chain principle #5 assumes
+attestations are resolvable from the artifact digest via **OCI referrers**. But a
+hardened `.jar` lives in a **Maven repository** and an npm package in an **npm
+registry** — none of which are OCI registries or support the Referrers API. The
+artifact and its attestations therefore live in different systems.
 
-Chain principle #5 says attestations are **OCI referrers resolvable from the
-artifact digest**. But a hardened `.jar` lives in a **Maven repository**, an npm
-package in an **npm registry** — none of which are OCI registries, and none of
-which support the Referrers API. So the artifact and its attestations end up in
-**two different systems**, and "resolvable from the artifact digest" stops being
-true at the storage layer.
+**Resolved by `noteworthy-attestation-index`:** artifact bytes stay in the
+ecosystem-native repository and are never duplicated; attestations live in OCI /
+Archivista blobs; and a **central digest → attestation index** supplies
+discovery. This is safe because the index is a *lookup, not evidence* — no
+admission rule depends on it being honest, a wrong index fails immediately
+against signed and digest-bound attestations, and it is a projection over Rekor,
+so omission is detectable rather than silent. Dual-publishing the bytes was
+considered and rejected as duplication in service of a discovery problem.
 
-Three ways out, none free:
-
-1. **Dual-publish** — the artifact goes to the ecosystem-native repo *and* the
-   same bytes go to an OCI registry as a blob, with attestations attached there.
-   Resolution works; the cost is two copies and a binding rule that they are the
-   same digest.
-2. **Sidecar** — `.intoto.jsonl` alongside the artifact in the Maven/npm repo
-   (already noted in the standards register). Works everywhere; loses referrer
-   discovery, so the resolver needs per-ecosystem path conventions.
-3. **Registry with both** — Artifactory and Harbor can host Maven *and* OCI, but
-   the Maven side still has no referrer mechanism, so it reduces to (1) or (2)
-   with fewer servers.
-
-**Recommendation: (1) dual-publish, with the OCI copy as the resolution surface
-and the ecosystem repo as the consumption surface.** The digest is identity
-(principle #1), so two locations holding identical bytes is not a
-co-authority problem — it is the same object addressed twice. This needs
-recording as its own decision; flagged here, not settled.
-
-Note this also constrains the **golden repo**: app teams consume via their
-native package manager, so the bank-side copy must be ecosystem-native, and the
-OCI bundle store sits beside it rather than replacing it.
+Consequence for the **golden repo**: app teams consume via their native package
+manager, so the bank-side copy stays ecosystem-native and the OCI bundle store
+sits beside it rather than replacing it.
 
 ## 7. Still physically undetermined
 
@@ -151,7 +144,8 @@ OCI bundle store sits beside it rather than replacing it.
   implies a courier process and a **staging host on each side of the perimeter**,
   on a daily tempo.
 - **Fulcio siting**, **verdict store**, **ledger store** — marked UNDECIDED above.
-- **Artifact/attestation co-location** — §6.
+- **Index/log reconciliation** — something must periodically replay Rekor and
+  confirm the index is complete. Whose job, and how often.
 
 ## 8. Relation to the other axes
 
