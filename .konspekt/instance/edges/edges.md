@@ -55,3 +55,34 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-notes-referent-fixspec | notes | noteworthy:noteworthy-referent-binding | artifact:artifact-ri-fixtures-spec | |
 | e-notes-referent-arch | notes | noteworthy:noteworthy-referent-binding | artifact:artifact-architecture | |
 | e-dec-ri-mockup | decomposes | node:goal-reference-implementation | node:task-lifecycle-mockup | |
+
+## Proposed — not yet accepted
+
+Edges below carry `review: proposed`, overriding the file-level default. They
+land in the table above on acceptance of the 2026-07-21 issuer-side batch
+(`conversationId: konspekt-architecture-tooling`).
+
+| id | kind | from | to | weight |
+|----|------|------|----|--------|
+| e-dec-gate-issuer | decomposes | node:goal-admission-gate | node:goal-issuer-side | |
+| e-dec-issuer-authoring | decomposes | node:goal-issuer-side | node:task-contract-authoring | |
+| e-dec-issuer-issuance | decomposes | node:goal-issuer-side | node:task-contract-issuance | |
+| e-dec-issuer-registry | decomposes | node:goal-issuer-side | node:task-verifier-registry | |
+| e-rel-issuer-compiler | relates | node:goal-issuer-side | node:task-layout-compiler | 0.9 |
+| e-prod-issuer-contractlc | produces | node:goal-issuer-side | artifact:artifact-contract-lifecycle | |
+| e-rel-contractlc-lifecycle | relates | artifact:artifact-contract-lifecycle | artifact:artifact-product-lifecycle | 0.95 |
+| e-rel-contractlc-arch | relates | artifact:artifact-contract-lifecycle | artifact:artifact-architecture | 0.85 |
+| e-rel-contractlc-datamodel | relates | artifact:artifact-contract-lifecycle | artifact:artifact-data-model | 0.8 |
+| e-rel-contractlc-issuance | relates | artifact:artifact-contract-lifecycle | node:task-contract-issuance | 0.9 |
+| e-prod-issuer-twosited | produces | node:goal-issuer-side | noteworthy:noteworthy-two-sited-scope | |
+| e-notes-twosited-arch | notes | noteworthy:noteworthy-two-sited-scope | artifact:artifact-architecture | |
+| e-prod-issuer-compiler | produces | node:goal-issuer-side | noteworthy:noteworthy-compiler-siting | |
+| e-notes-compiler-arch | notes | noteworthy:noteworthy-compiler-siting | artifact:artifact-architecture | |
+| e-notes-compiler-task | notes | noteworthy:noteworthy-compiler-siting | node:task-layout-compiler | |
+| e-prod-issuer-trustroot | produces | node:goal-issuer-side | noteworthy:noteworthy-trust-root-ownership | |
+| e-notes-trustroot-arch | notes | noteworthy:noteworthy-trust-root-ownership | artifact:artifact-architecture | |
+| e-notes-trustroot-datamodel | notes | noteworthy:noteworthy-trust-root-ownership | artifact:artifact-data-model | |
+| e-notes-trustroot-registry | notes | noteworthy:noteworthy-trust-root-ownership | node:task-verifier-registry | |
+| e-prod-issuer-threshold | produces | node:goal-issuer-side | noteworthy:noteworthy-threshold-everywhere | |
+| e-notes-threshold-arch | notes | noteworthy:noteworthy-threshold-everywhere | artifact:artifact-architecture | |
+| e-rel-threshold-ledger | relates | noteworthy:noteworthy-threshold-everywhere | noteworthy:noteworthy-ledger-substrate | 0.8 |
