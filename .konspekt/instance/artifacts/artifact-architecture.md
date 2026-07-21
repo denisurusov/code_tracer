@@ -7,7 +7,7 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-21T17:10:00Z
+  updatedAt: 2026-07-21T19:50:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   inputs:
@@ -15,7 +15,7 @@ provenance:
     - osera-bank-schematic.svg      # artifact #2
     - osera-standards-register.md   # artifact #3
 createdAt: 2026-07-17T00:00:00Z
-updatedAt: 2026-07-21T17:10:00Z
+updatedAt: 2026-07-21T19:50:00Z
 ```
 
 # code_tracer — Architecture & Design
@@ -40,13 +40,13 @@ interface between the two sides is `artifact-evidence-bundle`.
 > register) that did not persist. The attestation chain is reproduced in full in
 > §3 and is the single source of truth for the chain.
 
-> **Amendment 2026-07-21 (issuer side).** §1, §3.7, §6, §7 and §9 amended per
+> **Amendment 2026-07-21 (issuer side).** §1, §3, §4, §6, §7 and §9 amended per
 > `noteworthy-two-sited-scope`, `noteworthy-compiler-siting`,
-> `noteworthy-trust-root-ownership`, `noteworthy-threshold-everywhere` and
-> `noteworthy-conformance-binary`. Excerpts
-> `c284e12b3f1e77a4f712644a85aba7e8195b4648`,
-> `05038f93a541216c0f6713ea13bcff58a40d823d`,
-> `b73f250d059666768988095d440fa673548ef9d2`.
+> `noteworthy-trust-root-ownership`, `noteworthy-threshold-everywhere`,
+> `noteworthy-conformance-binary`, `noteworthy-governance-modes`,
+> `noteworthy-transparency-log`, `noteworthy-bundle-format`,
+> `noteworthy-authoritative-form`, `noteworthy-bundle-freshness`,
+> `noteworthy-revocation-semantics` and `noteworthy-quorum-parameters`.
 
 ---
 
@@ -71,9 +71,9 @@ distributes the result with machine-readable evidence.
 
 **What it is not:** the patching pipeline, the attestation *producers* (L0–L7),
 or the quorum's rebuild infrastructure. Those are upstream and
-integrated-against, not built. Alliance *governance* — who may issue, who sits in
-the trust-root threshold, what `k` and `n` are — is likewise out of scope: we
-build the mechanism, the alliance settles the policy.
+integrated-against, not built. Alliance *governance policy* — who sits in the
+trust-root threshold, verifier on/offboarding, compromise procedure — is likewise
+out of scope: we build the mechanism, the alliance settles the policy.
 
 ### Three zones
 
@@ -95,6 +95,21 @@ entire admission decision from stored inputs and reach the same verdict. The
 issuer side existing does not relax this: because the bank verifies offline, the
 perimeter crossing is a **copy of a self-contained evidence bundle**, not a
 protocol (`artifact-evidence-bundle`).
+
+### Two commissioning modes
+
+The alliance commissions work in either of two modes, which map onto the two
+trust paths rather than onto two sets of rules:
+
+- **Mutualized** — members vote a project in; spend, benefit and responsibility
+  are shared. Trust path `osera-root`.
+- **Solo** — a single bank commissions and funds alone and is solely accountable
+  for that judgement. Trust path `delegated:<bank>`.
+
+Mode changes **who is accountable for deciding what to commission**, never what
+the gate requires: verification is k-of-n with zero dissent either way, because
+verification is a **duty of membership** rather than a credit against funding
+(`noteworthy-governance-modes`).
 
 ---
 
@@ -157,14 +172,19 @@ Before any work starts, the alliance issues a **backpatch contract** and the
 vendor **signs acceptance** of it. This makes the deliverable a *commissioned
 spec*, not a post-hoc submission — it closes the loophole where a maker picks an
 easy test corpus after the fact. The contract is **L-1**: the root the entire
-chain above it is verified *against*. It freezes four things:
+chain above it is verified *against*. It freezes:
 
+- **Governance** — `mode`, `sponsor`, `mandateRef` and `trustPath`, so "was this
+  properly commissioned?" is checkable rather than assumed.
 - **Baseline** — `contract.baseline.digest`, the exact upstream artifact to
   start from.
 - **Scope** — `contract.scope.cvesInScope` (what must be fixed) and
   `contract.scope.explicitlyOutOfScope` (what must not be silently touched).
 - **Test corpus** — `contract.acceptanceCriteria.testCorpus`, named by digest so
   it cannot be substituted.
+- **Quorum size** — `verification.k`, computed as `max(3, ceil(n/3))` at
+  issuance, so the artifact is judged against the quorum in force when it was
+  commissioned.
 - **Schedule** — delivery window.
 
 The contract is machine-readable and content-addressed. It **compiles directly
@@ -185,7 +205,7 @@ Accepted, Delivered, Fulfilled, and three terminals — is
 | L5 | **Vulnerability Proof** | Moderne | Per CVE: PoC fails on baseline_digest, passes on hardened_digest | both |
 | L6 | **SBOM (out)** + diff | Moderne | Composition of the hardened artifact, and delta vs the L0 SBOM | hardened_digest |
 | L7 | **VEX** (OpenVEX/CSAF) | Moderne | Per CVE: `fixed`, justified by reference to L5 | hardened_digest |
-| L8 | **VSA** | **Verifier(s)** | Independently rebuilt → digest match; re-ran L4/L5 → result match; policy passed; conforms to contract | hardened_digest |
+| L8 | **VSA** | **Verifier(s)** | Independently rebuilt → digest match; re-ran L4/L5 → result match; policy passed; conforms to contract; **the log checkpoint this verifier observed** | hardened_digest |
 | L9 | **Acceptance** | **Bank** | Internal contract/integration tests passed; promoted to golden repo | hardened_digest |
 
 L0–L7 are the **maker's claims**. **L8 is the only attestation that converts
@@ -197,6 +217,10 @@ assembled by the maker at the Delivered transition, checked for completeness
 against `contract.requiredAttestations`, and fixed in time by a transparency-log
 entry rather than a signature — see `artifact-contract-lifecycle` §2 and
 `artifact-evidence-bundle` §1.
+
+**L8 carries the observed checkpoint** because the log is FINOS-operated (§7). A
+single asserted tree head would have to be trusted; k independently observed ones
+cannot be split without producing a dissent (`noteworthy-transparency-log`).
 
 ### 3.4 The anchor problem
 
@@ -257,7 +281,7 @@ middle state. An honest shortfall routes through **contract amendment**, not a
 softened verdict: the unfixable CVE moves to `explicitlyOutOfScope` with a stated
 reason, the maker re-countersigns, and delivery is `FULL` against a contract that
 tells the truth (`noteworthy-conformance-binary`,
-`artifact-contract-lifecycle` §3–§4).
+`artifact-contract-lifecycle` §4–§5).
 
 **Net effect:** the gate no longer asks "did the maker do good work?" It asks
 "did the output conform to a scope the maker committed to *before starting*,
@@ -289,10 +313,13 @@ natural Schelling point. Agreement without a consensus protocol.
 
 - **Moderne mints** L0–L7 (maker, and tester).
 - **N independent verifiers** each rebuild, re-run the suite, and replay the vuln
-  proofs — FINOS plus participating institutions (the pilot firms already have
-  the CI capacity; marginal cost is one job).
+  proofs. Because verification is a **duty of membership**, `n` is the active
+  verifier registry rather than a separately negotiated set; the marginal cost is
+  one CI job.
 - **Each publishes its own VSA**, independently signed and logged.
-- **Admission requires k-of-n, not 1-of-1.**
+- **Admission requires k-of-n**, with `k = max(3, ceil(n/3))` — a floor expressed
+  both absolutely and proportionally, so it cannot silently weaken as membership
+  grows (`noteworthy-quorum-parameters`).
 - **Threshold / aggregate signing** (FROST, BLS) so the bank's gate still
   verifies a single signature against a single quorum key.
 
@@ -304,13 +331,18 @@ promotion. A dissenting VSA is therefore **disqualifying, not outvoted**:
 investigation, not arithmetic. No single-checker design can produce this signal
 at all, and it is the strongest argument for the model.
 
-This is one of three places the same shape recurs — quorum, layout compilation,
-and the TUF root — generalized as `noteworthy-threshold-everywhere`: **no single
-key is load-bearing; threshold not majority; dissent disqualifying.**
+This is one of four places the same shape recurs — quorum, layout compilation,
+the TUF root, and log witnessing — generalized as
+`noteworthy-threshold-everywhere`: **no single key is load-bearing; threshold not
+majority; dissent disqualifying.**
+
+*Note for formation:* until three verifiers are active, no artifact can reach
+FULL admission. That is the floor working as intended, but it makes verifier
+recruitment a launch prerequisite rather than a growth activity.
 
 ### 3.7 Admission policy
 
-The gate resolves the attestation set for a candidate artifact digest `D`, then
+The gate resolves the evidence bundle for a candidate artifact digest `D`, then
 evaluates the policy below. Rules run in two passes: **structural**
 (`in-toto-verify` against the compiled layout — right steps, right signers, DAG
 intact) and **semantic** (Rego/Witness over the resolved predicate contents).
@@ -319,7 +351,8 @@ Promote only if every rule holds.
 ```
   1. All attestations in the set are DSSE-wrapped; signatures valid; signer
      certs chain to a trusted root (Fulcio); each entry present in the
-     transparency log (Rekor).                              [signature validity]
+     transparency log, verified against the witnessed checkpoint set — and no
+     two verifiers observed divergent tree heads.  [signature validity, §3.3]
   2. A VSA (L8) exists over D, signed by the FINOS verifier key, current,
      not revoked.                                     [checker present — see 2']
   3. L0 anchor is independently re-derivable: baseline_digest matches the
@@ -348,9 +381,12 @@ Promote only if every rule holds.
      requires them.                                     [digest-binding, §3.1]
  13. Resolve contract C = VSA.osera.contract.digest; C.status == ACCEPTED,
      signed by maker trust-anchor; VSA.osera.contract.conformance == "FULL";
-     C.scope.cvesInScope ⊆ (CVEs marked fixed in L7 VEX).    [contract binding]
+     C.scope.cvesInScope ⊆ (CVEs marked fixed in L7 VEX);
+     C.governance.trustPath matches the signing namespace.   [contract binding]
  14. Recompile layout L' locally from the signed contract C; digest(L') equals
      the digest of the layout as distributed.       [layout-compile agreement]
+ 15. Trust-root snapshot age ≤ 7 days; checkpoint set age ≤ 24 hours (limits
+     tightenable per bank, never loosenable).            [bundle freshness]
 
      → any rule fails: DO NOT PROMOTE.
 ```
@@ -360,20 +396,25 @@ checker, rules 2 and 5 are superseded by:
 
 ```
   2'. ∃ VSA set {V₁..Vₙ} over D, each signed by a distinct verifier in the
-      OSERA verifier registry, each current, none revoked.
+      OSERA verifier registry, each current, none revoked, |set| ≥ C.verification.k.
   5'. |{Vᵢ : Vᵢ.osera.rebuild.digestMatch == true}| ≥ k
       AND ∄ Vᵢ with digestMatch == false.            [zero-dissent quorum, §3.6]
 ```
 
-**Rule 14 (amendment 2026-07-21).** The layout compiler ① is **dual-sited and
-deterministic**: the alliance compiles, and the bank recompiles from the same
-signed contract and compares digests. Accepting an issuer-signed layout without
-recompiling would insert a *trusted compiler* into a design whose premise is
-verify-don't-trust — a signed layout is authenticated, not verified. Determinism
-is therefore a build requirement (fixed key ordering, no timestamps, no
-environment dependence, pinned version), and the compiler version rides in the
-`policy-object` so skew surfaces as a digest mismatch rather than silent
-divergence (`noteworthy-compiler-siting`).
+**Rule 14.** The layout compiler ① is **dual-sited and deterministic**: the
+alliance compiles, and the bank recompiles from the same signed contract and
+compares digests. Accepting an issuer-signed layout without recompiling would
+insert a *trusted compiler* into a design whose premise is verify-don't-trust — a
+signed layout is authenticated, not verified. Determinism is therefore a build
+requirement, and the compiler version rides in the `policy-object`
+(`noteworthy-compiler-siting`).
+
+**Rule 15.** Offline verification forfeits TUF's own freshness guarantee, so
+maximum age is stated on two clocks with different change rates. Stale is a
+**named-rule reject, not a warning** — a warning defers the decision to whoever
+is reading the console, which is not a control. Re-resolution is cheap: the
+artifact and its attestations are unchanged, only the trust material refreshes
+(`noteworthy-bundle-freshness`).
 
 **Offline decidability.** Every rule above must be decidable from the evidence
 bundle alone. A rule that requires a live lookup is either wrong or evidence of a
@@ -383,9 +424,9 @@ missing bundle element — the test that keeps hermeticity falsifiable
 > **Provenance.** Rules 2', 5', and 13 are recovered verbatim from the source
 > design conversations. Rules 1–12 are a **reconstruction** — derived from the
 > chain (§3.1–§3.6) and its principles, not recovered from the original
-> enumerated ruleset (which did not persist). Rule 14 is new (2026-07-21). They
-> are faithful to the design's logic; review against the original if it
-> resurfaces.
+> enumerated ruleset (which did not persist). Rules 14 and 15 are new
+> (2026-07-21), as are the checkpoint clause in rule 1 and the trustPath clause
+> in rule 13. Review against the original if it resurfaces.
 
 ### 3.8 The legal stub
 
@@ -402,6 +443,10 @@ deliberately does not:
 - **Liability / indemnity:** likely no one is contractually answerable when a
   conforming backpatch nonetheless breaks production — which is exactly why the
   bank's own **L9 acceptance testing is non-optional**, not a nicety.
+- **Solo-mode consumption:** where a mode-2 artifact is consumed by a member
+  other than its sponsor, the commissioning judgement was not collective, and
+  that member consumes at its own risk. The evidence is identical; the mandate is
+  not (`noteworthy-governance-modes`).
 
 ---
 
@@ -417,12 +462,11 @@ inside the bank, hermetic and offline, in two passes over a candidate artifact:
    predicate contents (§3.7). Confirms the evidence *means* what the contract
    requires.
 
-Both passes consume the same resolved attestation set and produce a single
-promote / reject verdict — the `Gate` state in the lifecycle, recorded as an
-immutable `verdict` over the compiled `policy-object`s in the data model
-(`artifact-product-lifecycle`, `artifact-data-model` §4). The verdict pins the
-evidence bundle, trust-root version and trust path it was reached from, so the
-decision is self-contained for offline replay.
+Both passes consume the same evidence bundle and produce a single promote /
+reject verdict — the `Gate` state in the lifecycle, recorded as an immutable
+`verdict` over the compiled `policy-object`s (`artifact-data-model` §4). The
+verdict pins the bundle digest, trust-root version and trust path it was reached
+from, so the decision is self-contained for offline replay.
 
 The build components that make this work:
 
@@ -431,15 +475,16 @@ The build components that make this work:
   today. **Dual-sited and deterministic** — run on both sides, with digest
   agreement enforced as rule 14. *(task-layout-compiler)*
 - **② Rego semantic policy.** The meaning layer in-toto cannot read — CVEs-fixed
-  ⊇ scope, k-of-n digest agreement, coverage ≥ threshold, conformance == FULL.
-  Runs at the same gate, immediately after structural verification.
-  *(task-rego-policy)*
+  ⊇ scope, k-of-n digest agreement, coverage ≥ threshold, conformance == FULL,
+  freshness limits. Runs at the same gate, immediately after structural
+  verification. *(task-rego-policy)*
 - **③ Attestation resolver / collector.** Discovers and collects the
   attestations attached to an artifact (OCI referrers / sigstore bundles keyed
-  to the digest), **assembles the evidence bundle** bank-side, and feeds it into
-  the gate. Assembly confers no authority — the bundle is a container, never a
-  credential — so ③ stays a resolver rather than a trusted packager. May shrink
-  to configuration if Archivista is adopted. *(task-attestation-resolver)*
+  to the digest), **assembles the evidence bundle** bank-side as an OCI image
+  index — with a deterministic tar export for air-gapped transfer — and feeds it
+  into the gate. Assembly confers no authority: the bundle is a container, never
+  a credential, so ③ stays a resolver rather than a trusted packager. Archivista
+  is optional convenience, not transport. *(task-attestation-resolver)*
 - **④ Bank-acceptance inspection harness.** The **L9** step *inside* the gate:
   runs the bank's own app-team contract/integration tests as an in-toto
   inspection at verification time, folding pass/fail into the promote-or-reject
@@ -472,6 +517,16 @@ bank answer "which bridge was in force in March, and what did it cover?" — the
 audit question a mutable row cannot — and equally "which admitted candidates rest
 on a verifier whose key was later revoked?"
 
+**Revocation records an exposure, it does not invalidate.** A revoked verifier
+key does not retract past verdicts: admission was valid at the time against a
+pinned `trustRootVersion`, and the artifacts are unchanged. Forcing
+re-verification would let one key invalidate hundreds of candidates at once — a
+self-inflicted outage from a trust event rather than an artifact event. Instead
+the console (⑥) raises a review trigger and the risk function judges per
+candidate. Tolerable precisely because k ≥ 3 with zero dissent means no single
+verifier was ever the sole basis for an admission
+(`noteworthy-revocation-semantics`).
+
 ### 5.1 Three replay-logs, one pattern
 
 The hash-chained ledger is one instance of a discipline the whole architecture
@@ -481,7 +536,7 @@ each specialized for its side, unified by the pattern:
 
 | Log | Side | Mechanism |
 |---|---|---|
-| Attestation chain | production | Merkle / Rekor-style transparency |
+| Attestation chain | production | Merkle / Rekor-style transparency (FINOS-operated, quorum-witnessed) |
 | Ledger | operational | hash-chained `ledger-event`s |
 | Verifier registry | trust | TUF metadata |
 
@@ -496,6 +551,12 @@ consensus protocol. The verifier registry keeps the pattern via TUF specifically
 because TUF additionally handles the one thing a bare event log cannot: trust
 recovery after key compromise (`noteworthy-ledger-substrate`).
 
+**And one authority per fact.** Alongside append-only-plus-projection sits its
+companion discipline: every fact has exactly one authoritative representation,
+and everything else is derived on demand — CycloneDX over SPDX, the event log
+over its rows, accepted contracts over the lineage registry, the OCI bundle over
+its tar export (`noteworthy-authoritative-form`).
+
 ---
 
 ## 6. Component register — build / integrate / not-ours / the-gap
@@ -504,15 +565,16 @@ recovery after key compromise (`noteworthy-ledger-substrate`).
 |---|---|
 | **Build — consumer side** (bank) | ① layout compiler (shared, dual-sited) · ② Rego semantic policy · ③ attestation resolver + bundle assembly · ④ acceptance inspection harness · ⑤ exposure/sunset tracker · ⑥ lifecycle console (UI over the mutable projections; `task-lifecycle-ui`) |
 | **Build — issuer side** (alliance) | ⑦ contract authoring UI (`task-contract-authoring`) · ⑧ contract issuance & countersignature (`task-contract-issuance`) · ⑨ verifier registry & TUF trust root (`task-verifier-registry`) · ① layout compiler (same deterministic compiler, issuer siting) |
-| **Integrate** (proven OSS, wired in) | `in-toto-verify` (structural) · Witness/OPA (Rego eval) · cosign / Sigstore (resolution + signature) · TUF (trust root) · Archivista (attestation store, optional) · the bank's existing CMDB (app inventory) |
+| **Integrate** (proven OSS, wired in) | `in-toto-verify` (structural) · Witness/OPA (Rego eval) · cosign / Sigstore (resolution + signature) · Rekor (FINOS-operated instance) · TUF (trust root) · Archivista (optional convenience) · the bank's existing CMDB (app inventory) |
 | **Not ours** (upstream, integrated-against) | Moderne's patching pipeline (L0–L7 production) · the verifier quorum's rebuild infra (L8) · Maven Central / public upstream repos (the anchor) |
-| **The gap** (unresolved) | Alliance **governance** — who may issue a contract, who sits in the trust-root threshold, what `k`/`m`/`n` are, what happens procedurally on suspected compromise. The *mechanism* is now built (⑨); the *policy* is formation-stage alliance business |
+| **The gap** (unresolved) | Alliance **governance policy** — who sits in the trust-root threshold, verifier on/offboarding criteria, and the procedure on suspected compromise. Mechanism is built (⑨); these are formation-stage alliance business |
 
-Trust-root governance has moved from *the gap* to *build* in mechanism only:
+Trust-root governance has moved from *the gap* to *build* in mechanism:
 `noteworthy-trust-root-ownership` fixes the root as **k-of-m co-signed** across
 the alliance and member institutions (so root re-signing survives any one party
-disappearing), with **TUF delegation** for bilateral bank↔vendor namespaces. What
-remains open is who those parties are and what the thresholds should be.
+disappearing), with **TUF delegation** for bilateral bank↔vendor namespaces.
+Quorum sizing is likewise settled (`noteworthy-quorum-parameters`). What remains
+is who those parties are and how they are admitted or removed.
 
 ---
 
@@ -523,16 +585,16 @@ The load-bearing standards, mapped to the level or component that consumes each.
 
 | Standard | Consumed at | Role |
 |---|---|---|
-| ★ **purl** | all subjects | Attestation subject identity (`pkg:maven/…`) + digest. Backpatched artifacts carry a distinct suffixed coordinate `@<upstream>-osera.N` (digest stays identity; the purl is the legible label) — decided, `noteworthy-purl-namespace` |
-| ★ **OCI Image/Artifact + Referrers API** | ③ resolver, L6/L7 | Digest-binding; "attached = referrer, not a link" — subject digest → attestation set, no out-of-band lookup |
+| ★ **purl** | all subjects | Attestation subject identity (`pkg:maven/…`) + digest. Backpatched artifacts carry a distinct suffixed coordinate `@<upstream>-osera.N` (digest stays identity; the purl is the legible label) — `noteworthy-purl-namespace` |
+| ★ **OCI Image/Artifact + Referrers API** | ③ resolver, L6/L7, the bundle | Digest-binding; "attached = referrer, not a link". Also the **canonical evidence-bundle format** — blob sharing is what removes the per-bundle duplication of trust material (`noteworthy-bundle-format`) |
 | ★ **in-toto** + Attestation Framework | ① compiler, gate | The framework the whole chain compiles to: layout + links + `in-toto-verify`; thresholds = the k-of-n quorum; inspections = ④ acceptance |
 | ★ **SLSA** | L3 | Build-provenance predicate + levels; the vocabulary the risk function already knows |
-| ★ **VSA** | L8 | Exactly the verifier's attestation — records the result of checking someone else's artifact |
+| ★ **VSA** | L8 | The verifier's attestation — result of checking someone else's artifact, now also carrying the observed log checkpoint |
 | ★ **DSSE** | all | The signing envelope in-toto / Sigstore attestations ride in |
-| ★ **Sigstore** (Cosign/Fulcio/Rekor) | ③ resolver, ⑧ issuance | Keyless signing, cert authority, transparency log; `cosign download attestation <digest>` is the resolution path; the log also fixes the delivery manifest in time |
+| ★ **Sigstore** (Cosign/Fulcio/Rekor) | ③ resolver, ⑧ issuance | Keyless signing, cert authority, transparency log. Rekor is a **shared FINOS-operated instance, witnessed by the quorum** — each VSA carries the checkpoint it observed, so split views surface as dissent (`noteworthy-transparency-log`). The log also fixes the delivery manifest in time |
 | ★ **Reproducible Builds** | L8, §3.6 | Bit-for-bit rebuild → digest equality; the Schelling point behind the quorum |
-| ★ **TUF** | ⑨ registry, gate | Trust root, key rotation, compromise recovery for the verifier registry — **now built, not a gap**: k-of-m co-signed root, delegated targets for bilateral namespaces, snapshot pinned into the evidence bundle. Also the registry's replay-log mechanism (§5.1) |
-| ★ **CycloneDX** (authoritative) / **SPDX** (projection) | L6 | CycloneDX is the source of truth — security/backpatch-native, purl-first, its `pedigree` models the is-hardening-of link directly; SPDX license IDs are embedded inside it, and an SPDX view is emitted on demand. VEX is **not** carried inline — it stays OpenVEX at L7. Decided, `noteworthy-sbom-format` |
+| ★ **TUF** | ⑨ registry, gate | Trust root, key rotation, compromise recovery — **built, not a gap**: k-of-m co-signed root, delegated targets for bilateral namespaces, snapshot pinned into the evidence bundle with a 7-day freshness limit. Also the registry's replay-log mechanism (§5.1) |
+| ★ **CycloneDX** (authoritative) / **SPDX** (projection) | L6 | CycloneDX is the source of truth — security/backpatch-native, purl-first, its `pedigree` models the is-hardening-of link directly; SPDX license IDs are embedded inside it, and an SPDX view is emitted on demand. VEX is **not** carried inline — it stays OpenVEX at L7. `noteworthy-sbom-format` |
 | ★ **OpenVEX** / **CSAF 2.0** | L7 | "fixed, not exploitable, here's the evidence" — must reference L5 to be evidence, not a claim; CSAF is the regulator-facing variant. Authoritative VEX layer (not CycloneDX-VEX) |
 | ★ **Rego / OPA** (via Witness) | ② policy | The semantic gate the meaning-checks run in |
 | **OSV schema** | L1, ⑤ ledger, ⑦ authoring | Vuln records keyed by `purl` — cleaner than CPE for the exposure graph; the publicly re-derivable source for `cvesInScope` at commissioning |
@@ -555,10 +617,11 @@ acceptance-tested inside our own environment — and we can re-run that decision
 offline on demand." That is a DORA/CRA-grade control statement, and it is the
 reason the maker/checker split, the L-1 contract, and the quorum all exist.
 
-It holds **without qualification across trust paths**: an artifact arriving over
-a delegated bilateral namespace faces the identical admission policy, with the
-path recorded on the verdict for attribution rather than treated as a weaker tier
-(`noteworthy-trust-root-ownership`).
+It holds **without qualification across trust paths and governance modes**: an
+artifact arriving over a delegated bilateral namespace, or commissioned by a
+single bank in solo mode, faces the identical admission policy. The path and mode
+are recorded on the verdict for attribution, never treated as a weaker tier
+(`noteworthy-trust-root-ownership`, `noteworthy-governance-modes`).
 
 ---
 
@@ -567,40 +630,50 @@ path recorded on the verdict for attribution rather than treated as a weaker tie
 Cross-cutting; several are now load-bearing elsewhere — the data model
 (`artifact-data-model` §6), the candidate lifecycle
 (`artifact-product-lifecycle` §8) and the contract lifecycle
-(`artifact-contract-lifecycle` §7).
+(`artifact-contract-lifecycle` §8).
 
 **Decided:**
 
-- **CycloneDX vs SPDX** for L6 — CycloneDX authoritative, SPDX license IDs
-  embedded, SPDX projection on demand; VEX stays OpenVEX at L7.
-  `noteworthy-sbom-format`.
+- **SBOM format** — CycloneDX authoritative, SPDX projection on demand; VEX
+  stays OpenVEX at L7. `noteworthy-sbom-format`.
 - **Two-sited scope** — issuer-side tooling in scope alongside the bank-side
   gate. `noteworthy-two-sited-scope`.
-- **Layout compiler siting** — dual-sited, deterministic, digest agreement as
-  rule 14. `noteworthy-compiler-siting`.
+- **Layout compiler siting** — dual-sited, deterministic, rule 14.
+  `noteworthy-compiler-siting`.
 - **Trust-root ownership** — k-of-m co-signed root; delegation for bilateral
   paths; no weaker tier. `noteworthy-trust-root-ownership`.
 - **Conformance** — binary at the gate; amendment is the route for shortfall.
   `noteworthy-conformance-binary`.
+- **Governance modes** — mutualized and solo; verification is a duty, not a
+  credit. `noteworthy-governance-modes`.
+- **Transparency log** — shared FINOS Rekor, witnessed by the quorum.
+  `noteworthy-transparency-log`.
+- **Evidence-bundle format** — OCI canonical, deterministic tar projection;
+  Archivista optional. `noteworthy-bundle-format`.
+- **Bundle freshness** — trust root ≤ 7 days, checkpoints ≤ 24 hours; rule 15.
+  `noteworthy-bundle-freshness`.
+- **Revocation semantics** — exposure with review trigger; verdicts stand.
+  `noteworthy-revocation-semantics`.
+- **Quorum parameters** — `k = max(3, ceil(n/3))`, zero dissent, frozen at
+  issuance. `noteworthy-quorum-parameters`.
 
 **Open:**
 
-- **Alliance governance** — who may issue a contract; who sits in the trust-root
-  threshold; concrete `k`, `m`, `n`; verifier onboarding/offboarding; procedure
-  on suspected compromise. The biggest remaining gap, and not an engineering one.
-- **Evidence-bundle format** — OCI artifact with referrers, or tar + manifest for
-  air-gapped transfer. `artifact-evidence-bundle` §6.
-- **Bundle freshness policy** — maximum permitted age of a trust-root snapshot or
-  log checkpoint, since offline verification forfeits TUF's freshness guarantee.
-- **Revocation semantics** — does `verifier-revoked` force re-verification or
-  record an exposure? Recommendation: the latter, with a review trigger.
-- **Transparency log** — shared FINOS-operated Rekor instance or the public one.
-  Now on the issuer-side critical path, since the delivery manifest is fixed in
-  time by a log entry.
-- **Admission ruleset review** — §3.7 rules 1–12 are reconstructed (2', 5', 13
-  recovered verbatim; 14 new); confirm against the original enumeration if it
-  resurfaces.
+- **Alliance governance policy** — trust-root threshold membership, verifier
+  on/offboarding criteria, procedure on suspected compromise. Not an engineering
+  question; the largest remaining item.
+- **Contract-schema compatibility policy** — the L-1 schema is the interface
+  between the two sides; versioning and compatibility rules are unspecified.
 - **Ingest class (b) depth** — how far the gate collapses L0–L7 for FINOS-native
-  projects (§2) is sketched, not specified.
-- **Archivista adoption** — decides whether ③ is a real build or mostly
-  configuration.
+  projects (§2) is sketched, not specified. A sub-design rather than a decision.
+- **External witnessing** — whether the checkpoint set should also be
+  cross-checked against a public log or witness network, for consumers outside
+  the membership. Not needed for admission; possibly wanted for the regulator
+  story.
+- **Corpus provenance** — should the supplemental test suite carry its own
+  attestation? Recommend yes; same argument as attesting the recipe set.
+- **Schedule breach** — flag or failure? Recommend flag-not-fail.
+- **Admission ruleset review** — rules 1–12 are reconstructed; confirm against
+  the original enumeration if it resurfaces.
+- **Air-gap cadence** — the 24-hour checkpoint clock sets a real operational
+  tempo for air-gapped estates; the rollout plan must absorb it.
