@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1420 800" font-family="Helvetica, Arial, sans-serif">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f8f4e"/></marker>
+<filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1.5" stdDeviation="2.5" flood-color="#1a2332" flood-opacity="0.13"/></filter>
+</defs>
+<rect width="1420" height="800" fill="#fbfcfd"/>
+<text x="36" y="40" font-size="22" font-weight="700" fill="#1a2332">3 — Architecture: components and the stores they touch</text>
+<text x="36" y="61" font-size="12.5" fill="#64748b">Nine components. Red = we build it. Assumes pages 1 and 2 — states and records are not repeated here.</text>
+
+<rect x="24" y="80" width="640" height="380" rx="10" fill="#fef6ec" stroke="#f3ddc0"/>
+<text x="44" y="102" font-size="12.5" font-weight="700" fill="#a1651a">ISSUER SIDE (alliance)</text>
+<rect x="700" y="80" width="696" height="380" rx="10" fill="#f2f0fb" stroke="#ddd6f3"/>
+<text x="720" y="102" font-size="12.5" font-weight="700" fill="#5b3fa8">CONSUMER SIDE (bank) — hermetic from the moment the bundle is sealed</text>
+
+<g filter="url(#s)">
+<rect x="44" y="118" width="190" height="88" rx="8" fill="#fff" stroke="#e11d48" stroke-width="1.5"/>
+<rect x="252" y="118" width="190" height="88" rx="8" fill="#fff" stroke="#e11d48" stroke-width="1.5"/>
+<rect x="460" y="118" width="184" height="88" rx="8" fill="#fff" stroke="#e11d48" stroke-width="1.5"/>
+<rect x="44" y="224" width="190" height="88" rx="8" fill="#fff" stroke="#e11d48" stroke-width="1.5"/>
+</g>
+<text x="139" y="142" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">⑦ Authoring UI</text>
+<text x="139" y="162" font-size="10" fill="#64748b" text-anchor="middle">scope · baseline · corpus</text>
+<text x="139" y="177" font-size="10" fill="#64748b" text-anchor="middle">governance · osera.line</text>
+<text x="139" y="195" font-size="9.5" font-style="italic" fill="#a1651a" text-anchor="middle">anchor checked while drafting</text>
+<text x="347" y="142" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">⑧ Issuance</text>
+<text x="347" y="162" font-size="10" fill="#64748b" text-anchor="middle">sign · countersign · freeze</text>
+<text x="347" y="177" font-size="10" fill="#64748b" text-anchor="middle">amendments · delivery manifest</text>
+<text x="347" y="195" font-size="9.5" font-style="italic" fill="#a1651a" text-anchor="middle">holds the issuance key</text>
+<text x="552" y="142" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">⑨ Registry + TUF root</text>
+<text x="552" y="162" font-size="10" fill="#64748b" text-anchor="middle">k-of-m co-signed root</text>
+<text x="552" y="177" font-size="10" fill="#64748b" text-anchor="middle">delegations · revocations</text>
+<text x="552" y="195" font-size="9.5" font-style="italic" fill="#a1651a" text-anchor="middle">survives any one party leaving</text>
+<text x="139" y="248" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">① Layout compiler</text>
+<text x="139" y="268" font-size="10" fill="#64748b" text-anchor="middle">contract → in-toto layout</text>
+<text x="139" y="285" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">DUAL-SITED · deterministic</text>
+<text x="139" y="300" font-size="9.5" font-style="italic" fill="#a1651a" text-anchor="middle">both sides compile; digests must agree</text>
+
+<rect x="252" y="224" width="392" height="88" rx="8" fill="#fff" stroke="#9fd8ce"/>
+<text x="448" y="248" font-size="12" font-weight="700" fill="#0f8a7a" text-anchor="middle">Integrated, not built</text>
+<text x="448" y="268" font-size="10" fill="#0f6f63" text-anchor="middle">Rekor (FINOS-operated, quorum-witnessed) · Fulcio · attestation index</text>
+<text x="448" y="284" font-size="10" fill="#0f6f63" text-anchor="middle">maker's pipeline (L0–L7) · verifier rebuild infra (L8)</text>
+<text x="448" y="301" font-size="9.5" font-style="italic" fill="#0f8a7a" text-anchor="middle">the index is a lookup, never evidence — untrusted by design</text>
+
+<rect x="44" y="330" width="600" height="112" rx="8" fill="#fffaf3" stroke="#e6c9a0" stroke-dasharray="4 3"/>
+<text x="64" y="352" font-size="11.5" font-weight="700" fill="#a1651a">THE GAP — not engineering</text>
+<text x="64" y="372" font-size="10.5" fill="#7c5314">Who sits in the trust-root threshold · verifier on/offboarding criteria · procedure on</text>
+<text x="64" y="389" font-size="10.5" fill="#7c5314">suspected compromise. Mechanism is built (⑨); the policy is formation-stage alliance business.</text>
+<text x="64" y="412" font-size="10.5" fill="#7c5314">Also: at formation n &lt; 3 means nothing can be admitted — verifier recruitment is a launch</text>
+<text x="64" y="429" font-size="10.5" fill="#7c5314">prerequisite, not a growth activity.</text>
+
+<rect x="664" y="80" width="34" height="380" fill="#1a2332"/>
+<text x="681" y="270" font-size="12" font-weight="700" fill="#fff" text-anchor="middle" transform="rotate(-90 681 270)">EVIDENCE BUNDLE</text>
+
+<g filter="url(#s)">
+<rect x="720" y="118" width="200" height="88" rx="8" fill="#fff" stroke="#e11d48" stroke-width="1.5"/>
+<rect x="938" y="118" width="200" height="88" rx="8" fill="#fff" stroke="#e11d48" stroke-width="1.5"/>
+<rect x="1156" y="118" width="222" height="88" rx="8" fill="#fff" stroke="#e11d48" stroke-width="1.5"/>
+<rect x="720" y="224" width="200" height="88" rx="8" fill="#fff" stroke="#e11d48" stroke-width="1.5"/>
+<rect x="938" y="224" width="200" height="88" rx="8" fill="#fff" stroke="#e11d48" stroke-width="1.5"/>
+<rect x="1156" y="224" width="222" height="88" rx="8" fill="#eaf7ee" stroke="#8fce9f"/>
+</g>
+<text x="820" y="142" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">③ Resolver + assembly</text>
+<text x="820" y="162" font-size="10" fill="#64748b" text-anchor="middle">index → attestations → bundle</text>
+<text x="820" y="179" font-size="9.5" font-style="italic" fill="#5b3fa8" text-anchor="middle">the LAST online step</text>
+<text x="820" y="195" font-size="9.5" font-style="italic" fill="#5b3fa8" text-anchor="middle">resolution online · verification offline</text>
+<text x="1038" y="142" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">① recompile + ② Rego</text>
+<text x="1038" y="162" font-size="10" fill="#64748b" text-anchor="middle">structural: in-toto-verify</text>
+<text x="1038" y="177" font-size="10" fill="#64748b" text-anchor="middle">semantic: 15 admission rules</text>
+<text x="1038" y="195" font-size="9.5" font-style="italic" fill="#5b3fa8" text-anchor="middle">every rule decidable from the bundle alone</text>
+<text x="1267" y="142" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">④ Acceptance harness</text>
+<text x="1267" y="162" font-size="10" fill="#64748b" text-anchor="middle">the bank's own tests, as an</text>
+<text x="1267" y="177" font-size="10" fill="#64748b" text-anchor="middle">in-toto inspection → L9</text>
+<text x="1267" y="195" font-size="9.5" font-style="italic" fill="#5b3fa8" text-anchor="middle">the part the alliance cannot do for you</text>
+<text x="820" y="248" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">⑤ Exposure + sunset</text>
+<text x="820" y="268" font-size="10" fill="#64748b" text-anchor="middle">hash-chained ledger events</text>
+<text x="820" y="285" font-size="10" fill="#64748b" text-anchor="middle">reads the CMDB for app inventory</text>
+<text x="820" y="302" font-size="9.5" font-style="italic" fill="#5b3fa8" text-anchor="middle">what the risk function feels daily</text>
+<text x="1038" y="248" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">⑥ Console</text>
+<text x="1038" y="268" font-size="10" fill="#64748b" text-anchor="middle">board · candidate · exposure · lineage</text>
+<text x="1038" y="285" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">READ TIER — writes nothing durable</text>
+<text x="1038" y="302" font-size="9.5" font-style="italic" fill="#5b3fa8" text-anchor="middle">every change routes via verdict or ledger</text>
+<text x="1267" y="252" font-size="12.5" font-weight="700" fill="#2f8f4e" text-anchor="middle">Golden repo</text>
+<text x="1267" y="273" font-size="10" fill="#3f8f5a" text-anchor="middle">ecosystem-native (Maven, npm, …)</text>
+<text x="1267" y="290" font-size="9.5" font-style="italic" fill="#3f8f5a" text-anchor="middle">the one path to consumption;</text>
+<text x="1267" y="304" font-size="9.5" font-style="italic" fill="#3f8f5a" text-anchor="middle">app teams read here and nowhere else</text>
+
+<rect x="720" y="330" width="658" height="112" rx="8" fill="#faf9ff" stroke="#ddd6f3"/>
+<text x="740" y="352" font-size="11.5" font-weight="700" fill="#5b3fa8">STORES, IN ONE LINE EACH</text>
+<text x="740" y="372" font-size="10.5" fill="#4c3a80">quarantine registry — written on arrival, read by the gate and by nothing else (a control, not a convenience)</text>
+<text x="740" y="389" font-size="10.5" fill="#4c3a80">bundle store (OCI) · trust material (a config-managed directory) · verdicts (content-addressed, immutable)</text>
+<text x="740" y="406" font-size="10.5" fill="#4c3a80">ledger (append-only, hash-chained) · CMDB (existing, read-only to us)</text>
+<text x="740" y="429" font-size="10.5" font-weight="700" fill="#4c3a80">Every durable write inside the bank is append-only. Everything else is a projection.</text>
+
+<g stroke="#475569" stroke-width="1.6" fill="none" marker-end="url(#a)">
+<line x1="920" y1="162" x2="936" y2="162"/>
+<line x1="1138" y1="162" x2="1154" y2="162"/>
+<line x1="644" y1="162" x2="662" y2="162"/>
+<line x1="698" y1="162" x2="718" y2="162"/>
+</g>
+<g stroke="#2f8f4e" stroke-width="2" fill="none" marker-end="url(#g)"><path d="M1267 206 L1267 222"/></g>
+
+<rect x="24" y="480" width="1372" height="120" rx="10" fill="#fff5f5" stroke="#f3c7c7"/>
+<text x="44" y="504" font-size="12.5" font-weight="700" fill="#b91c1c">THE FIVE PROPERTIES EVERYTHING ELSE SERVES</text>
+<text x="44" y="526" font-size="11" fill="#7f1d1d">1 · <tspan font-weight="700">Digest is identity.</tspan> No attestation refers to a version string.  2 · <tspan font-weight="700">The anchor is public.</tspan> If the baseline cannot be re-derived from a registry nobody</text>
+<text x="44" y="547" font-size="11" fill="#7f1d1d">here controls, the whole chain is a self-claim.  3 · <tspan font-weight="700">No single key is load-bearing.</tspan> Quorum, layout compile, TUF root, log witnessing — threshold every time,</text>
+<text x="44" y="568" font-size="11" fill="#7f1d1d">dissent disqualifying.  4 · <tspan font-weight="700">One authority per fact</tspan>, everything else a projection.  5 · <tspan font-weight="700">Offline decidable.</tspan> If the gate needs it, it ships in the bundle —</text>
+<text x="44" y="589" font-size="11" fill="#7f1d1d">which is what makes "a regulator can re-run this and get the same verdict" a physical fact rather than a promise.</text>
+
+<rect x="24" y="620" width="1372" height="150" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+<text x="44" y="644" font-size="12.5" font-weight="700" fill="#334155">WHAT IS STILL OPEN</text>
+<text x="44" y="666" font-size="11" fill="#475569">· Alliance governance policy (above) — the largest item, and not ours to close.</text>
+<text x="44" y="687" font-size="11" fill="#475569">· Contract-schema compatibility: signed contracts are frozen forever, so the gate must evaluate every schema version ever issued.</text>
+<text x="44" y="708" font-size="11" fill="#475569">· Ingest class (b) depth — how far the gate collapses L0–L7 for FINOS-native projects is sketched, not specified.</text>
+<text x="44" y="729" font-size="11" fill="#475569">· semver ecosystems have no valid hardened-coordinate encoding yet: pre-release sorts BELOW the baseline, build metadata is ignored for precedence.</text>
+<text x="44" y="750" font-size="11" fill="#475569">· Index/log reconciliation ownership · verifier rebuild siting and harness packaging · the air-gapped courier variant.</text>
+</svg>
