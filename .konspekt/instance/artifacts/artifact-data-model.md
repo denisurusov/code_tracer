@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-21T16:55:00Z
+  updatedAt: 2026-07-21T18:25:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: 259d3019f66d621539c97fbba96ac8d3ad138e53
   contentHash: 259d3019f66d621539c97fbba96ac8d3ad138e53
   timestamp: 2026-07-17T17:45:00Z
 createdAt: 2026-07-17T17:45:00Z
-updatedAt: 2026-07-21T16:55:00Z
+updatedAt: 2026-07-21T18:25:00Z
 ```
 # code_tracer — Data model
 
@@ -25,13 +25,11 @@ that back each state of the product lifecycle. It sits on
 qualities an element can carry several of at once, each contributing a reusable
 schema mixin.
 
-> **Amendment 2026-07-21.** §4 (`verdict`, `policy-object`) and §5
-> (`ledger-event`) amended per the issuer-side batch — excerpts
-> `c284e12b3f1e77a4f712644a85aba7e8195b4648` and
-> `b73f250d059666768988095d440fa673548ef9d2`. The binding records
-> (`noteworthy-trust-root-ownership`, `noteworthy-compiler-siting`,
-> `artifact-evidence-bundle`) are `review: proposed` pending the architecture
-> pass; these field additions are applied on human commit ahead of that.
+> **Amendment 2026-07-21.** §4 (`verdict`, `policy-object`, L-1 `governance`) and
+> §5 (`ledger-event`) amended per the issuer-side batch — excerpts
+> `c284e12b3f1e77a4f712644a85aba7e8195b4648`,
+> `b73f250d059666768988095d440fa673548ef9d2` and
+> `362e1ebe2a81cdfabf6b106db12db1e3ade7531a`.
 
 ## 1. Facets
 
@@ -126,7 +124,7 @@ mixins); only `asserts` differs per level:
 
 | Level | subject | `asserts` (distinctive fields) |
 |---|---|---|
-| L-1 contract | contract digest | contractId, version, baseline.digest, osera.line, scope.cvesInScope[], explicitlyOutOfScope[], acceptanceCriteria.testCorpus.digest, schedule |
+| L-1 contract | contract digest | contractId, version, governance{mode, sponsor, mandateRef.digest, trustPath}, baseline.digest, osera.line, scope.cvesInScope[], explicitlyOutOfScope[], acceptanceCriteria.testCorpus.digest, schedule |
 | L0 baseline | baseline_digest | source_ref (commit SHA), coordinates — anchor, publicly re-derivable |
 | L1 vuln assessment | baseline_digest | baselineSbomRef, cves[]:{id, component} |
 | L2 transformation | baseline→hardened | recipeSet.digest \| patch.digest |
@@ -137,6 +135,24 @@ mixins); only `asserts` differs per level:
 | L7 VEX | hardened_digest | per cve: status=fixed, justifiedBy→L5 id |
 | L8 VSA | hardened_digest | verifier, rebuild.digestMatch, l4/l5 recheck, policyPassed, osera{contract{…,conformance}} — one record per verifier; the quorum is the *set* |
 | L9 acceptance | hardened_digest | bankTests.pass, harnessRunRef, promotedTo |
+
+**The L-1 `governance` block** (amendment 2026-07-21) makes the commissioning
+mandate checkable rather than assumed — the same move L-1 already made for scope
+and corpus:
+
+```
+governance
+  mode:        mutualized | solo
+  sponsor:     <alliance URI | sponsoring bank id>
+  mandateRef:  { sha256: <vote record | bank authorization digest> }
+  trustPath:   osera-root | delegated:<bank>
+```
+
+`governance.trustPath` MUST agree with the namespace the artifact is actually
+signed under — a checkable admission invariant, in the same family as the
+supersedes-agrees-with-line rule below. Mode changes *who is accountable for the
+commissioning judgement*, never what the gate requires: verification is k-of-n
+with zero dissent in both modes (`noteworthy-governance-modes`).
 
 ```
 verdict                                        policy-object
@@ -161,8 +177,9 @@ Three fields make the verdict **self-contained for replay** (amendment
   verifier registry changes; the registry is a mutable external referent and is
   pinned by the same rule as any other (`noteworthy-referent-binding`).
 - **`trustPath`** — whether admission came over the OSERA root or a delegated
-  bilateral namespace. **Attribution, not leniency:** the admission policy is
-  identical across paths (`noteworthy-trust-root-ownership`).
+  bilateral namespace, and therefore which governance mode commissioned it.
+  **Attribution, not leniency:** the admission policy is identical across paths
+  (`noteworthy-trust-root-ownership`, `noteworthy-governance-modes`).
 
 `policy-object` gains **`compilerVersion`** for `kind: layout`, because the
 layout compiler is dual-sited and byte-deterministic: the bank recompiles from
@@ -237,29 +254,31 @@ one link and everything above it is worthless (architecture §3.1, §3.4, §5.1)
   (§5) are this model's fixed inputs; each state names the element(s) it owns.
 - `artifact-architecture` §3 — the L-1…L9 chain this model gives record shapes
   to; `artifact-architecture` is now the integrating overview cross-referencing
-  all three axes.
+  all four axes.
 - `artifact-contract-lifecycle` *(proposed)* — the issuer-side machine; adds a
   pre-acceptance **draft** record (`mutable-operational`) and the maker's
   **delivery manifest** (`immutable`, outside zone).
 - `artifact-evidence-bundle` *(proposed)* — the perimeter interface; `immutable`,
   born at Verified → Resolved, referenced by `verdict.bundleDigest`.
 
+Decided:
+
+- **purl namespace (Option B).** Backpatched artifacts carry a distinct suffixed
+  purl `@<upstream>-osera.N`; digest stays identity, the hardening relationship
+  is declared in L2/L6/L7. `noteworthy-purl-namespace`.
+- **SBOM format (CycloneDX).** Authoritative, purl-first, SPDX license IDs
+  embedded, SPDX projection on demand; VEX stays OpenVEX at L7.
+  `noteworthy-sbom-format`.
+- **Event-log substrate.** Append-only hash-chained `ledger-event`s;
+  `ledger-row`/`state-pointer` are projections; registry on TUF; attestation
+  chain on Rekor-style transparency. Hash-chaining everywhere, consensus
+  nowhere. `noteworthy-ledger-substrate`.
+- **candidateKey.** Version-less upstream purl + `contract.osera.line`, constant
+  across a bridge lineage; `app` lives only in `(appId, candidateKey)`.
+  `noteworthy-candidate-key`.
+- **Governance modes.** L-1 carries `governance`; mode selects accountability and
+  trust path, never admission strictness. `noteworthy-governance-modes`.
+
 Open:
 
-- **purl namespace — decided (Option B).** Backpatched artifacts carry a distinct
-  suffixed purl `@<upstream>-osera.N`; digest stays identity, the hardening
-  relationship is declared in L2/L6/L7. Fixes `candidate-version.purl` (§4). See
-  `noteworthy-purl-namespace`.
-- **SBOM format — decided (CycloneDX).** L6 `sbom` is CycloneDX (authoritative),
-  purl-first, with SPDX license IDs embedded and an SPDX projection emitted on
-  demand; VEX stays OpenVEX at L7. See `noteworthy-sbom-format`.
-- **Event-log substrate — decided.** The ledger is an append-only hash-chained
-  event log (`ledger-event`); `ledger-row`/`state-pointer` are projections. The
-  verifier registry keeps the same append-only pattern via TUF, not this log;
-  the attestation chain via Rekor-style transparency. Hash-chaining everywhere,
-  consensus nowhere. See `noteworthy-ledger-substrate`.
-- **candidateKey — decided.** = version-less upstream purl + `contract.osera.line`;
-  constant across a bridge lineage (the supersedes chain); `app` dropped from the
-  key (it lives in the ledger's `(appId, candidateKey)`). The line is declared in
-  L-1 and verified with the contract. See `noteworthy-candidate-key`.
-- **Revocation semantics — open.** Re-verify vs record-an-exposure (§5).
+- **Revocation semantics** — re-verify vs record-an-exposure (§5).
