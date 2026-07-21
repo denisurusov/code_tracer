@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-21T21:00:00Z
+  updatedAt: 2026-07-21T21:20:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   sourceRef: a587d0575d65f1fb3c3ef862c269af41ea2e94df
   contentHash: a587d0575d65f1fb3c3ef862c269af41ea2e94df
   timestamp: 2026-07-21T21:00:00Z
 createdAt: 2026-07-21T21:00:00Z
-updatedAt: 2026-07-21T21:00:00Z
+updatedAt: 2026-07-21T21:20:00Z
 ```
 # code_tracer — Physical topology
 
@@ -25,6 +25,31 @@ them, who reads them, and when. Diagram: `docs/code-tracer-topology.svg`.
 Organizing question: **what is written to where, and read by whom.** Everything
 here is a *store*, not a service — services are components ①–⑨ in
 `artifact-architecture` §6.
+
+## 0. Conventions
+
+**Actors are named by role, never by company.** The party that hardens artifacts
+is the **maker**; the parties that independently re-derive the result are
+**verifiers**; the party that commissions is the **issuer** (the alliance); the
+party that admits is the **bank**. Specific vendors may fill these roles, but the
+design binds to the role — a maker is whoever signs L0–L7 against a contract they
+countersigned, and nothing in the chain depends on which organisation that is.
+
+**Reading the tables and the diagram:**
+
+| Notation | Meaning |
+|---|---|
+| **W:** | what is **written into** this store — or, for an actor, what that actor writes out |
+| **R:** | what is **read from** this store — or, for an actor, what that actor reads in |
+| solid arrow | a write path |
+| dashed arrow | a read path |
+| green | the admitted artifact's path |
+| red border | a component we build (①–⑨) |
+
+The distinction matters because it is the *asymmetry* that carries the design:
+several stores are read-only to us (the public registries, the CMDB), one is
+write-only in practice (quarantine, read by nothing but the gate), and one writes
+nothing durable at all (the console).
 
 ## 1. The headline correction
 
@@ -57,7 +82,7 @@ strong, npm and PyPI permit deletion — so for those a **supplementary log witn
 at commissioning** is required, or the baseline can simply vanish
 (`noteworthy-ecosystem-generalization` §1).
 
-## 3. Outside — alliance, maker, verifiers
+## 3. Outside — issuer, maker, verifiers
 
 | Store | Written by | Read by | Notes |
 |---|---|---|---|
@@ -107,10 +132,14 @@ immutable; ledger events are hash-chained; everything else is a projection
 replayed from them. The console writes nothing — every state change routes
 through the gate (a `verdict`) or the ledger (a `ledger-event`).
 
+**Quarantine has exactly one reader**, and that is a control rather than a
+convenience: if any other system could read it, an app team could consume an
+unadmitted artifact by pointing at the wrong repository.
+
 ## 6. Two things still physically undetermined
 
 - **Verifier rebuild siting.** The `Origins` schematic drew this as deliberately
-  hybrid — FINOS-neutral or peer on-prem, same signed VSA either way. Now that
+  hybrid — neutral-zone or peer on-prem, same signed VSA either way. Now that
   verification is a **duty** and `n` ≈ active membership
   (`noteworthy-governance-modes`), the default is peer on-prem. That makes the
   rebuild harness a **distributable package rather than a hosted service**, which
