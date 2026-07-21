@@ -40,36 +40,58 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-prod-gate-ledger | produces | node:goal-admission-gate | noteworthy:noteworthy-ledger-substrate | |
 | e-notes-ledger-datamodel | notes | noteworthy:noteworthy-ledger-substrate | artifact:artifact-data-model | |
 | e-notes-ledger-arch | notes | noteworthy:noteworthy-ledger-substrate | artifact:artifact-architecture | |
-| e-prod-gate-referent | produces | node:goal-admission-gate | noteworthy:noteworthy-referent-binding | |
-| e-notes-referent-arch | notes | noteworthy:noteworthy-referent-binding | artifact:artifact-architecture | |
 | e-dec-gate-ri | decomposes | node:goal-admission-gate | node:goal-reference-implementation | |
 | e-dec-ri-fixtures | decomposes | node:goal-reference-implementation | node:task-fixtures | |
+| e-dec-ri-ui | decomposes | node:goal-reference-implementation | node:task-lifecycle-ui | |
+| e-rel-ri-thegate | relates | node:goal-reference-implementation | node:goal-the-gate | 0.9 |
+| e-prod-ri-artifact | produces | node:goal-reference-implementation | artifact:artifact-reference-implementation | |
+| e-prod-ri-stack | produces | node:goal-reference-implementation | noteworthy:noteworthy-ri-stack | |
+| e-rel-riart-arch | relates | artifact:artifact-reference-implementation | artifact:artifact-architecture | 0.85 |
+| e-notes-ristack-arch | notes | noteworthy:noteworthy-ri-stack | artifact:artifact-architecture | |
+| e-notes-ristack-riart | notes | noteworthy:noteworthy-ri-stack | artifact:artifact-reference-implementation | |
+| e-rel-fixspec-fixtures | relates | artifact:artifact-ri-fixtures-spec | node:task-fixtures | 0.95 |
+| e-rel-fixspec-riart | relates | artifact:artifact-ri-fixtures-spec | artifact:artifact-reference-implementation | 0.85 |
+| e-prod-gate-referent | produces | node:goal-admission-gate | noteworthy:noteworthy-referent-binding | |
+| e-notes-referent-fixspec | notes | noteworthy:noteworthy-referent-binding | artifact:artifact-ri-fixtures-spec | |
+| e-notes-referent-arch | notes | noteworthy:noteworthy-referent-binding | artifact:artifact-architecture | |
 | e-dec-ri-mockup | decomposes | node:goal-reference-implementation | node:task-lifecycle-mockup | |
-| e-dec-thegate-ui | decomposes | node:goal-the-gate | node:task-lifecycle-ui | |
-| e-prod-ri-ristack | produces | node:goal-reference-implementation | noteworthy:noteworthy-ri-stack | |
+| e-prod-gate-conformance | produces | node:goal-admission-gate | noteworthy:noteworthy-conformance-binary | |
+| e-notes-conformance-arch | notes | noteworthy:noteworthy-conformance-binary | artifact:artifact-architecture | |
 | e-dec-gate-issuer | decomposes | node:goal-admission-gate | node:goal-issuer-side | |
 | e-dec-issuer-authoring | decomposes | node:goal-issuer-side | node:task-contract-authoring | |
 | e-dec-issuer-issuance | decomposes | node:goal-issuer-side | node:task-contract-issuance | |
 | e-dec-issuer-registry | decomposes | node:goal-issuer-side | node:task-verifier-registry | |
+| e-rel-issuer-compiler | relates | node:goal-issuer-side | node:task-layout-compiler | 0.9 |
+| e-prod-issuer-contractlc | produces | node:goal-issuer-side | artifact:artifact-contract-lifecycle | |
+| e-rel-contractlc-lifecycle | relates | artifact:artifact-contract-lifecycle | artifact:artifact-product-lifecycle | 0.95 |
+| e-rel-contractlc-arch | relates | artifact:artifact-contract-lifecycle | artifact:artifact-architecture | 0.85 |
+| e-rel-contractlc-datamodel | relates | artifact:artifact-contract-lifecycle | artifact:artifact-data-model | 0.8 |
+| e-rel-contractlc-issuance | relates | artifact:artifact-contract-lifecycle | node:task-contract-issuance | 0.9 |
 | e-prod-issuer-twosited | produces | node:goal-issuer-side | noteworthy:noteworthy-two-sited-scope | |
 | e-notes-twosited-arch | notes | noteworthy:noteworthy-two-sited-scope | artifact:artifact-architecture | |
 | e-prod-issuer-compiler | produces | node:goal-issuer-side | noteworthy:noteworthy-compiler-siting | |
 | e-notes-compiler-arch | notes | noteworthy:noteworthy-compiler-siting | artifact:artifact-architecture | |
+| e-notes-compiler-task | notes | noteworthy:noteworthy-compiler-siting | node:task-layout-compiler | |
 | e-prod-issuer-trustroot | produces | node:goal-issuer-side | noteworthy:noteworthy-trust-root-ownership | |
 | e-notes-trustroot-arch | notes | noteworthy:noteworthy-trust-root-ownership | artifact:artifact-architecture | |
+| e-notes-trustroot-datamodel | notes | noteworthy:noteworthy-trust-root-ownership | artifact:artifact-data-model | |
+| e-notes-trustroot-registry | notes | noteworthy:noteworthy-trust-root-ownership | node:task-verifier-registry | |
 | e-prod-issuer-threshold | produces | node:goal-issuer-side | noteworthy:noteworthy-threshold-everywhere | |
 | e-notes-threshold-arch | notes | noteworthy:noteworthy-threshold-everywhere | artifact:artifact-architecture | |
-| e-prod-gate-conformance | produces | node:goal-admission-gate | noteworthy:noteworthy-conformance-binary | |
-| e-notes-conformance-arch | notes | noteworthy:noteworthy-conformance-binary | artifact:artifact-architecture | |
-| e-prod-issuer-contractlc | produces | node:goal-issuer-side | artifact:artifact-contract-lifecycle | |
-| e-rel-contractlc-lifecycle | relates | artifact:artifact-contract-lifecycle | artifact:artifact-product-lifecycle | 0.9 |
-| e-rel-contractlc-datamodel | relates | artifact:artifact-contract-lifecycle | artifact:artifact-data-model | 0.8 |
+| e-rel-threshold-ledger | relates | noteworthy:noteworthy-threshold-everywhere | noteworthy:noteworthy-ledger-substrate | 0.8 |
+| e-notes-conformance-contractlc | notes | noteworthy:noteworthy-conformance-binary | artifact:artifact-contract-lifecycle | |
+| e-notes-conformance-authoring | notes | noteworthy:noteworthy-conformance-binary | node:task-contract-authoring | |
 | e-prod-gate-bundle | produces | node:goal-admission-gate | artifact:artifact-evidence-bundle | |
 | e-rel-bundle-arch | relates | artifact:artifact-evidence-bundle | artifact:artifact-architecture | 0.9 |
-| e-rel-bundle-datamodel | relates | artifact:artifact-evidence-bundle | artifact:artifact-data-model | 0.8 |
+| e-rel-bundle-datamodel | relates | artifact:artifact-evidence-bundle | artifact:artifact-data-model | 0.85 |
+| e-rel-bundle-lifecycle | relates | artifact:artifact-evidence-bundle | artifact:artifact-product-lifecycle | 0.8 |
+| e-rel-bundle-resolver | relates | artifact:artifact-evidence-bundle | node:task-attestation-resolver | 0.9 |
+| e-notes-twosited-bundle | notes | noteworthy:noteworthy-two-sited-scope | artifact:artifact-evidence-bundle | |
+| e-notes-trustroot-bundle | notes | noteworthy:noteworthy-trust-root-ownership | artifact:artifact-evidence-bundle | |
 | e-prod-issuer-governance | produces | node:goal-issuer-side | noteworthy:noteworthy-governance-modes | |
 | e-notes-governance-arch | notes | noteworthy:noteworthy-governance-modes | artifact:artifact-architecture | |
 | e-notes-governance-contractlc | notes | noteworthy:noteworthy-governance-modes | artifact:artifact-contract-lifecycle | |
+| e-notes-governance-datamodel | notes | noteworthy:noteworthy-governance-modes | artifact:artifact-data-model | |
 | e-prod-issuer-translog | produces | node:goal-issuer-side | noteworthy:noteworthy-transparency-log | |
 | e-notes-translog-bundle | notes | noteworthy:noteworthy-transparency-log | artifact:artifact-evidence-bundle | |
 | e-notes-translog-arch | notes | noteworthy:noteworthy-transparency-log | artifact:artifact-architecture | |
@@ -77,15 +99,18 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-notes-bundlefmt-bundle | notes | noteworthy:noteworthy-bundle-format | artifact:artifact-evidence-bundle | |
 | e-prod-gate-authform | produces | node:goal-admission-gate | noteworthy:noteworthy-authoritative-form | |
 | e-notes-authform-arch | notes | noteworthy:noteworthy-authoritative-form | artifact:artifact-architecture | |
+| e-rel-authform-sbom | relates | noteworthy:noteworthy-authoritative-form | noteworthy:noteworthy-sbom-format | 0.8 |
 | e-prod-gate-freshness | produces | node:goal-admission-gate | noteworthy:noteworthy-bundle-freshness | |
 | e-notes-freshness-bundle | notes | noteworthy:noteworthy-bundle-freshness | artifact:artifact-evidence-bundle | |
 | e-notes-freshness-arch | notes | noteworthy:noteworthy-bundle-freshness | artifact:artifact-architecture | |
 | e-prod-gate-revocation | produces | node:goal-admission-gate | noteworthy:noteworthy-revocation-semantics | |
 | e-notes-revocation-datamodel | notes | noteworthy:noteworthy-revocation-semantics | artifact:artifact-data-model | |
 | e-notes-revocation-arch | notes | noteworthy:noteworthy-revocation-semantics | artifact:artifact-architecture | |
+| e-rel-revocation-trustroot | relates | noteworthy:noteworthy-revocation-semantics | noteworthy:noteworthy-trust-root-ownership | 0.9 |
 | e-prod-issuer-quorum | produces | node:goal-issuer-side | noteworthy:noteworthy-quorum-parameters | |
 | e-notes-quorum-arch | notes | noteworthy:noteworthy-quorum-parameters | artifact:artifact-architecture | |
 | e-notes-quorum-contractlc | notes | noteworthy:noteworthy-quorum-parameters | artifact:artifact-contract-lifecycle | |
+| e-rel-quorum-threshold | relates | noteworthy:noteworthy-quorum-parameters | noteworthy:noteworthy-threshold-everywhere | 0.9 |
 | e-prod-gate-topology | produces | node:goal-admission-gate | artifact:artifact-deployment-topology | |
 | e-rel-topology-arch | relates | artifact:artifact-deployment-topology | artifact:artifact-architecture | 0.9 |
 | e-rel-topology-bundle | relates | artifact:artifact-deployment-topology | artifact:artifact-evidence-bundle | 0.8 |
@@ -94,6 +119,7 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-rel-ecosystem-purl | relates | noteworthy:noteworthy-ecosystem-generalization | noteworthy:noteworthy-purl-namespace | 0.95 |
 | e-prod-gate-index | produces | node:goal-admission-gate | noteworthy:noteworthy-attestation-index | |
 | e-notes-index-topology | notes | noteworthy:noteworthy-attestation-index | artifact:artifact-deployment-topology | |
+| e-notes-index-resolver | notes | noteworthy:noteworthy-attestation-index | node:task-attestation-resolver | |
 | e-rel-index-bundlefmt | relates | noteworthy:noteworthy-attestation-index | noteworthy:noteworthy-bundle-format | 0.9 |
 | e-prod-gate-paper | produces | node:goal-admission-gate | artifact:artifact-paper-outline | |
 | e-rel-paper-arch | relates | artifact:artifact-paper-outline | artifact:artifact-architecture | 0.85 |
