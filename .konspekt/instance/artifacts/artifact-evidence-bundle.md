@@ -3,29 +3,28 @@ id: artifact-evidence-bundle
 type: artifact
 title: code_tracer — The evidence bundle (perimeter interface)
 status: active
-review: proposed
+review: accepted
 summary:
   origin: machine
-  pinned: false
-  updatedAt: 2026-07-21T16:00:00Z
+  pinned: true
+  updatedAt: 2026-07-21T19:30:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   sourceRef: 05038f93a541216c0f6713ea13bcff58a40d823d
   contentHash: 05038f93a541216c0f6713ea13bcff58a40d823d
   timestamp: 2026-07-21T15:10:00Z
 createdAt: 2026-07-21T15:10:00Z
-updatedAt: 2026-07-21T16:00:00Z
+updatedAt: 2026-07-21T19:30:00Z
 ```
 # code_tracer — The evidence bundle (perimeter interface)
 
-**Status:** proposed. The thing that crosses the bank boundary. Referenced by
-`noteworthy-two-sited-scope`, `noteworthy-compiler-siting` and
-`noteworthy-trust-root-ownership` as the interface between the issuer and
-consumer sides, and until now undefined.
+**Status:** accepted. The thing that crosses the bank boundary — the interface
+between the issuer and consumer sides.
 
-> **Provenance of amendments.** §1, §3 and the resolutions in §6 derive from a
-> second exchange, excerpt `b73f250d059666768988095d440fa673548ef9d2`. The
-> remainder derives from the creation excerpt cited in `provenance` above.
+> **Provenance of amendments.** §1, §3 and the §6 resolutions derive from excerpt
+> `b73f250d059666768988095d440fa673548ef9d2`; §2's checkpoint set and §6's format
+> and freshness resolutions from `62f7c4b932187a51625b047401a2925cb3b0715e` and
+> `19c83a6696b0385da970572660b26d3871318fad`.
 
 **Why it exists.** Because the bank verifies **hermetically and offline**
 (`artifact-architecture` §1), the perimeter crossing cannot be a protocol — there
@@ -46,18 +45,18 @@ verified output exist at different times and carry different authority.
 |---|---|---|
 | Assembled by | maker | resolver ③, bank-side at ingest |
 | At | Delivered transition | Verified → Resolved |
-| Contents | L-1 + L0–L7 | delivery manifest + L8 + layout + policy bundle + trust-root snapshot + log checkpoints |
+| Contents | L-1 + L0–L7 | delivery manifest + L8 + layout + policy bundle + trust-root snapshot + checkpoint set |
 | Purpose | freeze the submission | carry everything the gate needs, offline |
 | Crosses the perimeter | no | yes |
 
 **The delivery manifest freezes the hand-off.** Its job is to stop the maker
 adjusting what it submitted after seeing how verification went — the same
 loophole `L-1` closes for the test corpus, one layer out. It is checked
-mechanically against `contract.requiredAttestations`: did the maker hand over
-everything the contract obliged it to?
+mechanically against `contract.requiredAttestations`.
 
 **The freeze is a transparency-log entry, not a signature.** Log the delivery
-manifest digest at hand-off. That establishes *"this exact set existed at time
+manifest digest at hand-off in the shared FINOS Rekor instance
+(`noteworthy-transparency-log`). That establishes *"this exact set existed at time
 T"*, which is the property actually wanted, and asserts nothing about
 correctness — an inclusion proof cannot be misread as an endorsement.
 
@@ -66,8 +65,7 @@ faults. *Timing* — before testing, the container holds only L-1 and L0–L7, s
 is the maker's submission rather than the artifact that crosses the perimeter;
 L8 is the only element that converts claims into evidence. *Instrument* — such a
 signature attests "this is the set the vendor handed us," which is provenance of
-receipt masquerading as verification of contents. It would invite precisely the
-inference the schematic's one-gap panel exists to prevent.
+receipt masquerading as verification of contents.
 
 ## 2. Contents of the evidence bundle
 
@@ -77,12 +75,16 @@ inference the schematic's one-gap panel exists to prevent.
 | Delivery manifest + its log inclusion proof | the frozen maker hand-off |
 | Attestation set L0–L8, DSSE-wrapped | the maker's claims and the quorum's VSAs |
 | L-1 contract, signed, with countersignature | the root referent every link is checked against |
-| Compiled layout + `compilerVersion` | structural verification; the bank recompiles and compares (`noteworthy-compiler-siting`) |
+| Compiled layout + `compilerVersion` | structural verification; the bank recompiles and compares (rule 14) |
 | Rego policy bundle + version | semantic verification; the meaning layer |
 | Trust-root snapshot (TUF metadata, versioned) | verifier registry, keys, delegations — no live TUF refresh at verify time |
-| Transparency-log checkpoint (Rekor) | inclusion proofs verifiable without querying the log |
+| **Checkpoint set** — one Rekor checkpoint per verifier | inclusion proofs verifiable offline, **and** split-view detection: divergent tree heads across the quorum are disqualifying (`noteworthy-transparency-log`) |
 | Fulcio root / cert chain | signature validity without a live CA |
 | Bundle manifest | digest over every element above; the bundle's own identity |
+
+The checkpoint is a **set, not a singleton**, precisely because the log is
+FINOS-operated: a single asserted tree head would have to be trusted, whereas k
+independently observed ones cannot be split without producing a dissent.
 
 ## 3. Properties
 
@@ -92,7 +94,8 @@ inference the schematic's one-gap panel exists to prevent.
   them, nothing more. This is the property that keeps assembly from becoming a
   trust role.
 - **Content-addressed.** The manifest digest is the bundle's identity, exactly as
-  `sha256` is the artifact's (chain principle #1).
+  `sha256` is the artifact's (chain principle #1), and it is **identical across
+  the OCI and tar forms**.
 - **Self-verifying offline.** Every admission rule in §3.7 must be decidable from
   bundle contents alone. A rule that cannot be is a design error in the rule or a
   missing element here.
@@ -100,6 +103,9 @@ inference the schematic's one-gap panel exists to prevent.
   same verdict — the §8 control statement, made physically true.
 - **Immutable.** Once assembled it is frozen; a new trust-root version or an
   amended contract produces a **new bundle**, not an edit.
+- **Fresh, within stated limits.** Trust-root snapshot ≤ 7 days, checkpoint set
+  ≤ 24 hours; tightenable per bank, never loosenable; stale is a named-rule
+  reject (`noteworthy-bundle-freshness`).
 
 ## 4. What is deliberately *not* in it
 
@@ -116,28 +122,35 @@ inference the schematic's one-gap panel exists to prevent.
 The bundle is `immutable` + `standard-bound`, born at the **Verified → Resolved**
 transition (`artifact-product-lifecycle` §3) — it is what component ③ assembles
 and resolves. The delivery manifest is likewise `immutable`, born at
-**Delivered**, and belongs to the outside zone. The `verdict` gains
+**Delivered**, and belongs to the outside zone. The `verdict` carries
 `bundleDigest` alongside `trustRootVersion` and `trustPath`
-(`noteworthy-trust-root-ownership`), so a verdict names the exact evidence set it
-was reached from.
+(`artifact-data-model` §4), so a verdict names the exact evidence set it was
+reached from.
 
-## 6. Open
+## 6. Format — OCI canonical, tar projection
 
-**Resolved by §1:**
-- ~~Assembly siting~~ — the resolver ③ assembles bank-side at ingest. Because
-  the bundle is a container and not a credential, assembly confers no authority,
-  so ③ stays a resolver rather than becoming a trusted packager.
-- ~~Manifest signature~~ — none. The freeze it was reaching for is provided by
-  the delivery manifest's transparency-log entry instead.
+Decided (`noteworthy-bundle-format`): an **OCI image index with the attestation
+set attached as referrers** is canonical; a **deterministic tar + manifest
+export** is emitted on demand for air-gapped transfer; the manifest digest is
+identical across both.
 
-**Still open:**
-- **Format.** OCI artifact with the attestation set as referrers, or a plain
-  tar + manifest for air-gapped transfer? The OCI route is native to the
-  resolution path already chosen; the tar route survives environments with no
-  registry at the boundary. Possibly both, with the manifest as the invariant.
-- **Freshness policy.** How stale may a trust-root snapshot or log checkpoint be
-  before the gate refuses the bundle? Needs a stated maximum age, since offline
-  verification forfeits TUF's own freshness guarantee.
-- **Size.** Attestation sets plus a full trust-root snapshot per bundle is
-  duplicative across many candidates; deduplication vs self-containment is a real
-  tension, and self-containment should probably win.
+- OCI is native to the resolution path already chosen (cosign, Referrers API).
+- Blobs are content-addressed and shared, so one trust-root snapshot is
+  *referenced* by every bundle that uses it rather than copied into each — which
+  removes the size concern entirely for the registry case.
+- The tar form is fat by necessity and correct for an air gap; determinism
+  (fixed entry ordering, normalized metadata, no timestamps) is required so the
+  manifest digest survives the round trip.
+- **Archivista becomes optional** — storage and DAG-traversal convenience, not
+  transport.
+
+**Operational consequence.** The 24-hour checkpoint clock means an air-gapped
+estate must move the tar across the gap within a day of checkpoint issuance.
+That is a deployment cadence the rollout plan must absorb, not a schema problem.
+
+## 7. Open
+
+- **External witnessing** — whether the checkpoint set should additionally be
+  cross-checked against a public log or witness network for consumers outside the
+  membership. Not needed for admission inside a member bank; possibly wanted for
+  the regulator story (`noteworthy-transparency-log`).
