@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-21T16:40:00Z
+  updatedAt: 2026-07-21T16:55:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: 259d3019f66d621539c97fbba96ac8d3ad138e53
   contentHash: 259d3019f66d621539c97fbba96ac8d3ad138e53
   timestamp: 2026-07-17T17:45:00Z
 createdAt: 2026-07-17T17:45:00Z
-updatedAt: 2026-07-21T16:40:00Z
+updatedAt: 2026-07-21T16:55:00Z
 ```
 # code_tracer — Data model
 
@@ -224,6 +224,13 @@ Two rules fixed inside the model:
   hash and the whole tail is invalid. The verifier registry gets the same
   *pattern* via its own mechanism, TUF. See `noteworthy-ledger-substrate`.
 
+**Chain integrity is load-bearing.** The hash-chaining above is not a storage
+convenience — it is the property the whole evidence model rests on. The
+attestation DAG, the ledger event chain, and the TUF registry are each
+tamper-evident by construction, and every admission claim ultimately reduces to
+"these digests link, unbroken, back to an independently observable anchor." Break
+one link and everything above it is worthless (architecture §3.1, §3.4, §5.1).
+
 ## 6. Relation to other artifacts & open items
 
 - `artifact-product-lifecycle` — the state set (§2) and superseding-version rule
@@ -250,9 +257,7 @@ Open:
   event log (`ledger-event`); `ledger-row`/`state-pointer` are projections. The
   verifier registry keeps the same append-only pattern via TUF, not this log;
   the attestation chain via Rekor-style transparency. Hash-chaining everywhere,
-  consensus nowhere. See `noteworthy-ledger-substrate`. **Under review
-  2026-07-21** — a stated lean toward blockchain/smart-contract execution is in
-  tension with this record; unresolved.
+  consensus nowhere. See `noteworthy-ledger-substrate`.
 - **candidateKey — decided.** = version-less upstream purl + `contract.osera.line`;
   constant across a bridge lineage (the supersedes chain); `app` dropped from the
   key (it lives in the ledger's `(appId, candidateKey)`). The line is declared in
