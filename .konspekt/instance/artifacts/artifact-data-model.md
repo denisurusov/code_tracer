@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-17T17:45:00Z
+  updatedAt: 2026-07-21T16:40:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: 259d3019f66d621539c97fbba96ac8d3ad138e53
   contentHash: 259d3019f66d621539c97fbba96ac8d3ad138e53
   timestamp: 2026-07-17T17:45:00Z
 createdAt: 2026-07-17T17:45:00Z
-updatedAt: 2026-07-17T17:45:00Z
+updatedAt: 2026-07-21T16:40:00Z
 ```
 # code_tracer — Data model
 
@@ -24,6 +24,14 @@ that back each state of the product lifecycle. It sits on
 §3 (the L-1…L9 evidence chain), and is organized by **facets** — orthogonal
 qualities an element can carry several of at once, each contributing a reusable
 schema mixin.
+
+> **Amendment 2026-07-21.** §4 (`verdict`, `policy-object`) and §5
+> (`ledger-event`) amended per the issuer-side batch — excerpts
+> `c284e12b3f1e77a4f712644a85aba7e8195b4648` and
+> `b73f250d059666768988095d440fa673548ef9d2`. The binding records
+> (`noteworthy-trust-root-ownership`, `noteworthy-compiler-siting`,
+> `artifact-evidence-bundle`) are `review: proposed` pending the architecture
+> pass; these field additions are applied on human commit ahead of that.
 
 ## 1. Facets
 
@@ -135,10 +143,31 @@ verdict                                        policy-object
   id:          <sha256 of verdict>               id:        <digest of compiled artifact>
   candidateRef:<candidate-version id>            kind:      layout ① | rego ②
   inputs:      {layoutRef, policyRef}            bornPhase: Gate (compiled from L-1)
-  structural / semantic / l9: pass|fail          signed:    {signer: bank}
-  decision:    admit | reject                    standard:  {validator: in-toto | rego}
+  bundleDigest:<evidence-bundle manifest>        signed:    {signer: bank}
+  trustRootVersion: <TUF snapshot version>       standard:  {validator: in-toto | rego}
+  trustPath:   osera-root | delegated:<bank>     compilerVersion: <for kind: layout>
+  structural / semantic / l9: pass|fail
+  decision:    admit | reject
   failingRule?:<rule #>   signed:{signer: bank}
 ```
+
+Three fields make the verdict **self-contained for replay** (amendment
+2026-07-21):
+
+- **`bundleDigest`** — the exact evidence set the decision was reached from, so
+  a regulator re-running the gate names the same inputs (`artifact-evidence-bundle`).
+- **`trustRootVersion`** — the TUF snapshot verified against. Without it,
+  "re-run offline and reach the same verdict" becomes false the moment the
+  verifier registry changes; the registry is a mutable external referent and is
+  pinned by the same rule as any other (`noteworthy-referent-binding`).
+- **`trustPath`** — whether admission came over the OSERA root or a delegated
+  bilateral namespace. **Attribution, not leniency:** the admission policy is
+  identical across paths (`noteworthy-trust-root-ownership`).
+
+`policy-object` gains **`compilerVersion`** for `kind: layout`, because the
+layout compiler is dual-sited and byte-deterministic: the bank recompiles from
+the signed contract and compares digests, so a version skew must surface as a
+digest mismatch rather than silent divergence (`noteworthy-compiler-siting`).
 
 The **supersedes link** is not a separate record; it is the `supersedes` field
 on `candidate-version`, projected into the graph as a `supersedes` edge. A
@@ -152,7 +181,7 @@ shared `osera.line` must agree (a checkable admission invariant).
 # durable substrate — append-only, hash-chained (the operational-side log)
 ledger-event   { id: <sha256>, prev: <prior event id for candidateKey> | null,
                  candidateKey, ref: <cand id>,
-                 kind: issued | renewed | expired | retired, at,
+                 kind: issued | renewed | expired | retired | verifier-revoked, at,
                  coveredCves[] (from L-1 scope) }
 
 # projections — replayed from the event chain, NOT authoritative state
@@ -172,6 +201,15 @@ pointer and ledger follow renewals. `app` is deliberately *not* in it: a bridge
 is built and verified once regardless of how many apps adopt it, so the per-app
 dimension lives only in the ledger's composite `(appId, candidateKey)`. See
 `noteworthy-candidate-key`.
+
+**`verifier-revoked`** (amendment 2026-07-21) records that a verifier key backing
+an already-admitted candidate has been revoked. Candidates admitted on that
+verifier's VSAs were validly admitted *at the time* and now rest on a compromised
+signer; the event exists so the hash-chained ledger can answer "which admitted
+candidates depend on verifier X" — a question a last-write row cannot. Whether
+revocation forces re-verification or records an exposure is **open**; the
+recommendation is record-an-exposure with a review trigger, on the same reasoning
+as `Expiring` being computed rather than stored.
 
 Two rules fixed inside the model:
 
@@ -193,6 +231,11 @@ Two rules fixed inside the model:
 - `artifact-architecture` §3 — the L-1…L9 chain this model gives record shapes
   to; `artifact-architecture` is now the integrating overview cross-referencing
   all three axes.
+- `artifact-contract-lifecycle` *(proposed)* — the issuer-side machine; adds a
+  pre-acceptance **draft** record (`mutable-operational`) and the maker's
+  **delivery manifest** (`immutable`, outside zone).
+- `artifact-evidence-bundle` *(proposed)* — the perimeter interface; `immutable`,
+  born at Verified → Resolved, referenced by `verdict.bundleDigest`.
 
 Open:
 
@@ -207,8 +250,11 @@ Open:
   event log (`ledger-event`); `ledger-row`/`state-pointer` are projections. The
   verifier registry keeps the same append-only pattern via TUF, not this log;
   the attestation chain via Rekor-style transparency. Hash-chaining everywhere,
-  consensus nowhere. See `noteworthy-ledger-substrate`.
+  consensus nowhere. See `noteworthy-ledger-substrate`. **Under review
+  2026-07-21** — a stated lean toward blockchain/smart-contract execution is in
+  tension with this record; unresolved.
 - **candidateKey — decided.** = version-less upstream purl + `contract.osera.line`;
   constant across a bridge lineage (the supersedes chain); `app` dropped from the
   key (it lives in the ledger's `(appId, candidateKey)`). The line is declared in
   L-1 and verified with the contract. See `noteworthy-candidate-key`.
+- **Revocation semantics — open.** Re-verify vs record-an-exposure (§5).
