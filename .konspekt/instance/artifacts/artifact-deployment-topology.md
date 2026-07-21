@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-21T21:20:00Z
+  updatedAt: 2026-07-21T21:50:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   sourceRef: a587d0575d65f1fb3c3ef862c269af41ea2e94df
   contentHash: a587d0575d65f1fb3c3ef862c269af41ea2e94df
   timestamp: 2026-07-21T21:00:00Z
 createdAt: 2026-07-21T21:00:00Z
-updatedAt: 2026-07-21T21:20:00Z
+updatedAt: 2026-07-21T21:50:00Z
 ```
 # code_tracer — Physical topology
 
@@ -22,20 +22,19 @@ updatedAt: 2026-07-21T21:20:00Z
 the system *means*; this one describes where the bytes actually live, who writes
 them, who reads them, and when. Diagram: `docs/code-tracer-topology.svg`.
 
-Organizing question: **what is written to where, and read by whom.** Everything
-here is a *store*, not a service — services are components ①–⑨ in
-`artifact-architecture` §6.
+**Every store named here must be physically real** — a file at a path in a named
+repository, an object in a bucket, a table in a database, or a running third-party
+service. Where the realization is not yet chosen, it is marked **UNDECIDED**
+rather than described abstractly.
 
 ## 0. Conventions
 
 **Actors are named by role, never by company.** The party that hardens artifacts
 is the **maker**; the parties that independently re-derive the result are
 **verifiers**; the party that commissions is the **issuer** (the alliance); the
-party that admits is the **bank**. Specific vendors may fill these roles, but the
+party that admits is the **bank**. Specific vendors fill these roles, but the
 design binds to the role — a maker is whoever signs L0–L7 against a contract they
-countersigned, and nothing in the chain depends on which organisation that is.
-
-**Reading the tables and the diagram:**
+countersigned.
 
 | Notation | Meaning |
 |---|---|
@@ -46,114 +45,118 @@ countersigned, and nothing in the chain depends on which organisation that is.
 | green | the admitted artifact's path |
 | red border | a component we build (①–⑨) |
 
-The distinction matters because it is the *asymmetry* that carries the design:
-several stores are read-only to us (the public registries, the CMDB), one is
-write-only in practice (quarantine, read by nothing but the gate), and one writes
-nothing durable at all (the console).
-
 ## 1. The headline correction
 
 The framing this design started from was "two GitHubs, Maven, and all." That is
-not the shape.
-
-- **Git appears twice and is load-bearing in neither.** The alliance **master
-  repo** publishes contract schemas, Rego policy bundles and the layout compiler;
-  the **maker's repo** holds recipe sets. Both are *publishing* surfaces. Neither
-  is on the verification path.
-- **The spine is OCI registries** — the neutral registry the bank pulls from, and
-  the bank's own bundle store. Digest-addressed, referrer-carrying, and the
-  actual transport for everything that matters.
-- **The anchor is the public package registry for the artifact's purl type** —
-  not Maven specifically (`noteworthy-ecosystem-generalization`).
-
-**Artifact hosting carries this system; source hosting is peripheral.**
+not the shape. **Git appears twice and is load-bearing in neither** — both are
+publishing surfaces, neither is on the verification path. **The spine is OCI
+registries**, with the public package registry for the artifact's purl type as
+the uncontrolled anchor. Artifact hosting carries this system; source hosting is
+peripheral.
 
 ## 2. Public upstream — read-only, uncontrolled
 
-| Store | Written by | Read by | When |
+| Store | Physically | Written by | Read by |
 |---|---|---|---|
-| Package registry (per purl type) | upstream maintainers — **nobody in the alliance** | ⑦ at commissioning; maker at build; every verifier at rebuild; gate at rule 3 | anchor check, twice minimum |
-| Upstream git | upstream maintainers | maker; verifiers | `source_ref` resolution |
-| OSV / NVD | upstream | ⑦ at scoping | `cvesInScope` derivation |
-| `sum.golang.org` (Go only) | Go team | verifiers | already an independent checksum log |
+| Package registry | the ecosystem's own service — `repo1.maven.org`, `registry.npmjs.org`, `pypi.org`, `crates.io`, `proxy.golang.org` | upstream maintainers — **nobody in the alliance** | ⑦ at commissioning; maker at build; verifiers at rebuild; gate at rule 3 |
+| Upstream git | the project's own forge (GitHub/GitLab/self-hosted) | upstream maintainers | maker; verifiers |
+| OSV / NVD | `api.osv.dev` REST; NVD JSON feeds | upstream | ⑦ at scoping |
+| Go checksum log | `sum.golang.org` (Trillian-backed) | Go team | verifiers |
 
-Anchor strength is **not uniform**: Maven Central and Go are strong, crates.io
-strong, npm and PyPI permit deletion — so for those a **supplementary log witness
-at commissioning** is required, or the baseline can simply vanish
+Anchor strength is not uniform — npm and PyPI permit deletion, so those need a
+**supplementary log witness at commissioning**
 (`noteworthy-ecosystem-generalization` §1).
 
-## 3. Outside — issuer, maker, verifiers
+## 3. Issuer side (alliance)
 
-| Store | Written by | Read by | Notes |
-|---|---|---|---|
-| **Master repo (git)** | ⑦⑧ maintainers | issuer at compile; **bank only at publication time, never at verify** | schemas (all versions, never deprecated), Rego bundles, compiler ① |
-| **Contract store** | ⑧ issuance | maker, verifiers, gate | signed L-1 + countersignature; content-addressed |
-| **TUF root + verifier registry** | ⑨ (k-of-m co-signed) | bank, via pinned snapshot | root keys held **across organisations** — survives any one party |
-| **Rekor (FINOS-operated)** | ⑧ (contract), maker (delivery manifest), verifiers (VSAs) | verifiers; gate via checkpoint set | **quorum-witnessed** — each VSA carries the checkpoint it observed |
-| **Fulcio / CA** | Sigstore | gate, via roots shipped in the bundle | |
-| **Neutral OCI registry** | maker (artifact + L0–L7 referrers), verifiers (L8) | bank resolver ③ | **the spine** — this is what the bank pulls |
-| Maker build infra, recipe git | maker | maker | not ours |
-| Verifier rebuild infra × n | each verifier | each verifier | not ours; siting hybrid (§6) |
+| Store | Physically | Path / shape |
+|---|---|---|
+| **Master repo** | one git repository, e.g. `github.com/finos/osera-spec` | `schemas/contract/v{N}.json` · `policy/admission-v{N}.rego` · `compiler/` (source of ①) · tagged + released per version, **never deleted** |
+| **Contract store** | **not a separate service.** The signed L-1 is a DSSE-wrapped in-toto statement. Published as a file in the master repo (`contracts/{contractId}/v{N}.json`) for human retrieval; **authoritative copy is the digest**, logged in Rekor and carried in the bundle | file + log entry |
+| **TUF metadata** | **static files over HTTPS** — object storage + CDN (S3/GCS/R2). TUF is inherently a file tree, not a service | `root.json`, `timestamp.json`, `snapshot.json`, `targets.json`, `delegations/{bank}.json` |
+| **Rekor** | a **FINOS-operated Rekor server** — which means Trillian plus a backing SQL database, an availability commitment, and a key custody obligation. Not a small operational undertaking | append-only Merkle log |
+| **Fulcio / CA** | either the public Sigstore Fulcio, or a FINOS-operated instance. **UNDECIDED** — public is simpler; a private CA fits embargo handling | X.509 chain |
+| **Neutral artifact registry** | an **OCI registry with Referrers API support** — Harbor, zot, Artifactory, or a cloud registry. See §6: plain Nexus Maven hosting is *not* sufficient | artifact blob + attestations as referrers |
+| Maker build infra, recipe repo | maker's own CI and git | not ours |
+| Verifier rebuild infra × n | each verifier's own CI — mostly peer on-prem | not ours; harness must be distributable (§7) |
 
 ## 4. The perimeter
 
-Exactly **one thing crosses**: the evidence bundle — an OCI image index, or a
-deterministic tar with the same manifest digest when air-gapped. It is a **copy,
-not a protocol**, and a **container, never a credential**
-(`artifact-evidence-bundle`).
+Exactly one thing crosses: the **evidence bundle** — an OCI image index, or a
+deterministic tar with the same manifest digest when air-gapped. A copy, not a
+protocol; a container, never a credential.
 
-The rule that keeps this honest: **if the gate needs it, it ships in the bundle.**
-Anything the gate would have to fetch is a live dependency and breaks
-hermeticity. This is why the master repo — authoritative for schemas and policy —
-is *never read at verify time*: the schema version and its matching policy bundle
-ship **pinned by digest inside the bundle**, with the repo as the place they are
-published from and re-derivable against. Same shape as the trust-root snapshot,
-and the same discipline as `noteworthy-authoritative-form`.
+**If the gate needs it, it ships in the bundle.** This is why the master repo,
+authoritative for schemas and policy, is *never read at verify time*: the schema
+and its matching policy bundle ship **pinned by digest inside the bundle**, with
+the repo as the publication source and re-derivation target.
 
-Freshness at the boundary: TUF snapshot ≤ 7 days, checkpoint set ≤ 24 hours
-(`noteworthy-bundle-freshness`).
+Freshness: TUF snapshot ≤ 7 days, checkpoint set ≤ 24 hours.
 
-## 5. Inside the bank
+## 5. Bank side
 
-| Store | Written by | Read by | Grain |
-|---|---|---|---|
-| **Quarantine registry** | resolver ③ on arrival | gate only | holding area; nothing else may read it |
-| **OCI bundle store** | ③ (assembly) | gate | immutable; blobs shared, so trust material is stored once rather than per bundle |
-| **Trust material store** | scheduled refresh | ③ at assembly | TUF snapshot, Fulcio roots, checkpoint set, schema + policy bundles |
-| **Gate runner** | — | reads the bundle, nothing else | writes the `verdict` (immutable) |
-| **CI executor** | ④ harness | gate folds result into the verdict | writes **L9**, which never leaves the bank |
-| **Golden repo** | gate, on admit | app teams **only** | the one path to consumption |
-| **Ledger store** | ⑤ | console ⑥, risk function | append-only hash-chained events; rows and pointers are projections |
-| **CMDB** | the bank, externally | ⑤ | read-only to us |
-| **Console** ⑥ | **nothing durable** | operators | read tier over projections and verdicts |
+| Store | Physically | Notes |
+|---|---|---|
+| **Quarantine registry** | a separate repository in the bank's existing Artifactory/Harbor, or a distinct namespace | **exactly one reader — the gate.** A control, not a convenience: any other reader means an app team can consume an unadmitted artifact |
+| **OCI bundle store** | the bank's OCI registry (Harbor/Artifactory/zot) | immutable; blob sharing is why trust material is stored once, not per bundle |
+| **Trust material store** | a **directory on disk under configuration management**, refreshed on a schedule — not a service | `tuf/` snapshot, `fulcio/` roots, `checkpoints/`, `schema/`, `policy/` |
+| **Gate runner** | a CI job or container invoking `in-toto-verify` then Witness/OPA; stateless | reads the bundle and nothing else |
+| **Verdict store** | content-addressed files (`verdicts/{sha256}.json`) in object storage or an OCI artifact. **UNDECIDED** — file tree is simpler; OCI keeps one storage technology | immutable |
+| **CI executor** | the bank's existing CI (Jenkins/GitLab/GHA runner) running ④ | writes L9; never leaves the bank |
+| **Golden repo** | the bank's existing repository manager — Nexus/Artifactory, ecosystem-native (Maven repo for jars, npm registry for packages) | the one path to consumption |
+| **Ledger store** | **UNDECIDED between** (a) append-only JSON lines in git or object storage, hash-chained by content; (b) a Postgres table with a `prev_hash` column plus projection tables. (a) is more faithful to the append-only discipline; (b) is what an operations team will actually want | events are durable; rows and pointers are projections |
+| **CMDB** | the bank's existing system (ServiceNow or equivalent) | read-only to us |
+| **Console** | a web app plus API over the projections | writes nothing durable |
 
-**Every durable write inside the bank is append-only.** Verdicts and bundles are
-immutable; ledger events are hash-chained; everything else is a projection
-replayed from them. The console writes nothing — every state change routes
-through the gate (a `verdict`) or the ledger (a `ledger-event`).
+## 6. The awkward finding — Maven repos are not OCI registries
 
-**Quarantine has exactly one reader**, and that is a control rather than a
-convenience: if any other system could read it, an app team could consume an
-unadmitted artifact by pointing at the wrong repository.
+Making the stores concrete surfaces a real conflict the logical design conceals.
 
-## 6. Two things still physically undetermined
+Chain principle #5 says attestations are **OCI referrers resolvable from the
+artifact digest**. But a hardened `.jar` lives in a **Maven repository**, an npm
+package in an **npm registry** — none of which are OCI registries, and none of
+which support the Referrers API. So the artifact and its attestations end up in
+**two different systems**, and "resolvable from the artifact digest" stops being
+true at the storage layer.
 
-- **Verifier rebuild siting.** The `Origins` schematic drew this as deliberately
-  hybrid — neutral-zone or peer on-prem, same signed VSA either way. Now that
-  verification is a **duty** and `n` ≈ active membership
-  (`noteworthy-governance-modes`), the default is peer on-prem. That makes the
-  rebuild harness a **distributable package rather than a hosted service**, which
-  is a build implication nobody has costed.
-- **The air-gapped variant.** The tar projection plus a 24-hour checkpoint clock
+Three ways out, none free:
+
+1. **Dual-publish** — the artifact goes to the ecosystem-native repo *and* the
+   same bytes go to an OCI registry as a blob, with attestations attached there.
+   Resolution works; the cost is two copies and a binding rule that they are the
+   same digest.
+2. **Sidecar** — `.intoto.jsonl` alongside the artifact in the Maven/npm repo
+   (already noted in the standards register). Works everywhere; loses referrer
+   discovery, so the resolver needs per-ecosystem path conventions.
+3. **Registry with both** — Artifactory and Harbor can host Maven *and* OCI, but
+   the Maven side still has no referrer mechanism, so it reduces to (1) or (2)
+   with fewer servers.
+
+**Recommendation: (1) dual-publish, with the OCI copy as the resolution surface
+and the ecosystem repo as the consumption surface.** The digest is identity
+(principle #1), so two locations holding identical bytes is not a
+co-authority problem — it is the same object addressed twice. This needs
+recording as its own decision; flagged here, not settled.
+
+Note this also constrains the **golden repo**: app teams consume via their
+native package manager, so the bank-side copy must be ecosystem-native, and the
+OCI bundle store sits beside it rather than replacing it.
+
+## 7. Still physically undetermined
+
+- **Verifier rebuild siting** — hybrid by design; peer on-prem by default now
+  that verification is a duty, which makes the rebuild harness a **distributable
+  package rather than a hosted service**. Uncosted.
+- **Air-gapped variant** — the tar projection plus a 24-hour checkpoint clock
   implies a courier process and a **staging host on each side of the perimeter**,
-  operating on a daily tempo. Real infrastructure, currently one sentence in
-  `noteworthy-bundle-freshness`.
+  on a daily tempo.
+- **Fulcio siting**, **verdict store**, **ledger store** — marked UNDECIDED above.
+- **Artifact/attestation co-location** — §6.
 
-## 7. Relation to the other axes
+## 8. Relation to the other axes
 
-- `artifact-architecture` — §1's three zones and §6's component register are the
-  logical counterpart of this physical map; components ①–⑨ are the services that
-  act on these stores.
+- `artifact-architecture` — §1's zones and §6's component register are the
+  logical counterpart; ①–⑨ are the services acting on these stores.
 - `artifact-evidence-bundle` — defines what crosses §4.
 - `artifact-data-model` — defines the records these stores hold.
 - `artifact-contract-lifecycle` / `artifact-product-lifecycle` — define *when*
