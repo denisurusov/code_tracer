@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-17T18:45:00Z
+  updatedAt: 2026-07-21T20:20:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: ce42f850ccfc660dde5fce05f46db479f0993fe0
   contentHash: ce42f850ccfc660dde5fce05f46db479f0993fe0
   timestamp: 2026-07-17T18:45:00Z
 createdAt: 2026-07-17T18:45:00Z
-updatedAt: 2026-07-17T18:45:00Z
+updatedAt: 2026-07-21T20:20:00Z
 ```
 # Decision: purl namespace for backpatched artifacts
 
@@ -35,17 +35,54 @@ conflates.
 - The supersedes chain (lifecycle §5) becomes self-describing: successive
   bridges read as `-osera.1`, `-osera.2`, not identical purls separable only by
   digest — the audit story §5 exists to make easy.
-- It survives the bank boundary into Maven/Artifactory repos and app POMs, where
+- It survives the bank boundary into repository managers and app manifests, where
   a distinct coordinate is pinnable and visible; a same-coordinate/different-
   digest artifact is a footgun for ordinary tooling that doesn't key on digests.
 - The CPE mismatch (architecture §7 trap) is turned into an explicit,
   machine-readable is-hardening-of relationship (declared in L6/L7) rather than
   hidden — B declares and annotates the relationship; A conceals it.
 
-**Suffix scheme:** `-osera.N` (alliance-scoped, N = renewal count), chosen over
-encoding the contract id (`+osera.OSERA-2026-0142`) — the latter is more precise
-but pushes build-metadata semantics onto Maven's version grammar, which handles
-it poorly.
+---
 
-**Binds:** `artifact-data-model` `candidate-version.purl` (§4). **Resolves:**
-`artifact-data-model` §6 and the purl question in `artifact-architecture` §7.
+## Amendment 2026-07-21 — the suffix scheme is per-ecosystem
+
+**The principle stands; the encoding was over-fitted to Maven.** `-osera.N` was
+chosen against Maven's version grammar. Under **semver**, `3.2.1-osera.1` is a
+**pre-release identifier and sorts *below* `3.2.1`** — so npm, cargo and every
+semver-based resolver would treat the hardened artifact as older than the
+vulnerable release it replaces. That is exactly the footgun this decision exists
+to prevent, reintroduced through ecosystem assumptions
+(`noteworthy-ecosystem-generalization`).
+
+**The invariant, which is what actually matters:**
+
+> The hardened coordinate MUST sort **above** its baseline in the ecosystem's own
+> version ordering, MUST NOT collide with any upstream release, and MUST remain
+> monotonic across renewals (`N` increasing).
+
+**Per-ecosystem encodings satisfying it:**
+
+| Ecosystem | Encoding | Why |
+|---|---|---|
+| Maven | `3.2.1-osera.N` | Maven's grammar sorts the qualifier above the bare version |
+| Python (PEP 440) | `3.2.1+osera.N` | local version identifier; sorts **above** the base version |
+| semver (npm, cargo) | **not** `-osera.N` — requires a scheme that sorts above `3.2.1` | pre-release sorts below; build metadata (`+`) is ignored for precedence, so neither naive form works. Encoding to be fixed at ecosystem onboarding |
+| Go | module path or `+incompatible`-style handling | version semantics differ again; resolve at onboarding |
+
+Note the irony: `+osera.N` — the build-metadata form this decision originally
+**rejected** as pushing build-metadata semantics onto Maven's grammar — is the
+*correct* form under PEP 440. The rejection was right for Maven and wrong as a
+general rule.
+
+**semver is genuinely unresolved.** Pre-release sorts below; build metadata is
+ignored for precedence entirely. Neither `-osera.N` nor `+osera.N` satisfies the
+invariant, so a semver ecosystem needs either a patch-level bump plus a
+qualifier, or a distinct package name. Deferred to ecosystem onboarding
+(`noteworthy-ecosystem-generalization` §3), and flagged as a real obstacle rather
+than a formatting detail.
+
+**Unchanged by this amendment:** digest remains identity; the purl remains a
+label; the is-hardening-of relationship remains declared in L2/L6/L7.
+
+**Binds:** `artifact-data-model` `candidate-version.purl` (§4). **Resolves:** the
+purl question in `artifact-architecture` §7.
