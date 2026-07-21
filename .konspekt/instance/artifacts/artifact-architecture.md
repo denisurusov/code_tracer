@@ -7,7 +7,7 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-17T20:45:00Z
+  updatedAt: 2026-07-21T17:10:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   inputs:
@@ -15,62 +15,86 @@ provenance:
     - osera-bank-schematic.svg      # artifact #2
     - osera-standards-register.md   # artifact #3
 createdAt: 2026-07-17T00:00:00Z
-updatedAt: 2026-07-17T20:45:00Z
+updatedAt: 2026-07-21T17:10:00Z
 ```
 
 # code_tracer — Architecture & Design
 
 **Status:** accepted (`review: accepted`). **Integrating overview.** The design is
-factored into three axes; this document ties them together and is the home of the
+factored into four axes; this document ties them together and is the home of the
 evidence-chain axis:
 
 - **Evidence chain** — the L-1…L9 attestation format the gate consumes. §3 below.
+- **Contract lifecycle** — the issuer-side commitment machine (Drafted…Fulfilled)
+  that produces the root referent. `artifact-contract-lifecycle`.
 - **Product lifecycle** — the candidate state machine (Commissioned…Sunset).
   `artifact-product-lifecycle`.
 - **Data model** — the records backing each state. `artifact-data-model`.
 
-§4–§8 are the cross-cutting concerns that bind the three: the gate, the ledger,
-the component register, the standards binding, and the regulatory narrative.
+§4–§8 are the cross-cutting concerns that bind them: the gate, the ledger, the
+component register, the standards binding, and the regulatory narrative. The
+interface between the two sides is `artifact-evidence-bundle`.
 
 > Historical note: this document supersedes and inlines three earlier
 > per-conversation artifacts (attestation chain, solution schematic, standards
 > register) that did not persist. The attestation chain is reproduced in full in
 > §3 and is the single source of truth for the chain.
 
+> **Amendment 2026-07-21 (issuer side).** §1, §3.7, §6, §7 and §9 amended per
+> `noteworthy-two-sited-scope`, `noteworthy-compiler-siting`,
+> `noteworthy-trust-root-ownership`, `noteworthy-threshold-everywhere` and
+> `noteworthy-conformance-binary`. Excerpts
+> `c284e12b3f1e77a4f712644a85aba7e8195b4648`,
+> `05038f93a541216c0f6713ea13bcff58a40d823d`,
+> `b73f250d059666768988095d440fa673548ef9d2`.
+
 ---
 
 ## 1. Context & scope
 
-code_tracer is the **bank-side admission gate and ledger at the end of the OSERA
-supply chain** — not the supply chain itself. OSERA (Open Source Enterprise
-Resiliency Alliance, a FINOS coalition) mutualizes the backpatching of old,
-widely-shared open source across regulated banks: a patching vendor (Moderne)
-hardens vulnerable upstream artifacts, and the alliance distributes the result
-with machine-readable evidence. code_tracer is the on-prem machinery that
-*admits* that hardened output into one bank under a verifiable, automated
-contract, and *tracks* the bank's exposure to it afterward.
+code_tracer is the machinery at the **two ends of the OSERA supply chain** — the
+alliance-side tooling that *commissions* hardened open source, and the bank-side
+gate and ledger that *admits and tracks* it. It is not the supply chain itself.
+OSERA (Open Source Enterprise Resiliency Alliance, a FINOS coalition) mutualizes
+the backpatching of old, widely-shared open source across regulated banks: a
+patching vendor (Moderne) hardens vulnerable upstream artifacts, and the alliance
+distributes the result with machine-readable evidence.
 
-**What it is:** the gate (does this artifact conform to a scope the maker
-committed to before starting, independently verified?) and the ledger (which of
-our applications run a time-bound backpatch, and when does it lapse?).
+**What it is:**
+- **Issuer side** — authoring and issuing the L-1 backpatch contract, and
+  curating the verifier registry and trust root the gate verifies against
+  (`goal-issuer-side`, components ⑦⑧⑨).
+- **Consumer side** — the gate (does this artifact conform to a scope the maker
+  committed to before starting, independently verified?) and the ledger (which
+  of our applications run a time-bound backpatch, and when does it lapse?)
+  (`goal-the-gate`, components ①–⑥).
 
-**What it is not:** the patching pipeline, the attestation *producers*, the
-transparency log, or the alliance's governance. Those are upstream and
-integrated-against, not built.
+**What it is not:** the patching pipeline, the attestation *producers* (L0–L7),
+or the quorum's rebuild infrastructure. Those are upstream and
+integrated-against, not built. Alliance *governance* — who may issue, who sits in
+the trust-root threshold, what `k` and `n` are — is likewise out of scope: we
+build the mechanism, the alliance settles the policy.
 
-### Two zones
+### Three zones
 
-The whole system splits cleanly at the bank boundary:
+The system spans three zones, not two, and the third is the one that makes the
+evidence trustworthy rather than circular:
 
-- **Outside** — build, test. The vendor's and verifiers' infrastructure; the
-  evidence-**production** half. code_tracer does not run here.
-- **Inside** — resolve, verify, accept, re-test, deploy, adopt, track. The
-  bank's on-prem gate and ledger; the evidence-**consumption** half. This is
-  code_tracer.
+- **Public upstream** — Maven Central, the upstream git repositories, OSV/NVD.
+  **Nobody in the alliance controls it**, which is exactly why it is the anchor
+  (§3.4). Integrated-against, never annexed.
+- **Outside (alliance + maker)** — commission, build, test, verify. The issuer
+  side runs here, alongside the vendor's and quorum's infrastructure; the
+  evidence-**production** half.
+- **Inside (bank)** — resolve, verify, accept, re-test, deploy, adopt, track. The
+  bank's on-prem gate and ledger; the evidence-**consumption** half.
 
-Everything code_tracer does inside the bank is **hermetic and offline** — no
+Everything code_tracer does **inside the bank is hermetic and offline** — no
 callout to the vendor, no live trust query — so that a regulator can re-run the
-entire admission decision from stored inputs and reach the same verdict.
+entire admission decision from stored inputs and reach the same verdict. The
+issuer side existing does not relax this: because the bank verifies offline, the
+perimeter crossing is a **copy of a self-contained evidence bundle**, not a
+protocol (`artifact-evidence-bundle`).
 
 ---
 
@@ -100,8 +124,9 @@ states and the machine is class-agnostic from Resolved inward
 ## 3. The attestation chain
 
 This is the **input contract** the gate consumes — the evidence format an
-artifact must arrive with to be admissible. code_tracer does not produce it; it
-resolves it, verifies it, and reads its meaning. Reproduced here in full.
+artifact must arrive with to be admissible. code_tracer does not produce L0–L8;
+it commissions the work they attest to, then resolves, verifies, and reads their
+meaning. Reproduced here in full.
 
 ### 3.1 Core principles
 
@@ -118,6 +143,13 @@ resolves it, verifies it, and reads its meaning. Reproduced here in full.
    important property and the easiest to get wrong.
 5. **Attestations are OCI referrers / sigstore bundles resolvable from the
    artifact digest.** Not links in release notes. Not rows in a portal.
+
+**Chain integrity is load-bearing.** Principles 1–4 are one property seen from
+four sides: every admission claim ultimately reduces to *these digests link,
+unbroken, back to an independently observable anchor*. Hash-linking is not a
+storage convenience here — break one link and everything above it is worthless,
+no matter how well-signed. The same discipline recurs in the ledger and the
+verifier registry (§5.1).
 
 ### 3.2 The L-1 backpatch contract — the root referent
 
@@ -137,7 +169,9 @@ chain above it is verified *against*. It freezes four things:
 
 The contract is machine-readable and content-addressed. It **compiles directly
 to an in-toto layout** (§4), which is what makes admission mechanical rather than
-a human reading a PDF.
+a human reading a PDF. Its own issuance state machine — Drafted, Proposed,
+Accepted, Delivered, Fulfilled, and three terminals — is
+`artifact-contract-lifecycle`.
 
 ### 3.3 The chain, L0–L9
 
@@ -158,6 +192,12 @@ L0–L7 are the **maker's claims**. **L8 is the only attestation that converts
 claims into evidence** — an independent party re-derived the result. L9 is the
 bank's own control and never leaves the bank.
 
+The maker's hand-off of L0–L7 is itself frozen: a **delivery manifest**,
+assembled by the maker at the Delivered transition, checked for completeness
+against `contract.requiredAttestations`, and fixed in time by a transparency-log
+entry rather than a signature — see `artifact-contract-lifecycle` §2 and
+`artifact-evidence-bundle` §1.
+
 ### 3.4 The anchor problem
 
 L0 is a *self-claim*. If the vendor merely asserts "we started from
@@ -170,7 +210,10 @@ is only load-bearing if it is **independently re-derivable from public data**:
 - `source_ref` MUST be a git commit SHA in the public upstream repository.
 
 If the anchor is not independently observable, nothing above it is worth
-verifying. This is the property most likely to be quietly wrong.
+verifying. This is the property most likely to be quietly wrong. The anchor is
+checked twice: once at commissioning, when the contract is authored against a
+baseline that must publicly resolve (component ⑦), and again at admission
+(rule 3).
 
 ### 3.5 How the contract binds the chain
 
@@ -205,6 +248,16 @@ The VSA gains an `osera` block:
   }
 }
 ```
+
+**Conformance is binary at the gate.** `FULL` promotes; `PARTIAL` and `BREACH`
+never do (rule 13, unamended). They remain valid *findings* about what was
+delivered, but have no admission path — the contract is on a course toward
+smart-contract execution, and executable terms have no room for a discretionary
+middle state. An honest shortfall routes through **contract amendment**, not a
+softened verdict: the unfixable CVE moves to `explicitlyOutOfScope` with a stated
+reason, the maker re-countersigns, and delivery is `FULL` against a contract that
+tells the truth (`noteworthy-conformance-binary`,
+`artifact-contract-lifecycle` §3–§4).
 
 **Net effect:** the gate no longer asks "did the maker do good work?" It asks
 "did the output conform to a scope the maker committed to *before starting*,
@@ -251,6 +304,10 @@ promotion. A dissenting VSA is therefore **disqualifying, not outvoted**:
 investigation, not arithmetic. No single-checker design can produce this signal
 at all, and it is the strongest argument for the model.
 
+This is one of three places the same shape recurs — quorum, layout compilation,
+and the TUF root — generalized as `noteworthy-threshold-everywhere`: **no single
+key is load-bearing; threshold not majority; dissent disqualifying.**
+
 ### 3.7 Admission policy
 
 The gate resolves the attestation set for a candidate artifact digest `D`, then
@@ -292,6 +349,8 @@ Promote only if every rule holds.
  13. Resolve contract C = VSA.osera.contract.digest; C.status == ACCEPTED,
      signed by maker trust-anchor; VSA.osera.contract.conformance == "FULL";
      C.scope.cvesInScope ⊆ (CVEs marked fixed in L7 VEX).    [contract binding]
+ 14. Recompile layout L' locally from the signed contract C; digest(L') equals
+     the digest of the layout as distributed.       [layout-compile agreement]
 
      → any rule fails: DO NOT PROMOTE.
 ```
@@ -306,11 +365,27 @@ checker, rules 2 and 5 are superseded by:
       AND ∄ Vᵢ with digestMatch == false.            [zero-dissent quorum, §3.6]
 ```
 
+**Rule 14 (amendment 2026-07-21).** The layout compiler ① is **dual-sited and
+deterministic**: the alliance compiles, and the bank recompiles from the same
+signed contract and compares digests. Accepting an issuer-signed layout without
+recompiling would insert a *trusted compiler* into a design whose premise is
+verify-don't-trust — a signed layout is authenticated, not verified. Determinism
+is therefore a build requirement (fixed key ordering, no timestamps, no
+environment dependence, pinned version), and the compiler version rides in the
+`policy-object` so skew surfaces as a digest mismatch rather than silent
+divergence (`noteworthy-compiler-siting`).
+
+**Offline decidability.** Every rule above must be decidable from the evidence
+bundle alone. A rule that requires a live lookup is either wrong or evidence of a
+missing bundle element — the test that keeps hermeticity falsifiable
+(`artifact-evidence-bundle` §3).
+
 > **Provenance.** Rules 2', 5', and 13 are recovered verbatim from the source
 > design conversations. Rules 1–12 are a **reconstruction** — derived from the
 > chain (§3.1–§3.6) and its principles, not recovered from the original
-> enumerated ruleset (which did not persist). They are faithful to the design's
-> logic; review against the original if it resurfaces.
+> enumerated ruleset (which did not persist). Rule 14 is new (2026-07-21). They
+> are faithful to the design's logic; review against the original if it
+> resurfaces.
 
 ### 3.8 The legal stub
 
@@ -345,20 +420,26 @@ inside the bank, hermetic and offline, in two passes over a candidate artifact:
 Both passes consume the same resolved attestation set and produce a single
 promote / reject verdict — the `Gate` state in the lifecycle, recorded as an
 immutable `verdict` over the compiled `policy-object`s in the data model
-(`artifact-product-lifecycle`, `artifact-data-model` §4). The four build
-components that make this work:
+(`artifact-product-lifecycle`, `artifact-data-model` §4). The verdict pins the
+evidence bundle, trust-root version and trust path it was reached from, so the
+decision is self-contained for offline replay.
+
+The build components that make this work:
 
 - **① Contract → in-toto layout compiler.** Compiles the accepted L-1 contract
   into the in-toto layout the verifier enforces. OSERA-specific; exists nowhere
-  today. *(task-layout-compiler)*
+  today. **Dual-sited and deterministic** — run on both sides, with digest
+  agreement enforced as rule 14. *(task-layout-compiler)*
 - **② Rego semantic policy.** The meaning layer in-toto cannot read — CVEs-fixed
   ⊇ scope, k-of-n digest agreement, coverage ≥ threshold, conformance == FULL.
   Runs at the same gate, immediately after structural verification.
   *(task-rego-policy)*
 - **③ Attestation resolver / collector.** Discovers and collects the
   attestations attached to an artifact (OCI referrers / sigstore bundles keyed
-  to the digest) and feeds them into the gate. May shrink to configuration if
-  Archivista is adopted. *(task-attestation-resolver)*
+  to the digest), **assembles the evidence bundle** bank-side, and feeds it into
+  the gate. Assembly confers no authority — the bundle is a container, never a
+  credential — so ③ stays a resolver rather than a trusted packager. May shrink
+  to configuration if Archivista is adopted. *(task-attestation-resolver)*
 - **④ Bank-acceptance inspection harness.** The **L9** step *inside* the gate:
   runs the bank's own app-team contract/integration tests as an in-toto
   inspection at verification time, folding pass/fail into the promote-or-reject
@@ -383,11 +464,13 @@ it is admitted, and drives the sunset/re-verification cycle.
 The ledger backs the `Active`/`Sunset` states of the lifecycle. Its durable
 substrate is an **append-only, hash-chained event log** — `ledger-event`s, each
 carrying its own `sha256` and chaining to the prior event for its `candidateKey`
-(`issued → renewed → expired → retired`); `ledger-row` and `state-pointer` are
-**projections replayed** from that chain, not authoritative state, and `Expiring`
-is a computed view, never a stored status (`artifact-data-model` §2–§5). Event
-sourcing, not last-write, is what lets the bank answer "which bridge was in force
-in March, and what did it cover?" — the audit question a mutable row cannot.
+(`issued → renewed → expired → retired`, plus `verifier-revoked`);
+`ledger-row` and `state-pointer` are **projections replayed** from that chain,
+not authoritative state, and `Expiring` is a computed view, never a stored status
+(`artifact-data-model` §2–§5). Event sourcing, not last-write, is what lets the
+bank answer "which bridge was in force in March, and what did it cover?" — the
+audit question a mutable row cannot — and equally "which admitted candidates rest
+on a verifier whose key was later revoked?"
 
 ### 5.1 Three replay-logs, one pattern
 
@@ -419,10 +502,17 @@ recovery after key compromise (`noteworthy-ledger-substrate`).
 
 | Bucket | Items |
 |---|---|
-| **Build** (ours; nowhere off-the-shelf) | ① layout compiler · ② Rego semantic policy · ③ attestation resolver · ④ acceptance inspection harness · ⑤ exposure/sunset tracker · ⑥ lifecycle console (UI over the mutable projections; `task-lifecycle-ui`) |
-| **Integrate** (proven OSS, wired in) | `in-toto-verify` (structural) · Witness/OPA (Rego eval) · cosign / Sigstore (resolution + signature) · Archivista (attestation store, optional) · the bank's existing CMDB (ledger substrate) |
+| **Build — consumer side** (bank) | ① layout compiler (shared, dual-sited) · ② Rego semantic policy · ③ attestation resolver + bundle assembly · ④ acceptance inspection harness · ⑤ exposure/sunset tracker · ⑥ lifecycle console (UI over the mutable projections; `task-lifecycle-ui`) |
+| **Build — issuer side** (alliance) | ⑦ contract authoring UI (`task-contract-authoring`) · ⑧ contract issuance & countersignature (`task-contract-issuance`) · ⑨ verifier registry & TUF trust root (`task-verifier-registry`) · ① layout compiler (same deterministic compiler, issuer siting) |
+| **Integrate** (proven OSS, wired in) | `in-toto-verify` (structural) · Witness/OPA (Rego eval) · cosign / Sigstore (resolution + signature) · TUF (trust root) · Archivista (attestation store, optional) · the bank's existing CMDB (app inventory) |
 | **Not ours** (upstream, integrated-against) | Moderne's patching pipeline (L0–L7 production) · the verifier quorum's rebuild infra (L8) · Maven Central / public upstream repos (the anchor) |
-| **The gap** (unresolved) | Trust-root governance & key rotation for the verifier registry (TUF-shaped) — who curates the registry, how keys rotate, what happens on compromise |
+| **The gap** (unresolved) | Alliance **governance** — who may issue a contract, who sits in the trust-root threshold, what `k`/`m`/`n` are, what happens procedurally on suspected compromise. The *mechanism* is now built (⑨); the *policy* is formation-stage alliance business |
+
+Trust-root governance has moved from *the gap* to *build* in mechanism only:
+`noteworthy-trust-root-ownership` fixes the root as **k-of-m co-signed** across
+the alliance and member institutions (so root re-signing survives any one party
+disappearing), with **TUF delegation** for bilateral bank↔vendor namespaces. What
+remains open is who those parties are and what the thresholds should be.
 
 ---
 
@@ -439,13 +529,13 @@ The load-bearing standards, mapped to the level or component that consumes each.
 | ★ **SLSA** | L3 | Build-provenance predicate + levels; the vocabulary the risk function already knows |
 | ★ **VSA** | L8 | Exactly the verifier's attestation — records the result of checking someone else's artifact |
 | ★ **DSSE** | all | The signing envelope in-toto / Sigstore attestations ride in |
-| ★ **Sigstore** (Cosign/Fulcio/Rekor) | ③ resolver | Keyless signing, cert authority, transparency log; `cosign download attestation <digest>` is the resolution path |
+| ★ **Sigstore** (Cosign/Fulcio/Rekor) | ③ resolver, ⑧ issuance | Keyless signing, cert authority, transparency log; `cosign download attestation <digest>` is the resolution path; the log also fixes the delivery manifest in time |
 | ★ **Reproducible Builds** | L8, §3.6 | Bit-for-bit rebuild → digest equality; the Schelling point behind the quorum |
+| ★ **TUF** | ⑨ registry, gate | Trust root, key rotation, compromise recovery for the verifier registry — **now built, not a gap**: k-of-m co-signed root, delegated targets for bilateral namespaces, snapshot pinned into the evidence bundle. Also the registry's replay-log mechanism (§5.1) |
 | ★ **CycloneDX** (authoritative) / **SPDX** (projection) | L6 | CycloneDX is the source of truth — security/backpatch-native, purl-first, its `pedigree` models the is-hardening-of link directly; SPDX license IDs are embedded inside it, and an SPDX view is emitted on demand. VEX is **not** carried inline — it stays OpenVEX at L7. Decided, `noteworthy-sbom-format` |
 | ★ **OpenVEX** / **CSAF 2.0** | L7 | "fixed, not exploitable, here's the evidence" — must reference L5 to be evidence, not a claim; CSAF is the regulator-facing variant. Authoritative VEX layer (not CycloneDX-VEX) |
 | ★ **Rego / OPA** (via Witness) | ② policy | The semantic gate the meaning-checks run in |
-| **OSV schema** | L1, ⑤ ledger | Vuln records keyed by `purl` — cleaner than CPE for the exposure graph |
-| **TUF** | the-gap | Trust-root, key rotation, compromise recovery for the verifier registry — the unresolved governance question; also the registry's replay-log mechanism (§5.1) |
+| **OSV schema** | L1, ⑤ ledger, ⑦ authoring | Vuln records keyed by `purl` — cleaner than CPE for the exposure graph; the publicly re-derivable source for `cvesInScope` at commissioning |
 | **CPE** | *trap* | Why scanners still fire on a backpatched artifact — CPE match ignores the patch. The `-osera.N` purl turns that mismatch into an explicit, machine-readable is-hardening-of relationship (declared in L2/L6/L7) rather than a hidden coordinate collision. A problem to suppress (via VEX), not a tool to use |
 
 ---
@@ -465,24 +555,52 @@ acceptance-tested inside our own environment — and we can re-run that decision
 offline on demand." That is a DORA/CRA-grade control statement, and it is the
 reason the maker/checker split, the L-1 contract, and the quorum all exist.
 
+It holds **without qualification across trust paths**: an artifact arriving over
+a delegated bilateral namespace faces the identical admission policy, with the
+path recorded on the verdict for attribution rather than treated as a weaker tier
+(`noteworthy-trust-root-ownership`).
+
 ---
 
 ## 9. Open questions / decisions
 
 Cross-cutting; several are now load-bearing elsewhere — the data model
-(`artifact-data-model` §6) and the lifecycle (`artifact-product-lifecycle` §8).
+(`artifact-data-model` §6), the candidate lifecycle
+(`artifact-product-lifecycle` §8) and the contract lifecycle
+(`artifact-contract-lifecycle` §7).
 
-- **CycloneDX vs SPDX** for L6 — **decided: CycloneDX authoritative**, SPDX
-  license IDs embedded, SPDX projection emitted on demand; VEX stays OpenVEX at
-  L7. See `noteworthy-sbom-format`.
-- **Trust-root governance (TUF-shaped)** — who curates the verifier registry,
-  how keys rotate, what happens on compromise. The biggest open gap.
-- **Admission ruleset review** — §3.7 rules 1–12 are reconstructed (rules 2', 5',
-  13 recovered verbatim); confirm against the original enumeration if it
+**Decided:**
+
+- **CycloneDX vs SPDX** for L6 — CycloneDX authoritative, SPDX license IDs
+  embedded, SPDX projection on demand; VEX stays OpenVEX at L7.
+  `noteworthy-sbom-format`.
+- **Two-sited scope** — issuer-side tooling in scope alongside the bank-side
+  gate. `noteworthy-two-sited-scope`.
+- **Layout compiler siting** — dual-sited, deterministic, digest agreement as
+  rule 14. `noteworthy-compiler-siting`.
+- **Trust-root ownership** — k-of-m co-signed root; delegation for bilateral
+  paths; no weaker tier. `noteworthy-trust-root-ownership`.
+- **Conformance** — binary at the gate; amendment is the route for shortfall.
+  `noteworthy-conformance-binary`.
+
+**Open:**
+
+- **Alliance governance** — who may issue a contract; who sits in the trust-root
+  threshold; concrete `k`, `m`, `n`; verifier onboarding/offboarding; procedure
+  on suspected compromise. The biggest remaining gap, and not an engineering one.
+- **Evidence-bundle format** — OCI artifact with referrers, or tar + manifest for
+  air-gapped transfer. `artifact-evidence-bundle` §6.
+- **Bundle freshness policy** — maximum permitted age of a trust-root snapshot or
+  log checkpoint, since offline verification forfeits TUF's freshness guarantee.
+- **Revocation semantics** — does `verifier-revoked` force re-verification or
+  record an exposure? Recommendation: the latter, with a review trigger.
+- **Transparency log** — shared FINOS-operated Rekor instance or the public one.
+  Now on the issuer-side critical path, since the delivery manifest is fixed in
+  time by a log entry.
+- **Admission ruleset review** — §3.7 rules 1–12 are reconstructed (2', 5', 13
+  recovered verbatim; 14 new); confirm against the original enumeration if it
   resurfaces.
 - **Ingest class (b) depth** — how far the gate collapses L0–L7 for FINOS-native
   projects (§2) is sketched, not specified.
 - **Archivista adoption** — decides whether ③ is a real build or mostly
   configuration.
-- **Quorum parameters** — concrete `k` and `n`, and the verifier onboarding /
-  offboarding process.
