@@ -55,6 +55,8 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-notes-referent-fixspec | notes | noteworthy:noteworthy-referent-binding | artifact:artifact-ri-fixtures-spec | |
 | e-notes-referent-arch | notes | noteworthy:noteworthy-referent-binding | artifact:artifact-architecture | |
 | e-dec-ri-mockup | decomposes | node:goal-reference-implementation | node:task-lifecycle-mockup | |
+| e-prod-gate-conformance | produces | node:goal-admission-gate | noteworthy:noteworthy-conformance-binary | |
+| e-notes-conformance-arch | notes | noteworthy:noteworthy-conformance-binary | artifact:artifact-architecture | |
 
 ## Proposed — not yet accepted
 
@@ -86,3 +88,12 @@ land in the table above on acceptance of the 2026-07-21 issuer-side batch
 | e-prod-issuer-threshold | produces | node:goal-issuer-side | noteworthy:noteworthy-threshold-everywhere | |
 | e-notes-threshold-arch | notes | noteworthy:noteworthy-threshold-everywhere | artifact:artifact-architecture | |
 | e-rel-threshold-ledger | relates | noteworthy:noteworthy-threshold-everywhere | noteworthy:noteworthy-ledger-substrate | 0.8 |
+| e-notes-conformance-contractlc | notes | noteworthy:noteworthy-conformance-binary | artifact:artifact-contract-lifecycle | |
+| e-notes-conformance-authoring | notes | noteworthy:noteworthy-conformance-binary | node:task-contract-authoring | |
+| e-prod-gate-bundle | produces | node:goal-admission-gate | artifact:artifact-evidence-bundle | |
+| e-rel-bundle-arch | relates | artifact:artifact-evidence-bundle | artifact:artifact-architecture | 0.9 |
+| e-rel-bundle-datamodel | relates | artifact:artifact-evidence-bundle | artifact:artifact-data-model | 0.85 |
+| e-rel-bundle-lifecycle | relates | artifact:artifact-evidence-bundle | artifact:artifact-product-lifecycle | 0.8 |
+| e-rel-bundle-resolver | relates | artifact:artifact-evidence-bundle | node:task-attestation-resolver | 0.9 |
+| e-notes-twosited-bundle | notes | noteworthy:noteworthy-two-sited-scope | artifact:artifact-evidence-bundle | |
+| e-notes-trustroot-bundle | notes | noteworthy:noteworthy-trust-root-ownership | artifact:artifact-evidence-bundle | |
