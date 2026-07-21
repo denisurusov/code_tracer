@@ -57,15 +57,6 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-dec-ri-mockup | decomposes | node:goal-reference-implementation | node:task-lifecycle-mockup | |
 | e-prod-gate-conformance | produces | node:goal-admission-gate | noteworthy:noteworthy-conformance-binary | |
 | e-notes-conformance-arch | notes | noteworthy:noteworthy-conformance-binary | artifact:artifact-architecture | |
-
-## Proposed — not yet accepted
-
-Edges below carry `review: proposed`, overriding the file-level default. They
-land in the table above on acceptance of the 2026-07-21 issuer-side batch
-(`conversationId: konspekt-architecture-tooling`).
-
-| id | kind | from | to | weight |
-|----|------|------|----|--------|
 | e-dec-gate-issuer | decomposes | node:goal-admission-gate | node:goal-issuer-side | |
 | e-dec-issuer-authoring | decomposes | node:goal-issuer-side | node:task-contract-authoring | |
 | e-dec-issuer-issuance | decomposes | node:goal-issuer-side | node:task-contract-issuance | |

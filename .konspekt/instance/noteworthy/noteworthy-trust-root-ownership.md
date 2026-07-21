@@ -3,24 +3,24 @@ id: noteworthy-trust-root-ownership
 type: noteworthy
 title: Decision — trust root co-signed (alliance + member banks); delegation for bilateral paths
 status: active
-review: proposed
+review: accepted
 summary:
   origin: machine
-  pinned: false
-  updatedAt: 2026-07-21T14:00:00Z
+  pinned: true
+  updatedAt: 2026-07-21T17:25:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   sourceRef: c284e12b3f1e77a4f712644a85aba7e8195b4648
   contentHash: c284e12b3f1e77a4f712644a85aba7e8195b4648
   timestamp: 2026-07-21T14:00:00Z
 createdAt: 2026-07-21T14:00:00Z
-updatedAt: 2026-07-21T14:00:00Z
+updatedAt: 2026-07-21T17:25:00Z
 ```
 # Decision: trust-root ownership, continuity, and delegated bilateral paths
 
 **Decision.** Verifier-registry curation and the TUF trust root are **built, and
-built by us**, on the issuer side. Ownership splits into two distinct mechanisms
-that must not be conflated:
+built by us**, on the issuer side (component ⑨). Ownership splits into two
+distinct mechanisms that must not be conflated:
 
 - **Continuity — root is k-of-m co-signed** across OSERA *and* participating
   member institutions. Member banks are **co-signers in the root threshold**,
@@ -29,6 +29,9 @@ that must not be conflated:
   vendor directly, over OSERA rails, receives a **delegated targets role scoped
   to its own namespace**. It signs for its own artifacts; other members' clients
   need not trust that namespace.
+
+**Applied** to `artifact-architecture` §6, §7, §8, §9 (commit `55d85de`) and
+`artifact-data-model` §4–§5 (commit `4e699f4`).
 
 **Why co-signing, not delegation, carries continuity.** TUF delegation runs
 *downward*: root delegates targets authority over a scoped path. **A delegate
@@ -59,16 +62,16 @@ refresh; the bank verifies offline and makes no live call at verify time. The
 resolution is the standing pattern in `noteworthy-referent-binding`: the verifier
 registry is a **mutable external referent**, so it crosses the perimeter as a
 **pinned, versioned snapshot** (frozen digest + advisory live URI), refreshed on
-a deliberate cadence. Consequently the **`verdict` must pin the trust-root
-version it verified against** — otherwise "a regulator can re-run this decision
-offline and reach the same verdict" becomes false the moment the registry
-changes.
+a deliberate cadence, carried inside `artifact-evidence-bundle`. Consequently the
+**`verdict` pins the trust-root version it verified against** — otherwise "a
+regulator can re-run this decision offline and reach the same verdict" becomes
+false the moment the registry changes.
 
 **Revocation after admission — newly modeled.** If a verifier key is revoked in
 month six, candidates admitted on VSAs it signed were validly admitted *at the
 time* and now rest on a compromised signer. The hash-chained ledger can answer
 "which admitted candidates depend on verifier X" (a last-write row could not),
-but nothing currently emits that fact. Adds a `ledger-event` kind
+but nothing previously emitted that fact. Adds a `ledger-event` kind
 `verifier-revoked`. **Open:** does revocation force re-verification, or record an
 exposure? Recommend record-an-exposure with a review trigger, on the same
 reasoning as `Expiring` being computed rather than stored.
@@ -77,14 +80,11 @@ reasoning as `Expiring` being computed rather than stored.
 answer: who sits in the root threshold, what `m` and `k` are, what quorum signs a
 root rotation, who may admit or remove a verifier, and what happens procedurally
 on suspected compromise. These are formation-stage alliance governance, not
-engineering, and they remain open.
+engineering, and they remain the-gap in `artifact-architecture` §6.
 
 **Accepted risk (human call, 2026-07-21).** A bank co-signing the trust root of a
 system it also consumes from is a conflict its own second line is expected to
 accept, on the grounds that the counterfactual is not a stricter regime but an
 unguarded one — banks ingest open source today without any of these controls.
 
-**Binds:** `artifact-architecture` §6 (trust-root governance moves *the gap* →
-*build*) and §9; `artifact-data-model` `verdict` gains `trustRootVersion` and
-`trustPath`, `ledger-event` gains kind `verifier-revoked`.
 **Resolves:** the TUF-shaped trust-root gap as *owned*; leaves its governance open.
