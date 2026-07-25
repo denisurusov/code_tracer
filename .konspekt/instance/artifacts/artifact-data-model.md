@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-21T19:40:00Z
+  updatedAt: 2026-07-25T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: 259d3019f66d621539c97fbba96ac8d3ad138e53
   contentHash: 259d3019f66d621539c97fbba96ac8d3ad138e53
   timestamp: 2026-07-17T17:45:00Z
 createdAt: 2026-07-17T17:45:00Z
-updatedAt: 2026-07-21T19:40:00Z
+updatedAt: 2026-07-25T00:00:00Z
 ```
 # code_tracer — Data model
 
@@ -32,6 +32,10 @@ schema mixin.
 > `362e1ebe2a81cdfabf6b106db12db1e3ade7531a`,
 > `62f7c4b932187a51625b047401a2925cb3b0715e`,
 > `19c83a6696b0385da970572660b26d3871318fad`.
+>
+> **Amendment 2026-07-25.** §2, §3 and §4 (`verdict.coreDigest`) amended for the
+> core/envelope split — excerpt `7aa6325730d0516102bfe4d0adffadbc846626f1`
+> (`noteworthy-bundle-split`).
 
 ## 1. Facets
 
@@ -63,7 +67,8 @@ element. It is a mapping onto `artifact-product-lifecycle`, not a facet.
 |---|:---:|:---:|:---:|:---:|:---:|---|---|
 | Attestations L-1…L9 | ✓ | ✓ | ✓ | ✓ | out (L9 in) | Commissioned→Adopted (accrue) | immutable |
 | Delivery manifest | ✓ | ✓ | ✓ | — | out | Delivered | immutable |
-| Evidence bundle | ✓ | ✓ | ✓ | — | spans | Verified→Resolved | immutable |
+| Evidence core | ✓ | ✓ | ✓ | — | out | Fulfilled | immutable |
+| Ingest envelope | — | ✓ | ✓ | — | in | Verified→Resolved | immutable |
 | Compiled layout ① + Rego policy ② | — | ✓ | ✓ | ✓ | in | Gate (compiled from L-1) | immutable |
 | Candidate version (digest + snapshot) | — | ~ purl | ✓ | — | spans | Commissioned (exists across all) | immutable |
 | Admission verdict (gate-run record) | ✓ | ~ | ✓ | ✓ | in | Gate | immutable |
@@ -90,7 +95,7 @@ not to store it.
 # IMMUTABLE record — content-addressed, stored sources-style (hash-named), append-only
 id:          <sha256>                 # identity IS the content address
 kind:        candidate-version | attestation | verdict | policy-object
-             | delivery-manifest | evidence-bundle
+             | delivery-manifest | evidence-core | ingest-envelope
 zone:        outside | inside
 bornPhase:   Drafted … Gate
 supersedes:  <id> | null              # chain-candidate link (lifecycle §5)
@@ -177,19 +182,26 @@ verdict                                        policy-object
   id:          <sha256 of verdict>               id:        <digest of compiled artifact>
   candidateRef:<candidate-version id>            kind:      layout ① | rego ②
   inputs:      {layoutRef, policyRef}            bornPhase: Gate (compiled from L-1)
-  bundleDigest:<evidence-bundle manifest>        signed:    {signer: bank}
-  trustRootVersion: <TUF snapshot version>       standard:  {validator: in-toto | rego}
-  trustPath:   osera-root | delegated:<bank>     compilerVersion: <for kind: layout>
+  coreDigest:  <evidence-core manifest>          signed:    {signer: bank}
+  bundleDigest:<ingest-envelope manifest>        standard:  {validator: in-toto | rego}
+  trustRootVersion: <TUF snapshot version>       compilerVersion: <for kind: layout>
+  trustPath:   osera-root | delegated:<bank>
   structural / semantic / l9: pass|fail
   decision:    admit | reject
   failingRule?:<rule #>   signed:{signer: bank}
 ```
 
-Three fields make the verdict **self-contained for replay**:
+Four fields make the verdict **self-contained for replay**:
 
-- **`bundleDigest`** — the exact evidence set the decision was reached from
-  (`artifact-evidence-bundle`), identical whether the bundle travelled as OCI or
-  as its tar projection.
+- **`coreDigest`** — the evidence set itself, sealed once by the issuer and
+  identical for every bank that admits this candidate
+  (`artifact-evidence-bundle` §1). It is the only field in the verdict two
+  members can compare directly, which is what makes "we admitted the same thing"
+  a checkable statement rather than an assertion.
+- **`bundleDigest`** — the ingest envelope this bank actually verified: the core
+  digest plus the trust material current at its own gate. Bank-local by
+  construction, and identical whether the envelope travelled as OCI or as its
+  tar projection.
 - **`trustRootVersion`** — the TUF snapshot verified against. Without it,
   "re-run offline and reach the same verdict" becomes false the moment the
   verifier registry changes. It is also what lets a past verdict *stand* when a
@@ -275,8 +287,9 @@ one link and everything above it is worthless (architecture §3.1, §3.4, §5.1)
   (§5) are this model's fixed inputs; each state names the element(s) it owns.
 - `artifact-contract-lifecycle` — the issuer-side machine; owns the contract
   draft and the delivery manifest.
-- `artifact-evidence-bundle` — the perimeter interface, referenced by
-  `verdict.bundleDigest`.
+- `artifact-evidence-bundle` — the perimeter interface: the shared **evidence
+  core** and the per-bank **ingest envelope**, referenced by
+  `verdict.coreDigest` and `verdict.bundleDigest`.
 - `artifact-architecture` §3 — the L-1…L9 chain this model gives record shapes
   to; it is the integrating overview across all four axes.
 
@@ -292,7 +305,11 @@ Decided:
   `noteworthy-candidate-key`.
 - **Governance modes** — L-1 carries `governance`; mode selects accountability
   and trust path, never admission strictness. `noteworthy-governance-modes`.
-- **Verdict replay fields** — `bundleDigest`, `trustRootVersion`, `trustPath`.
+- **Verdict replay fields** — `coreDigest`, `bundleDigest`, `trustRootVersion`,
+  `trustPath`.
+- **Bundle split** — issuer-sealed evidence core with one shared digest, per-bank
+  ingest envelope carrying the trust material and its freshness clock.
+  `noteworthy-bundle-split`.
 - **Revocation semantics** — exposure with review trigger, verdict stands.
   `noteworthy-revocation-semantics`.
 - **Quorum parameters** — `k = max(3, ceil(n/3))`, zero dissent, frozen at
