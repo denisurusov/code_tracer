@@ -35,7 +35,8 @@ schema mixin.
 >
 > **Amendment 2026-07-25.** §2, §3 and §4 (`verdict.coreDigest`) amended for the
 > core/envelope split — excerpt `7aa6325730d0516102bfe4d0adffadbc846626f1`
-> (`noteworthy-bundle-split`).
+> (`noteworthy-bundle-split`); §4 gains the `evidence-core` record shape —
+> excerpt `4c033a33595c2cf803123955559edfbeb6585d05` (`noteworthy-core-manifest`).
 
 ## 1. Facets
 
@@ -149,6 +150,30 @@ mixins); only `asserts` differs per level:
 | L7 VEX | hardened_digest | per cve: status=fixed, justifiedBy→L5 id |
 | L8 VSA | hardened_digest | verifier, rebuild.digestMatch, l4/l5 recheck, policyPassed, **log.checkpoint** (observed Rekor tree head + inclusion proofs), osera{contract{…,conformance}} — one record per verifier; the quorum is the *set* |
 | L9 acceptance | hardened_digest | bankTests.pass, harnessRunRef, promotedTo |
+
+The **evidence core** is the one immutable record that is a plain file rather
+than a signed envelope — a list of digests, identified by the digest of the list
+(`noteworthy-core-manifest`):
+
+```
+evidence-core
+  id:          <sha256 of canonical file bytes>   # = verdict.coreDigest
+  schema:      osera/evidence-core/v{N}
+  contractRef: <L-1 digest>
+  seq:         N                                  # 1 on first seal
+  supersedes:  <prior coreDigest> | null          # a later VSA arriving re-seals
+  elements[]:  { role, sha256, locator }          # role: delivery-manifest | L0…L8
+                                                  #     | layout | policy-bundle
+  sealedAt:    <timestamp>
+  logEntry:    <rekor index over id>              # the freeze
+```
+
+It carries no signature of its own — every element it names is independently
+signed, and a wrong locator fails against the `sha256` beside it. Canonical
+serialization (RFC 8785 + trailing LF) is part of the schema, because the digest
+of the bytes is the identity. Published at
+`cores/{contractId}/v{N}/{seq}.json`; the git blob SHA of that path is a locator
+and no admission rule keys on it.
 
 **The L-1 `governance` block** makes the commissioning mandate checkable rather
 than assumed — the same move L-1 already made for scope and corpus:
@@ -310,6 +335,8 @@ Decided:
 - **Bundle split** — issuer-sealed evidence core with one shared digest, per-bank
   ingest envelope carrying the trust material and its freshness clock.
   `noteworthy-bundle-split`.
+- **Core form** — one canonical JSON file in the master repo, `sha256` over its
+  bytes as identity, Rekor entry as the freeze. `noteworthy-core-manifest`.
 - **Revocation semantics** — exposure with review trigger, verdict stands.
   `noteworthy-revocation-semantics`.
 - **Quorum parameters** — `k = max(3, ceil(n/3))`, zero dissent, frozen at
