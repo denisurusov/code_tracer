@@ -130,3 +130,10 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-notes-bundlesplit-resolver | notes | noteworthy:noteworthy-bundle-split | node:task-attestation-resolver | |
 | e-rel-bundlesplit-freshness | relates | noteworthy:noteworthy-bundle-split | noteworthy:noteworthy-bundle-freshness | 0.95 |
 | e-rel-bundlesplit-bundlefmt | relates | noteworthy:noteworthy-bundle-split | noteworthy:noteworthy-bundle-format | 0.9 |
+| e-prod-gate-coremanifest | produces | node:goal-admission-gate | noteworthy:noteworthy-core-manifest | |
+| e-notes-coremanifest-bundle | notes | noteworthy:noteworthy-core-manifest | artifact:artifact-evidence-bundle | |
+| e-notes-coremanifest-topology | notes | noteworthy:noteworthy-core-manifest | artifact:artifact-deployment-topology | |
+| e-notes-coremanifest-datamodel | notes | noteworthy:noteworthy-core-manifest | artifact:artifact-data-model | |
+| e-rel-coremanifest-bundlesplit | relates | noteworthy:noteworthy-core-manifest | noteworthy:noteworthy-bundle-split | 0.95 |
+| e-rel-coremanifest-bundlefmt | relates | noteworthy:noteworthy-core-manifest | noteworthy:noteworthy-bundle-format | 0.9 |
+| e-rel-coremanifest-authform | relates | noteworthy:noteworthy-core-manifest | noteworthy:noteworthy-authoritative-form | 0.85 |
