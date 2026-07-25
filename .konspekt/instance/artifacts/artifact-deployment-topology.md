@@ -25,7 +25,9 @@ them, who reads them, and when. Diagram: `docs/resource/code-tracer-topology.svg
 
 > **Amendment 2026-07-25.** §4 and the §5 bundle-store and gate-runner rows
 > reflect the core/envelope split — excerpt `7aa6325730d0516102bfe4d0adffadbc846626f1`
-> (`noteworthy-bundle-split`).
+> (`noteworthy-bundle-split`). §1 and the §3 master-repo row reflect the core
+> being a canonical JSON file — excerpt `4c033a33595c2cf803123955559edfbeb6585d05`
+> (`noteworthy-core-manifest`).
 
 **Every store named here must be physically real** — a file at a path in a named
 repository, an object in a bucket, a table in a database, or a running third-party
@@ -53,11 +55,18 @@ countersigned.
 ## 1. The headline correction
 
 The framing this design started from was "two GitHubs, Maven, and all." That is
-not the shape. **Git appears twice and is load-bearing in neither** — both are
-publishing surfaces, neither is on the verification path. **The spine is OCI
-registries**, with the public package registry for the artifact's purl type as
-the uncontrolled anchor. Artifact hosting carries this system; source hosting is
-peripheral.
+not the shape, though git turns out to matter more than the first correction
+allowed. **The alliance master repo publishes two authoritative files** — the
+signed L-1 contract and the evidence core (`noteworthy-core-manifest`) — while
+the maker's git holds recipes and is a publishing surface only.
+
+**Neither repository's own hashing is load-bearing.** Both files are identified
+by `sha256` over their canonical bytes; git supplies a path, a history, and a
+review workflow, and supplies no identity. That is what keeps the original
+correction true in substance: what carries the system is the digest, and the
+store is replaceable. **The spine for bytes is still OCI registries** —
+attestation blobs, envelopes, transport — with the public package registry for
+the artifact's purl type as the uncontrolled anchor.
 
 ## 2. Public upstream — read-only, uncontrolled
 
@@ -76,8 +85,9 @@ Anchor strength is not uniform — npm and PyPI permit deletion, so those need a
 
 | Store | Physically | Path / shape |
 |---|---|---|
-| **Master repo** | one git repository, e.g. `github.com/finos/osera-spec` | `schemas/contract/v{N}.json` · `policy/admission-v{N}.rego` · `compiler/` (source of ①) · tagged + released per version, **never deleted** |
+| **Master repo** | one git repository, e.g. `github.com/finos/osera-spec` | `schemas/contract/v{N}.json` · `schemas/core/v{N}.json` · `policy/admission-v{N}.rego` · `compiler/` (source of ①) · `contracts/{contractId}/v{N}.json` · `cores/{contractId}/v{N}/{seq}.json` · tagged + released per version, **never deleted** |
 | **Contract store** | **not a separate service.** The signed L-1 is a DSSE-wrapped in-toto statement. Published as a file in the master repo (`contracts/{contractId}/v{N}.json`) for human retrieval; **authoritative copy is the digest**, logged in Rekor and carried in the bundle | file + log entry |
+| **Evidence-core store** | **not a separate service.** One canonical JSON file per seal at `cores/{contractId}/v{N}/{seq}.json`, RFC 8785 + trailing LF, listing each element's `sha256` and locator. `coreDigest = sha256(file)`, frozen by a Rekor entry; the git blob SHA is a locator and nothing keys on it (`noteworthy-core-manifest`) | file + log entry |
 | **TUF metadata** | **static files over HTTPS** — object storage + CDN (S3/GCS/R2). TUF is inherently a file tree, not a service | `root.json`, `timestamp.json`, `snapshot.json`, `targets.json`, `delegations/{bank}.json` |
 | **Rekor** | a **FINOS-operated Rekor server** — which means Trillian plus a backing SQL database, an availability commitment, and a key custody obligation. Not a small operational undertaking | append-only Merkle log |
 | **Fulcio / CA** | either the public Sigstore Fulcio, or a FINOS-operated instance. **UNDECIDED** — public is simpler; a private CA fits embargo handling | X.509 chain |
