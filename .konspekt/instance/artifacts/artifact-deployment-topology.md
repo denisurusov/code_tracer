@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-21T20:35:00Z
+  updatedAt: 2026-07-25T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   sourceRef: a587d0575d65f1fb3c3ef862c269af41ea2e94df
   contentHash: a587d0575d65f1fb3c3ef862c269af41ea2e94df
   timestamp: 2026-07-21T21:00:00Z
 createdAt: 2026-07-21T21:00:00Z
-updatedAt: 2026-07-21T20:35:00Z
+updatedAt: 2026-07-25T00:00:00Z
 ```
 # code_tracer — Physical topology
 
@@ -22,6 +22,10 @@ updatedAt: 2026-07-21T20:35:00Z
 the system *means*; this one describes where the bytes actually live, who writes
 them, who reads them, and when. Diagram: `docs/resource/code-tracer-topology.svg`
 (page 4 of the set indexed in `docs/resource/README.md`).
+
+> **Amendment 2026-07-25.** §4 and the §5 bundle-store and gate-runner rows
+> reflect the core/envelope split — excerpt `7aa6325730d0516102bfe4d0adffadbc846626f1`
+> (`noteworthy-bundle-split`).
 
 **Every store named here must be physically real** — a file at a path in a named
 repository, an object in a bucket, a table in a database, or a running third-party
@@ -84,29 +88,40 @@ Anchor strength is not uniform — npm and PyPI permit deletion, so those need a
 
 ## 4. The perimeter
 
-Exactly one thing crosses: the **evidence bundle** — an OCI image index, or a
-deterministic tar with the same manifest digest when air-gapped. A copy, not a
-protocol; a container, never a credential.
+What crosses is the **evidence core** — an OCI image index, or a deterministic
+tar with the same manifest digest when air-gapped. The crossing is a copy rather
+than a protocol, and sealing a container confers no authority on its contents.
 
-**If the gate needs it, it ships in the bundle.** This is why the master repo,
+**Two containers, two sites (`noteworthy-bundle-split`).** The issuer seals the
+core once at Fulfilled — L-1, L0–L8, the compiled layout and the policy bundle —
+and its digest is the same for every consuming bank, which is what lets two
+members cite one evidence set to each other and to a supervisor. Each bank's ③
+then seals its own **ingest envelope** around that core digest: trust-root
+snapshot, checkpoint set, Fulcio chain, and the local artifact locator. Evidence
+is shared because it is frozen; trust material is per-bank because its clock runs
+at that bank's gate.
+
+**If the gate needs it, it ships in one of the two.** This is why the master repo,
 authoritative for schemas and policy, is *never read at verify time*: the schema
-and its matching policy bundle ship **pinned by digest inside the bundle**, with
+and its matching policy bundle ship **pinned by digest inside the core**, with
 the repo as the publication source and re-derivation target.
 
 **Resolution is online; verification is offline.** The attestation index is read
-by ③ *before* the bundle is sealed, which is why a central index does not breach
-hermeticity.
+by ③ *before* the envelope is sealed, which is why a central index does not
+breach hermeticity.
 
-Freshness: TUF snapshot ≤ 7 days, checkpoint set ≤ 24 hours.
+Freshness applies to the envelope: TUF snapshot ≤ 7 days, checkpoint set ≤ 24
+hours. The core has no clock, so it may cross ahead of the envelope on any
+schedule — including, for an air-gapped estate, well ahead of it.
 
 ## 5. Bank side
 
 | Store | Physically | Notes |
 |---|---|---|
 | **Quarantine registry** | a separate repository in the bank's existing Artifactory/Harbor, or a distinct namespace | **exactly one reader — the gate.** A control, not a convenience: any other reader means an app team can consume an unadmitted artifact |
-| **OCI bundle store** | the bank's OCI registry (Harbor/Artifactory/zot) | immutable; blob sharing is why trust material is stored once, not per bundle |
+| **OCI bundle store** | the bank's OCI registry (Harbor/Artifactory/zot) | immutable; holds the mirrored **cores** and this bank's **envelopes**. Blob sharing is why one core and one trust-root snapshot are stored once and referenced by every envelope over them |
 | **Trust material store** | a **directory on disk under configuration management**, refreshed on a schedule — not a service | `tuf/` snapshot, `fulcio/` roots, `checkpoints/`, `schema/`, `policy/` |
-| **Gate runner** | a CI job or container invoking `in-toto-verify` then Witness/OPA; stateless | reads the bundle and nothing else |
+| **Gate runner** | a CI job or container invoking `in-toto-verify` then Witness/OPA; stateless | reads one envelope and the core it names, and nothing else |
 | **Verdict store** | content-addressed files (`verdicts/{sha256}.json`) in object storage or an OCI artifact. **UNDECIDED** — file tree is simpler; OCI keeps one storage technology | immutable |
 | **CI executor** | the bank's existing CI (Jenkins/GitLab/GHA runner) running ④ | writes L9; never leaves the bank |
 | **Golden repo** | the bank's existing repository manager — Nexus/Artifactory, ecosystem-native (Maven repo for jars, npm registry for packages) | the one path to consumption |
@@ -141,8 +156,12 @@ sits beside it rather than replacing it.
   that verification is a duty, which makes the rebuild harness a **distributable
   package rather than a hosted service**. Uncosted.
 - **Air-gapped variant** — the tar projection plus a 24-hour checkpoint clock
-  implies a courier process and a **staging host on each side of the perimeter**,
-  on a daily tempo.
+  implies a courier process and a **staging host on each side of the perimeter**.
+  Only the envelope is on the daily tempo; cores move on their own schedule and
+  can be batched.
+- **Core mirroring and retention** — where a bank keeps the cores it has
+  admitted against, and what it does when a core named by a standing verdict is
+  no longer served by the issuer (`artifact-evidence-bundle` §7).
 - **Fulcio siting**, **verdict store**, **ledger store** — marked UNDECIDED above.
 - **Index/log reconciliation** — something must periodically replay Rekor and
   confirm the index is complete. Whose job, and how often.
@@ -151,7 +170,7 @@ sits beside it rather than replacing it.
 
 - `artifact-architecture` — §1's zones and §6's component register are the
   logical counterpart; ①–⑨ are the services acting on these stores.
-- `artifact-evidence-bundle` — defines what crosses §4.
+- `artifact-evidence-bundle` — defines the core and the envelope that cross §4.
 - `artifact-data-model` — defines the records these stores hold.
 - `artifact-contract-lifecycle` / `artifact-product-lifecycle` — define *when*
   each write happens.
