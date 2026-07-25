@@ -123,3 +123,10 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-rel-index-bundlefmt | relates | noteworthy:noteworthy-attestation-index | noteworthy:noteworthy-bundle-format | 0.9 |
 | e-prod-gate-paper | produces | node:goal-admission-gate | artifact:artifact-paper-outline | |
 | e-rel-paper-arch | relates | artifact:artifact-paper-outline | artifact:artifact-architecture | 0.85 |
+| e-prod-gate-bundlesplit | produces | node:goal-admission-gate | noteworthy:noteworthy-bundle-split | |
+| e-notes-bundlesplit-bundle | notes | noteworthy:noteworthy-bundle-split | artifact:artifact-evidence-bundle | |
+| e-notes-bundlesplit-topology | notes | noteworthy:noteworthy-bundle-split | artifact:artifact-deployment-topology | |
+| e-notes-bundlesplit-datamodel | notes | noteworthy:noteworthy-bundle-split | artifact:artifact-data-model | |
+| e-notes-bundlesplit-resolver | notes | noteworthy:noteworthy-bundle-split | node:task-attestation-resolver | |
+| e-rel-bundlesplit-freshness | relates | noteworthy:noteworthy-bundle-split | noteworthy:noteworthy-bundle-freshness | 0.95 |
+| e-rel-bundlesplit-bundlefmt | relates | noteworthy:noteworthy-bundle-split | noteworthy:noteworthy-bundle-format | 0.9 |
