@@ -7,22 +7,22 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-17T19:40:00Z
+  updatedAt: 2026-07-26T18:00:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: 424df10e62cab63963dfe1759ddb248cc9236020
   contentHash: 424df10e62cab63963dfe1759ddb248cc9236020
   timestamp: 2026-07-17T19:40:00Z
 createdAt: 2026-07-17T19:40:00Z
-updatedAt: 2026-07-17T19:40:00Z
+updatedAt: 2026-07-26T18:00:00Z
 ```
 # Decision: append-only hash-chained logs (ledger substrate; registry TUF)
 
 **Decision.** The event-sourced ledger runs on an **append-only, hash-chained
 event log** — not an event-store product (Kafka/EventStoreDB/Axon) and not a
 consensus blockchain. Its durable facts are `ledger-event`s: each carries its own
-`sha256`, references a `candidate-version`, and hash-chains to the prior event
-for its `candidateKey` (`issued → renewed → expired → retired`). `ledger-row`
+`sha256`, references a package record, and hash-chains to the prior event
+for its `lineKey` (`issued → renewed → expired → retired`). `ledger-row`
 and `state-pointer` are **projections** replayed from that chain, not
 authoritative state.
 
