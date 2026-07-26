@@ -19,28 +19,49 @@ the links.
 
 ## The design artifacts
 
-The design is factored into three axes — evidence, product, and records — plus
-the scope of the implementation that realizes them. Read them in this order.
+The design is factored into evidence, project, package/product, and records, plus
+the interface between the two sides and the scope of the implementation that
+realizes them. Read them in this order.
 
 | Artifact | Covers | Review |
 |---|---|---|
 | [Architecture & Design](../.konspekt/instance/artifacts/artifact-architecture.md) | The integrating overview, and home of the **evidence axis**: the L-1…L9 attestation chain, the anchor problem, the k-of-n quorum, admission policy, the gate, the ledger, and the component register. Start here. | accepted |
-| [Product lifecycle](../.konspekt/instance/artifacts/artifact-product-lifecycle.md) | The **product axis**: the candidate state machine from Commissioned to Sunset, the outside/inside boundary, and why a renewal is a superseding record rather than a status change. | accepted |
+| [Project lifecycle](../.konspekt/instance/artifacts/artifact-contract-lifecycle.md) | The **project axis**, issuer-side: Drafted through Fulfilled plus three terminals, what Accepted freezes, and amendment as the only route for a shortfall. | accepted |
+| [Package and product lifecycles](../.konspekt/instance/artifacts/artifact-product-lifecycle.md) | The two machines that run after the freeze: the digest-keyed **package** machine (Built → Adopted, or Rejected) and the lineage-keyed **product** machine (Active, Sunset, Retired), plus the renewal loop. | accepted |
+| [Evidence bundle](../.konspekt/instance/artifacts/artifact-evidence-bundle.md) | The **perimeter interface**: the delivery manifest, the issuer-assembled evidence core, and the bank-assembled ingest envelope — what crosses, who seals it, and which clock applies. | accepted |
 | [Data model](../.konspekt/instance/artifacts/artifact-data-model.md) | The **records axis**: one schema per state, organized by facets. Immutable content-addressed records versus the append-only operational log and the projections replayed from it. | accepted |
+| [Deployment topology](../.konspekt/instance/artifacts/artifact-deployment-topology.md) | The physical stores behind the logical model, and the air-gap cadence. | accepted |
 | [Reference implementation scope](../.konspekt/instance/artifacts/artifact-reference-implementation.md) | What the walking skeleton must prove, the in/out boundary, the six build phases, and the acceptance criteria. | accepted |
 | [RI fixture spec](../.konspekt/instance/artifacts/artifact-ri-fixtures-spec.md) | The synthetic test corpus: one backpatch with every value fixed, the L0–L9 set, and the known-bad variants each expected to be refused by a named rule. **A living draft** — open items in §9. | proposed |
+| [Paper outline](../.konspekt/instance/artifacts/artifact-paper-outline.md) | Structure of the working paper. | accepted |
 
 Decisions with their rejected alternatives are recorded separately under
 `.konspekt/instance/noteworthy/`, and the goals and tasks they attach to under
 `.konspekt/instance/nodes/`. The whole graph starts at
 [`project.md`](../.konspekt/instance/project.md).
 
+## The lifecycle note
+
+[Lifecycle](osera-lifecycle.md) is the one note here that is **current rather
+than historical**: a step-by-step synthesis of the three machines — project,
+package, product — with the terminology, the commissioning modes, the perimeter
+crossing, the gate sequence, and the renewal rules, written as bullets. It
+tracks the artifacts rather than the working group, and is kept in step with
+them.
+
+Its vocabulary is fixed by
+[`noteworthy-lifecycle-nouns`](../.konspekt/instance/noteworthy/noteworthy-lifecycle-nouns.md):
+product, package, project, contract — with *candidate* retired, *maker* renamed
+to *provider*, and *mutualized* renamed to *team*.
+
 ## The working-group notes
 
 Written for the OSERA formation working group rather than for this repository.
 Each was **reconstructed on 2026-07-17** from design conversations that were not
 persisted, and each carries a provenance note naming the sections that survived
-intact and those that are partial. Treat the marked sections as incomplete.
+intact and those that are partial. Treat the marked sections as incomplete, and
+note that all four predate the vocabulary reconciliation above — they still say
+*maker* and *candidate*.
 
 | Note | Covers |
 |---|---|
@@ -49,6 +70,12 @@ intact and those that are partial. Treat the marked sections as incomplete.
 | [Attestation chain](osera-attestation-chain.md) | The L0–L9 chain, core principles, the anchor problem, admission rules, and quorum verification. **Superseded** — now inlined and extended as [Architecture §3](../.konspekt/instance/artifacts/artifact-architecture.md); kept for the working-group framing and its open questions. |
 | [Standards register](osera-standards-register.md) | Standards, formats and protocols across the lifecycle, with the load-bearing ones starred. §6–§9 are partial. |
 | [Bank schematic](osera-bank-schematic.svg) | Diagram of the ingestion path. |
+
+## Figures
+
+`resource/` carries the working-paper figures. `p1-lifecycle.svg` is the
+lifecycle page; it still draws the single candidate machine and is **pending
+redraw** against the project/package/product split.
 
 ## The mockup
 
@@ -64,6 +91,9 @@ Incomplete against its own brief: the refusal case is not yet drawn.
 
 **"What is this project?"** — the [root README](../README.md), then
 [Architecture](../.konspekt/instance/artifacts/artifact-architecture.md).
+
+**"How does the whole thing run, start to finish?"** —
+[Lifecycle](osera-lifecycle.md), which is the shortest complete pass.
 
 **"How does admission actually work?"** —
 [Backpatch contract](osera-backpatch-contract.md) for what is agreed, then
