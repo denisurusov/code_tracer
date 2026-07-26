@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-25T00:00:00Z
+  updatedAt: 2026-07-26T18:30:00Z
 provenance:
   conversationId: konspekt-osera-member-deck
   sourceRef: 4c033a33595c2cf803123955559edfbeb6585d05
   contentHash: 4c033a33595c2cf803123955559edfbeb6585d05
   timestamp: 2026-07-25T00:00:00Z
 createdAt: 2026-07-25T00:00:00Z
-updatedAt: 2026-07-25T00:00:00Z
+updatedAt: 2026-07-26T18:30:00Z
 ```
 # Decision: the evidence core is one canonical JSON file
 
@@ -31,8 +31,8 @@ freeze     = Rekor entry over coreDigest at seal time
 ```
 
 Re-sealing produces `{seq}` + 1 carrying `supersedes: <prior coreDigest>`, the
-same append-only supersede pattern `candidate-version` already uses. There is no
-index file: which core belongs to a candidate resolves through the accepted
+same append-only supersede pattern `package-version` already uses. There is no
+index file: which core belongs to a package resolves through the accepted
 contract, exactly as the `(package, line)` lineage registry is a projection over
 accepted contracts (`noteworthy-candidate-key`).
 
