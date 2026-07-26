@@ -1,24 +1,68 @@
 # Lifecycle
 
-How a backpatch moves from commissioning to sunset. Two state machines, joined
-at one point.
+How a backpatch moves from commissioning to sunset. Three state machines —
+project, package, product — and the points where they hand over.
+
+## Terminology
+
+- **Product** — the software library or application being patched or created.
+- **Package** — the distribution unit a product ships as, named by `purl`
+  (Maven, npm, PyPI). The technical identity the attestation chain binds to; the
+  product is the software it names.
+- **Project** — work on a product within a particular scope, against one release
+  line. One project, one contract. A product carries many projects over time —
+  across lines, and across successive renewals within a line.
+- **Contract** — the L-1 instrument that scopes a project: baseline, CVE set,
+  test corpus, schedule, governance, line. One per project, and the root every
+  attestation is verified against.
+- **Project backlog** — the ranked set of seconded interest declarations
+  awaiting a commissioning ballot.
+- **Alliance** — a group of OSERA members. Acts as issuer: commissions the work
+  and curates the trust root. Commissions in one of two modes, below.
+- **Provider** — whoever works on the product. Signs L0–L7 against a contract it
+  countersigned.
+- **Bank** — a member of the alliance and a consumer of the product. Runs the
+  gate and the ledger.
 
 ## Zones
 
 - **Public upstream** — package registry, upstream git, OSV/NVD. Controlled by
   nobody in the alliance. Read at commissioning and again at admission.
-- **Outside** — issuer, maker, verifier quorum. Evidence is produced.
+- **Outside** — issuer, provider, verifier quorum. Evidence is produced.
 - **Inside** — the bank. Evidence is consumed, hermetically and offline.
 - The perimeter is crossed by a copy of a self-contained evidence bundle.
 
-## Contract lifecycle — states
+## Modes
+
+- **Team** — members vote collectively on what, when, who and budget.
+  Verification is an enforced duty of membership. Trust path `osera-root`.
+- **Solo** — one member commissions, funds, works and verifies independently.
+  Trust path `delegated:<bank>`.
+- In both modes every actor signs its identity cryptographically.
+- Mode is frozen into L-1 at Accepted as `governance.mode`, alongside `sponsor`,
+  `mandateRef` and `trustPath`.
+- Mode sets who is accountable for deciding what to commission. The gate
+  requires the same of both: k-of-n with zero dissent.
+
+## Team-mode commissioning — steps
+
+- Members file signed, expiring **interest declarations**: subject, driver,
+  priority band, desired timeline, committed contribution.
+- Declarations reaching the seconding threshold enter the **project backlog**.
+- A **prioritization ballot** — one member, one vote — ranks the project backlog.
+- A **commissioning ballot**, weighted by contribution, produces the
+  `mandateRef` digest that anchors the L-1 contract.
+- Solo efforts are excluded from interest declarations and prioritization
+  ballots.
+
+## Project lifecycle — states
 
 - **Drafted** — issuer authors governance, scope, baseline, corpus, schedule and
   `osera.line`. Mutable, unsigned.
-- **Proposed** — issuer signs and issues to the maker. Contract digest minted.
-- **Accepted** — maker countersigns. Scope, baseline and acceptance criteria
+- **Proposed** — issuer signs and issues to the provider. Contract digest minted.
+- **Accepted** — provider countersigns. Scope, baseline and acceptance criteria
   become immutable.
-- **Delivered** — maker mints L0–L7 and hands off under a frozen delivery
+- **Delivered** — provider mints L0–L7 and hands off under a frozen delivery
   manifest.
 - **Fulfilled** — quorum publishes k-of-n VSAs asserting `conformance == FULL`.
 - **Withdrawn** — terminal. Issuer retracts before acceptance.
@@ -26,12 +70,12 @@ at one point.
   version.
 - **Lapsed** — terminal. `deliverBy` passed with nothing delivered.
 
-## Contract lifecycle — transitions
+## Project lifecycle — transitions
 
 - **Drafted → Proposed** — issuer signs; contract digest minted.
-- **Proposed → Drafted** — maker rejects or negotiates.
+- **Proposed → Drafted** — provider rejects or negotiates.
 - **Proposed → Withdrawn** — issuer retracts.
-- **Proposed → Accepted** — maker countersignature verifies. The freeze.
+- **Proposed → Accepted** — provider countersignature verifies. The freeze.
 - **Accepted → Delivered** — L0–L7 resolvable; delivery manifest complete
   against `contract.requiredAttestations`, digest logged to the transparency log.
 - **Delivered → Fulfilled** — k-of-n VSAs, zero dissent, conformance `FULL`.
@@ -39,7 +83,7 @@ at one point.
 - **Accepted → Lapsed** — `now > schedule.deliverBy`, nothing delivered.
 - **Accepted → Accepted′** — amendment. New version, fresh countersignature,
   supersession pointer. The only route by which a shortfall reaches admission:
-  the unfixable CVE moves to `explicitlyOutOfScope`, the maker re-countersigns,
+  the unfixable CVE moves to `explicitlyOutOfScope`, the provider re-countersigns,
   and delivery is `FULL` against a contract that tells the truth.
 
 ## What Accepted freezes
@@ -54,27 +98,27 @@ at one point.
 
 ## The hinge
 
-- `Accepted` emits `Commissioned` into the candidate lifecycle.
+- `Accepted` freezes the project and starts the package work.
 - Before it: issuer-internal and mutable. From it on: immutable and signed.
 
-## Candidate lifecycle — states
+## Package lifecycle — states
 
-- **Commissioned** — outside. L-1 issued and accepted.
-- **Built** — outside. Hardened artifact produced; maker claims minted (L0–L7).
+Digest-keyed. Every state is a statement about one `hardened_digest`.
+
+- **Built** — outside. Hardened artifact produced; provider claims minted
+  (L0–L7).
 - **Verified** — outside. Independently rebuilt by the quorum, zero dissent (L8).
 - **Resolved** — inside. Evidence bundle collected and sealed, keyed to the
   digest. Component ③.
 - **Gate** — inside. Under evaluation. Components ①②④.
-- **Adopted** — inside. Admitted and promoted to the golden repo (L9).
-- **Active** — inside. Deployed, within the bridge window. Component ⑤.
-- **Sunset** — inside. The bridge has lapsed. Component ⑤.
+- **Adopted** — inside. Admitted and promoted to the golden repo (L9). The last
+  package state.
 - **Rejected** — terminal. An admission rule failed; the failing rule is
-  recorded. A corrected re-submission is a new candidate.
-- **Retired** — terminal. The application moved to an upstream-fixed release.
+  recorded. A corrected re-submission is a new package under a new project.
 
-## Candidate lifecycle — transitions
+## Package lifecycle — transitions
 
-- **Commissioned → Built** — maker builds; L0–L7 minted.
+- **Accepted → Built** — provider builds; L0–L7 minted.
 - **Built → Verified** — k-of-n verifiers rebuild and publish L8 VSAs; zero
   dissent.
 - **Verified → Resolved** — crosses the perimeter. ③ discovers the attestation
@@ -82,11 +126,25 @@ at one point.
 - **Resolved → Gate** — layout compiled ①, Rego loaded ②, harness staged ④.
 - **Gate → Adopted** — structural, semantic and L9 acceptance all pass.
 - **Gate → Rejected** — any admission rule fails.
+- **Adopted → Active** — the handover. L9 is minted over the digest; the
+  exposure opens against the lineage.
+
+## Product lifecycle — states
+
+Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
+
+- **Active** — deployed, within the bridge window. Component ⑤.
+- **Sunset** — the bridge has lapsed. Component ⑤.
+- **Retired** — terminal. The application moved to an upstream-fixed release.
+
+## Product lifecycle — transitions
+
 - **Adopted → Active** — deployed; ⑤ writes an `issued` event and begins
   tracking.
 - **Active → Sunset** — the bridge window lapses.
 - **Sunset → Retired** — the application adopted an upstream-fixed release.
-- **Sunset → Commissioned′** — renewal.
+- **Sunset → Drafted′** — renewal; a new project is drafted against the same
+  line.
 
 ## Class (a) / (b) divergence
 
@@ -96,10 +154,20 @@ at one point.
 - **(b) FINOS-native** — no baseline; project health, origin, provenance.
 - From Resolved inward the machine is class-agnostic.
 
+## Distribution
+
+- On reaching Fulfilled, team output is distributed via the central nexus under
+  `osera-root`. **Blessing** is carried by definition.
+- Solo output reaches the nexus only through a **blessing petition** that meets
+  the quorum threshold.
+- Unblessed solo output stays on its sponsor's `delegated:<bank>` path. A member
+  other than the sponsor that consumes it does so on its own judgement: the
+  evidence is identical, and the commissioning judgement was one member's.
+
 ## The perimeter crossing
 
-- **Delivery manifest** — maker-assembled at Delivered. L-1 + L0–L7. Frozen by a
-  transparency-log entry. Does not cross.
+- **Delivery manifest** — provider-assembled at Delivered. L-1 + L0–L7. Frozen
+  by a transparency-log entry. Does not cross.
 - **Evidence core** — issuer-assembled once at Fulfilled. Delivery manifest, L-1,
   L0–L8, compiled layout, Rego bundle. One digest shared by every bank. No clock.
   This is what crosses.
@@ -149,16 +217,18 @@ at one point.
 
 ## Renewal
 
-- A renewal is a new candidate carrying a `supersedes` edge to its predecessor.
+- A renewal is a new project against the same line; its package carries a
+  `supersedes` edge to its predecessor.
 - Each renewal has its own L-1 contract, its own `baseline.digest`, and very
   likely its own CVE set.
-- `commons-x:3.2.1-osera.1` and `…-osera.2` are two immutable records, each with
-  its own frozen evidence chain.
-- `candidateKey` — version-less upstream purl plus `contract.osera.line` — stays
-  constant across the chain, so the pointer and ledger follow the lineage.
+- `commons-x:3.2.1-osera.1` and `…-osera.2` are two immutable package records,
+  each with its own frozen evidence chain.
+- The lineage key — version-less upstream purl plus `contract.osera.line`, today
+  the field `candidateKey` — stays constant across the chain, so the pointer and
+  ledger follow the lineage through renewals.
 - A continuing renewal carries the same `osera.line`; the `supersedes` edge and
   the line must agree.
 - A renewal that jumps lines (3.x → 4.x) is a new lineage: the old line Retires,
-  a new one is Commissioned.
+  a new one starts with a fresh project.
 - An amendment is a new version of the same commitment; a renewal is a new
   member of the same lineage. Different edges.

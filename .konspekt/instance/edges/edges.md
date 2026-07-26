@@ -137,3 +137,11 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-rel-coremanifest-bundlesplit | relates | noteworthy:noteworthy-core-manifest | noteworthy:noteworthy-bundle-split | 0.95 |
 | e-rel-coremanifest-bundlefmt | relates | noteworthy:noteworthy-core-manifest | noteworthy:noteworthy-bundle-format | 0.9 |
 | e-rel-coremanifest-authform | relates | noteworthy:noteworthy-core-manifest | noteworthy:noteworthy-authoritative-form | 0.85 |
+| e-prod-gate-nouns | produces | node:goal-admission-gate | noteworthy:noteworthy-lifecycle-nouns | |
+| e-notes-nouns-lifecycle | notes | noteworthy:noteworthy-lifecycle-nouns | artifact:artifact-product-lifecycle | |
+| e-notes-nouns-contractlc | notes | noteworthy:noteworthy-lifecycle-nouns | artifact:artifact-contract-lifecycle | |
+| e-notes-nouns-datamodel | notes | noteworthy:noteworthy-lifecycle-nouns | artifact:artifact-data-model | |
+| e-notes-nouns-arch | notes | noteworthy:noteworthy-lifecycle-nouns | artifact:artifact-architecture | |
+| e-rel-nouns-candkey | relates | noteworthy:noteworthy-lifecycle-nouns | noteworthy:noteworthy-candidate-key | 0.95 |
+| e-rel-nouns-governance | relates | noteworthy:noteworthy-lifecycle-nouns | noteworthy:noteworthy-governance-modes | 0.9 |
+| e-rel-nouns-ecosystem | relates | noteworthy:noteworthy-lifecycle-nouns | noteworthy:noteworthy-ecosystem-generalization | 0.85 |
