@@ -7,23 +7,23 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-25T00:00:00Z
+  updatedAt: 2026-07-26T18:30:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: 259d3019f66d621539c97fbba96ac8d3ad138e53
   contentHash: 259d3019f66d621539c97fbba96ac8d3ad138e53
   timestamp: 2026-07-17T17:45:00Z
 createdAt: 2026-07-17T17:45:00Z
-updatedAt: 2026-07-25T00:00:00Z
+updatedAt: 2026-07-26T18:30:00Z
 ```
 # code_tracer — Data model
 
-**Status:** accepted (`review: accepted`). The third factored axis: the *records*
-that back each state of the product lifecycle. It sits on
-`artifact-product-lifecycle` (states/transitions) and `artifact-architecture`
-§3 (the L-1…L9 evidence chain), and is organized by **facets** — orthogonal
-qualities an element can carry several of at once, each contributing a reusable
-schema mixin.
+**Status:** accepted (`review: accepted`). The records axis: the *records* that
+back each state of the package and product lifecycles. It sits on
+`artifact-product-lifecycle` (states/transitions), `artifact-contract-lifecycle`
+(the project machine) and `artifact-architecture` §3 (the L-1…L9 evidence
+chain), and is organized by **facets** — orthogonal qualities an element can
+carry several of at once, each contributing a reusable schema mixin.
 
 > **Amendment 2026-07-21.** §4 (`verdict`, `policy-object`, L-1 `governance`,
 > L8 `log.checkpoint`) and §5 (`ledger-event`, revocation) amended per the
@@ -37,6 +37,14 @@ schema mixin.
 > core/envelope split — excerpt `7aa6325730d0516102bfe4d0adffadbc846626f1`
 > (`noteworthy-bundle-split`); §4 gains the `evidence-core` record shape —
 > excerpt `4c033a33595c2cf803123955559edfbeb6585d05` (`noteworthy-core-manifest`).
+>
+> **Amendment 2026-07-26 (`noteworthy-lifecycle-nouns`).** The retired noun
+> *candidate* is removed throughout: **`candidate-version` → `package-version`**
+> (digest-grain), **`candidateKey` → `lineKey`** (lineage-grain), and
+> `verdict.candidateRef` → `verdict.packageRef`. `governance.mode` value
+> `mutualized` → `team`. Lifecycle-phase names follow the split: the immutable
+> span now opens at **Accepted** rather than Commissioned, which was a duplicate
+> of it. Record shapes and semantics are unchanged.
 
 ## 1. Facets
 
@@ -49,7 +57,8 @@ orthogonal facets, and each facet carries its own shared machinery:
 - **standard-bound** — conforms to an external spec; carries `predicateType`,
   `schema`, `validator` (in-toto, SLSA, CycloneDX, OpenVEX, DSSE, purl).
 - **immutable** — content-addressed, append-only; never edited, only
-  *superseded* — a chain candidate (lifecycle §5).
+  *superseded* — a member of a supersedes chain (`artifact-product-lifecycle`
+  §7).
 - **signed** — has an authenticated author (DSSE envelope + signer identity).
   Distinct from evidence: authorship vs role.
 - **mutable-operational** — the deliberate opposite of immutable: bank-side
@@ -58,7 +67,8 @@ orthogonal facets, and each facet carries its own shared machinery:
 - **zone** — produced outside vs created inside the bank; sets trust handling.
 
 A seventh column, **lifecycle phase**, records which state *creates/owns* the
-element. It is a mapping onto `artifact-product-lifecycle`, not a facet.
+element. It is a mapping onto the project, package and product machines, not a
+facet.
 
 ## 2. Element inventory
 
@@ -66,12 +76,12 @@ element. It is a mapping onto `artifact-product-lifecycle`, not a facet.
 
 | Element | ev | std | imm | sig | zone | lifecycle phase | grain |
 |---|:---:|:---:|:---:|:---:|:---:|---|---|
-| Attestations L-1…L9 | ✓ | ✓ | ✓ | ✓ | out (L9 in) | Commissioned→Adopted (accrue) | immutable |
+| Attestations L-1…L9 | ✓ | ✓ | ✓ | ✓ | out (L9 in) | Accepted→Adopted (accrue) | immutable |
 | Delivery manifest | ✓ | ✓ | ✓ | — | out | Delivered | immutable |
 | Evidence core | ✓ | ✓ | ✓ | — | out | Fulfilled | immutable |
 | Ingest envelope | — | ✓ | ✓ | — | in | Verified→Resolved | immutable |
 | Compiled layout ① + Rego policy ② | — | ✓ | ✓ | ✓ | in | Gate (compiled from L-1) | immutable |
-| Candidate version (digest + snapshot) | — | ~ purl | ✓ | — | spans | Commissioned (exists across all) | immutable |
+| Package version (digest + snapshot) | — | ~ purl | ✓ | — | spans | Accepted (exists across all) | immutable |
 | Admission verdict (gate-run record) | ✓ | ~ | ✓ | ✓ | in | Gate | immutable |
 | Supersedes link (version → prior) | — | — | ✓ | — | in | Sunset (at renewal) | immutable |
 | Contract draft | — | — | ✗ | — | out | Drafted (issuer-side) | mutable |
@@ -82,9 +92,9 @@ element. It is a mapping onto `artifact-product-lifecycle`, not a facet.
 | Verifier registry entry | — | ~ TUF | ✗ | ✓ | in | Verified/Gate (standing) | mutable |
 
 The facets predict the grain, and the grain splits in **time**: immutable rows
-are all born in the Commissioned→Gate span (production plus the admission
-decision) and frozen forever; mutable rows all live in the Adopted→Sunset span
-(the operational afterlife) — with one exception on the issuer side, the contract
+are all born in the Accepted→Gate span (production plus the admission decision)
+and frozen forever; mutable rows all live in the Adopted→Sunset span (the
+operational afterlife) — with one exception on the issuer side, the contract
 draft, which is deliberately mutable *before* Accepted and frozen from it. The
 one element spanning the operational split — the current-state pointer — is a
 projection replayed from the ledger events: its job is to present current motion,
@@ -95,11 +105,11 @@ not to store it.
 ```
 # IMMUTABLE record — content-addressed, stored sources-style (hash-named), append-only
 id:          <sha256>                 # identity IS the content address
-kind:        candidate-version | attestation | verdict | policy-object
+kind:        package-version | attestation | verdict | policy-object
              | delivery-manifest | evidence-core | ingest-envelope
 zone:        outside | inside
 bornPhase:   Drafted … Gate
-supersedes:  <id> | null              # chain-candidate link (lifecycle §5)
+supersedes:  <id> | null              # supersedes-chain link (lifecycle §7)
   # facet mixins, included when the facet is present:
   signed:    { envelope: dsse, signer, cert|keyref, rekor }
   standard:  { predicateType, schema, validator }
@@ -110,7 +120,7 @@ supersedes:  <id> | null              # chain-candidate link (lifecycle §5)
 kind:        ledger-event | state-pointer | ledger-row | application
              | verifier-entry | contract-draft
 updateRule:  append-only (ledger-event) | projection (pointer, row) | external (application) | TUF (verifier)
-key/id:      ledger-event by <sha256>+prev; projections by candidateKey / (appId, candidateKey)
+key/id:      ledger-event by <sha256>+prev; projections by lineKey / (appId, lineKey)
 refs:        [<immutable id>…]        # still points UP into the immutable store — only
 ```
 
@@ -121,17 +131,17 @@ across the immutable side and the handle the mutable side holds.
 
 ## 4. Immutable elements
 
-The candidate version is the spine — the lifecycle-§5 chain candidate,
-identified by the deployed digest:
+The package version is the spine — the member of the supersedes chain
+(`artifact-product-lifecycle` §7), identified by the deployed digest:
 
 ```
-candidate-version
+package-version
   id:          <hardened_digest>              # the deployed artifact
   purl:        pkg:maven/…@3.2.1-osera.1
   class:       a | b                          # the only field that differs by ingest class
   contractRef: <L-1 id>
   chain:       [<L0 id> … <L9 id>]
-  supersedes:  <prior candidate-version id> | null
+  supersedes:  <prior package-version id> | null
 ```
 
 Every attestation shares one envelope (`signed` + `standard` + `evidence`
@@ -180,7 +190,7 @@ than assumed — the same move L-1 already made for scope and corpus:
 
 ```
 governance
-  mode:        mutualized | solo
+  mode:        team | solo
   sponsor:     <alliance URI | sponsoring bank id>
   mandateRef:  { sha256: <vote record | bank authorization digest> }
   trustPath:   osera-root | delegated:<bank>
@@ -205,7 +215,7 @@ exists (`noteworthy-transparency-log`).
 ```
 verdict                                        policy-object
   id:          <sha256 of verdict>               id:        <digest of compiled artifact>
-  candidateRef:<candidate-version id>            kind:      layout ① | rego ②
+  packageRef:  <package-version id>              kind:      layout ① | rego ②
   inputs:      {layoutRef, policyRef}            bornPhase: Gate (compiled from L-1)
   coreDigest:  <evidence-core manifest>          signed:    {signer: bank}
   bundleDigest:<ingest-envelope manifest>        standard:  {validator: in-toto | rego}
@@ -219,7 +229,7 @@ verdict                                        policy-object
 Four fields make the verdict **self-contained for replay**:
 
 - **`coreDigest`** — the evidence set itself, sealed once by the issuer and
-  identical for every bank that admits this candidate
+  identical for every bank that admits this package
   (`artifact-evidence-bundle` §1). It is the only field in the verdict two
   members can compare directly, which is what makes "we admitted the same thing"
   a checkable statement rather than an assertion.
@@ -241,7 +251,7 @@ the signed contract and compares digests, so a version skew must surface as a
 digest mismatch rather than silent divergence (`noteworthy-compiler-siting`).
 
 The **supersedes link** is not a separate record; it is the `supersedes` field
-on `candidate-version`, projected into the graph as a `supersedes` edge. A
+on `package-version`, projected into the graph as a `supersedes` edge. A
 renewal's contract carries the *same* `osera.line` as its predecessor; a line
 change means a new lineage, not a supersede — so the `supersedes` edge and the
 shared `osera.line` must agree (a checkable admission invariant).
@@ -250,39 +260,39 @@ shared `osera.line` must agree (a checkable admission invariant).
 
 ```
 # durable substrate — append-only, hash-chained (the operational-side log)
-ledger-event   { id: <sha256>, prev: <prior event id for candidateKey> | null,
-                 candidateKey, ref: <cand id>,
+ledger-event   { id: <sha256>, prev: <prior event id for lineKey> | null,
+                 lineKey, ref: <package-version id>,
                  kind: issued | renewed | expired | retired | verifier-revoked, at,
                  coveredCves[] (from L-1 scope) }
 
 # projections — replayed from the event chain, NOT authoritative state
-state-pointer  { candidateKey          → current <cand id> + <lifecycle state> }
-ledger-row     { (appId, candidateKey) → active window, expiresAt }
+state-pointer  { lineKey              → current <package-version id> + <state> }
+ledger-row     { (appId, lineKey)     → active window, expiresAt }
 
 # external-mutable
-application     { key: appId, name, owner, deployed:[<cand id>…], source: CMDB }
+application     { key: appId, name, owner, deployed:[<package-version id>…], source: CMDB }
 
 # trust history — its own append-only signed log (TUF), not this event chain
 verifier-entry  { key: verifierId, keys[], status: active|revoked, rotationRef, signed: root }
 ```
 
-`candidateKey` = the version-less upstream purl + `contract.osera.line` — the
+`lineKey` = the version-less upstream purl + `contract.osera.line` — the
 handle for one **bridge lineage**, constant across the supersedes chain so the
 pointer and ledger follow renewals. `app` is deliberately *not* in it: a bridge
 is built and verified once regardless of how many apps adopt it, so the per-app
-dimension lives only in the ledger's composite `(appId, candidateKey)`. See
+dimension lives only in the ledger's composite `(appId, lineKey)`. See
 `noteworthy-candidate-key`.
 
 **`verifier-revoked` — records an exposure, does not invalidate.** When a
-verifier key is revoked, candidates admitted on its VSAs **remain admitted**:
+verifier key is revoked, packages admitted on its VSAs **remain admitted**:
 admission was valid at the time against a pinned `trustRootVersion`, and the
 artifacts themselves are unchanged — they still rebuild to the same digest and
 still prove the same CVEs fixed. Forcing re-verification would let one revoked
-key invalidate hundreds of candidates at once, a self-inflicted outage triggered
+key invalidate hundreds of packages at once, a self-inflicted outage triggered
 by a trust event rather than an artifact event. Instead the event is appended per
-affected `candidateKey`, the ledger answers "which admitted candidates rest on
+affected `lineKey`, the ledger answers "which admitted packages rest on
 this signer," and the console (⑥) raises a **review trigger** for the risk
-function to judge per candidate. Tolerable precisely because k ≥ 3 with zero
+function to judge per package. Tolerable precisely because k ≥ 3 with zero
 dissent means no single verifier was ever the sole basis for an admission
 (`noteworthy-revocation-semantics`).
 
@@ -290,10 +300,10 @@ Two rules fixed inside the model:
 
 - **`Expiring` is a computed view, not a stored state** — `now ≥ expiresAt −
   window` over the ledger row. Deriving it avoids a mutable status needing its
-  own writer and clock. (Resolves lifecycle §8.)
+  own writer and clock. (Resolves the lifecycle's sunset-signalling item.)
 - **The ledger is an append-only, hash-chained event log** (Merkle-style, not a
   consensus blockchain) — each `ledger-event` carries the digest of its
-  predecessor for that `candidateKey`; `ledger-row`/`state-pointer` are replayed
+  predecessor for that `lineKey`; `ledger-row`/`state-pointer` are replayed
   projections. This answers "which bridge was in force on a past date, covering
   what?" (a last-write row cannot) and makes tampering detectable: break one
   hash and the whole tail is invalid. The verifier registry gets the same
@@ -308,9 +318,10 @@ one link and everything above it is worthless (architecture §3.1, §3.4, §5.1)
 
 ## 6. Relation to other artifacts & open items
 
-- `artifact-product-lifecycle` — the state set (§2) and superseding-version rule
-  (§5) are this model's fixed inputs; each state names the element(s) it owns.
-- `artifact-contract-lifecycle` — the issuer-side machine; owns the contract
+- `artifact-product-lifecycle` — the package and product state sets and the
+  renewal rule (§7) are this model's fixed inputs; each state names the
+  element(s) it owns.
+- `artifact-contract-lifecycle` — the project machine; owns the contract
   draft and the delivery manifest.
 - `artifact-evidence-bundle` — the perimeter interface: the shared **evidence
   core** and the per-bank **ingest envelope**, referenced by
@@ -326,7 +337,7 @@ Decided:
   `noteworthy-sbom-format`.
 - **Event-log substrate** — append-only hash-chained events; projections over
   them; consensus nowhere. `noteworthy-ledger-substrate`.
-- **candidateKey** — version-less upstream purl + `contract.osera.line`.
+- **`lineKey`** — version-less upstream purl + `contract.osera.line`.
   `noteworthy-candidate-key`.
 - **Governance modes** — L-1 carries `governance`; mode selects accountability
   and trust path, never admission strictness. `noteworthy-governance-modes`.
@@ -341,5 +352,7 @@ Decided:
   `noteworthy-revocation-semantics`.
 - **Quorum parameters** — `k = max(3, ceil(n/3))`, zero dissent, frozen at
   issuance. `noteworthy-quorum-parameters`.
+- **Record names** — `package-version` (digest-grain), `lineKey` (lineage-grain);
+  the noun *candidate* is retired. `noteworthy-lifecycle-nouns`.
 
 Open: none at the data-model level.
