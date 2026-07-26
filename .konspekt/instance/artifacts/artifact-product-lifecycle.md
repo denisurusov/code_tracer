@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-26T17:00:00Z
+  updatedAt: 2026-07-26T18:00:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: 37d8d29a487a1e1e02ec3995be23d7d422179fab
   contentHash: 37d8d29a487a1e1e02ec3995be23d7d422179fab
   timestamp: 2026-07-17T17:15:00Z
 createdAt: 2026-07-17T17:15:00Z
-updatedAt: 2026-07-26T17:00:00Z
+updatedAt: 2026-07-26T18:00:00Z
 ```
 # code_tracer — Package and product lifecycles
 
@@ -38,8 +38,9 @@ lapsing, renewing). They are distinct from the **evidence chain** (L-1…L9,
 >   keyed by `hardened_digest`. §2–§3.
 > - **Active, Sunset, Retired** are product-grain, keyed by lineage. §4–§5.
 >
-> `candidate-version` and `candidateKey` survive as field names pending the
-> identifier rename pass.
+> `candidateKey` is renamed **`lineKey`** in the same pass
+> (`noteworthy-candidate-key`, amended); `candidate-version` survives as a field
+> name pending the rest of the rename.
 
 ## 1. The boundary
 
@@ -86,8 +87,8 @@ in the operational afterlife.
 
 ## 4. Product machine — states
 
-Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest,
-which is why the key is version-less (`noteworthy-candidate-key`).
+Keyed by `lineKey`. Lapse and exposure attach to the bridge rather than to a
+digest, which is why the key is version-less (`noteworthy-candidate-key`).
 
 | State | Zone | Meaning | Backed by |
 |-------|------|---------|-----------|
@@ -146,7 +147,7 @@ Consequences, which the data model inherits:
 - **Audit-answerable.** The bank can reconstruct exactly which bridge was in
   force at any past date, and what scope it covered — a question a mutable
   status field cannot answer after the fact.
-- **Lineage-stable.** The lineage key (version-less upstream purl +
+- **Lineage-stable.** `lineKey` (version-less upstream purl +
   `contract.osera.line`) is constant across the supersedes chain, so the
   state-pointer and ledger follow renewals. A renewal that jumps lines is a new
   lineage: the old line Retires and a new one starts with a fresh project.
@@ -179,8 +180,8 @@ Consequences, which the data model inherits:
 - **Sunset signaling** — how far ahead of lapse the ledger (⑤) surfaces an
   Active product as approaching Sunset. The computed-view decision is settled
   (`artifact-data-model` §5); the window value is not.
-- **Identifier rename pass** — `candidateKey` is product-grain and
-  `candidate-version` is package-grain; both still carry the retired noun.
+- **Identifier rename pass** — `candidateKey` is now `lineKey`;
+  `candidate-version` is package-grain and still carries the retired noun.
 - **Multi-package products** — a product shipping as several packages currently
   yields one lineage per package, so one backpatch touching three modules is
   three lineages for one project.

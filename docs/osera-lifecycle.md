@@ -15,6 +15,10 @@ project, package, product — and the points where they hand over.
 - **Contract** — the L-1 instrument that scopes a project: baseline, CVE set,
   test corpus, schedule, governance, line. One per project, and the root every
   attestation is verified against.
+- **Line** — the release line a project works against, declared in the contract
+  as `contract.osera.line`. A product's 3.x bridge and its 4.x bridge are
+  separate lines. `lineKey` (version-less purl + line) is the handle that stays
+  constant as a line renews.
 - **Project backlog** — the ranked set of seconded interest declarations
   awaiting a commissioning ballot.
 - **Alliance** — a group of OSERA members. Acts as issuer: commissions the work
@@ -195,7 +199,7 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
 
 ## Tracking
 
-- ⑤ opens the exposure on `(appId, candidateKey)` at Adopted → Active.
+- ⑤ opens the exposure on `(appId, lineKey)` at Adopted → Active.
 - Durable facts are append-only hash-chained `ledger-event`s: `issued`,
   `renewed`, `expired`, `retired`, `verifier-revoked`.
 - `ledger-row` and `state-pointer` are projections replayed from that chain.
@@ -223,9 +227,9 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
   likely its own CVE set.
 - `commons-x:3.2.1-osera.1` and `…-osera.2` are two immutable package records,
   each with its own frozen evidence chain.
-- The lineage key — version-less upstream purl plus `contract.osera.line`, today
-  the field `candidateKey` — stays constant across the chain, so the pointer and
-  ledger follow the lineage through renewals.
+- `lineKey` — version-less upstream purl plus `contract.osera.line` — stays
+  constant across the chain, so the pointer and ledger follow the lineage
+  through renewals.
 - A continuing renewal carries the same `osera.line`; the `supersedes` edge and
   the line must agree.
 - A renewal that jumps lines (3.x → 4.x) is a new lineage: the old line Retires,

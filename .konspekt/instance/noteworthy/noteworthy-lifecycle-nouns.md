@@ -72,10 +72,11 @@ answered against package-grain records, and naming both "candidate" is what made
 that hard to see. The split also removes a duplicate state and gives the second
 and third machines the same naming form as the first.
 
-**Cost.** Identifier churn: `candidateKey` is product-grain and wants a name such
-as `bridgeKey` or `lineKey`; `candidate-version` is package-grain and wants
-`package-version` or `release`. Deferred to a separate pass so that the reasoning
-lands before the rename does.
+**Cost.** Identifier churn, deferred to a separate pass so that the reasoning
+lands before the rename does. Half of it is now settled: `candidateKey` is
+product-grain and becomes **`lineKey`** (`noteworthy-candidate-key`, amended).
+`candidate-version` is package-grain and wants `package-version` or `release`;
+still open.
 
 **Binds:** splits `artifact-product-lifecycle` §2–§3 into package-grain and
 product-grain machines and removes Commissioned; retitles
@@ -84,6 +85,7 @@ product-grain machines and removes Commissioned; retitles
 `candidateKey` in `artifact-data-model` §4–§5.
 **Resolves:** the vocabulary drift between `docs/osera-lifecycle.md` and the
 graph.
-**Open:** the identifier rename pass, and whether a product that ships as several
-packages needs a key above `candidateKey` — one backpatch touching three modules
-currently yields three lineages for one project.
+**Open:** the `candidate-version` half of the identifier rename pass, and whether
+a product that ships as several packages needs a key above `lineKey` — one
+backpatch touching three modules currently yields three lineages for one
+project.
