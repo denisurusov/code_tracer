@@ -9,8 +9,9 @@ production use, and out again at sunset.
 Evidence formats, record schemas, and physical stores are covered elsewhere and
 referenced rather than repeated.
 
-> **Derived, not authoritative.** This note is a synthesis of the accepted
-> artifacts as of 2026-07-26. Where it disagrees with them, they are current:
+> **Derived from the accepted artifacts.** This note synthesizes them as of
+> 2026-07-26. The artifacts are canonical; where this note disagrees with them,
+> they are current:
 > [contract lifecycle](../.konspekt/instance/artifacts/artifact-contract-lifecycle.md),
 > [product lifecycle](../.konspekt/instance/artifacts/artifact-product-lifecycle.md),
 > [evidence bundle](../.konspekt/instance/artifacts/artifact-evidence-bundle.md),
