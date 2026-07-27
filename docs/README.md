@@ -19,7 +19,7 @@ the links.
 
 Fixed by
 [`noteworthy-lifecycle-nouns`](../.konspekt/instance/noteworthy/noteworthy-lifecycle-nouns.md)
-and applied across the artifacts and the lifecycle note:
+and applied across the artifacts, the notes here, and the figures:
 
 | Term | Means | Identity |
 |---|---|---|
@@ -33,16 +33,21 @@ and applied across the artifacts and the lifecycle note:
 | **Bank** | a member and consumer; runs the gate and the ledger | — |
 
 Retired: *candidate* (it spanned three grains), *maker* (now provider),
-*mutualized* (now team). The four working-group notes below predate this and
-still use the old terms.
+*mutualized* (now team). The identifier renames that followed: `candidateKey` →
+`lineKey`, `candidate-version` → `package-version`, `verdict.candidateRef` →
+`packageRef`.
 
-**The rename pass has not run.** `noteworthy-lifecycle-nouns` deferred the
-identifier churn so the reasoning could land first, and that pass is still
-outstanding. Today only `osera-lifecycle.md`, `resource/p1-lifecycle.svg` and
-this table use the new terms; the artifacts themselves — including
-`artifact-architecture` — still say *maker*, *mutualized* and *candidate*
-throughout. Until the pass runs across the graph and these notes together, the
-vocabulary above describes the decision rather than the state of the repository.
+**The rename pass ran on 2026-07-27** across the artifacts, these notes, the
+figures and the paper sources. Two things deliberately still carry the old
+terms, and both should stay that way:
+
+- **`.konspekt/instance/sources/`** — verbatim content-addressed excerpts whose
+  filenames are their blob hashes. Rewriting them would change every hash and
+  orphan every `provenance.contentHash` citing them.
+- **Amendment notes and `noteworthy-candidate-key`** — documents that *state* a
+  rename necessarily contain the term being retired. A blanket substitution
+  turns "maker → provider" into "provider → provider" and destroys the record of
+  what changed.
 
 ---
 
@@ -54,14 +59,14 @@ realizes them. Read them in this order.
 
 | Artifact | Covers | Review |
 |---|---|---|
-| [Architecture & Design](../.konspekt/instance/artifacts/artifact-architecture.md) | The integrating overview, and home of the **evidence axis**: the L-1…L9 attestation chain, the anchor problem, the k-of-n quorum, admission policy, the gate, the ledger, and the component register. Start here. | accepted |
+| [Architecture & Design](../.konspekt/instance/artifacts/artifact-architecture.md) | The integrating overview, and home of the **evidence axis**: the L-1…L9 attestation chain, the anchor problem, the k-of-n quorum, the 16 admission rules, the gate, the ledger, and the component register. Start here. | accepted |
 | [Project lifecycle](../.konspekt/instance/artifacts/artifact-contract-lifecycle.md) | The **project axis**, issuer-side: Drafted through Fulfilled plus three terminals, what Accepted freezes, and amendment as the only route for a shortfall. | accepted |
-| [Package and product lifecycles](../.konspekt/instance/artifacts/artifact-product-lifecycle.md) | The two machines that run after the freeze: the digest-keyed **package** machine (Built → Adopted, or Rejected) and the lineage-keyed **product** machine (Active, Sunset, Retired), plus the renewal loop. | accepted |
+| [Package and product lifecycles](../.konspekt/instance/artifacts/artifact-product-lifecycle.md) | The two machines that run after the freeze: the digest-keyed **package** machine (Accepted → Built → Adopted, or Rejected) and the lineage-keyed **product** machine (Active, Sunset, Retired), plus the renewal loop. | accepted |
 | [Evidence bundle](../.konspekt/instance/artifacts/artifact-evidence-bundle.md) | The **perimeter interface**: the delivery manifest, the issuer-assembled evidence core, and the bank-assembled ingest envelope — what crosses, who seals it, and which clock applies. | accepted |
 | [Data model](../.konspekt/instance/artifacts/artifact-data-model.md) | The **records axis**: one schema per state, organized by facets. Immutable content-addressed records versus the append-only operational log and the projections replayed from it. | accepted |
 | [Deployment topology](../.konspekt/instance/artifacts/artifact-deployment-topology.md) | The physical stores behind the logical model, and the air-gap cadence. | accepted |
 | [Reference implementation scope](../.konspekt/instance/artifacts/artifact-reference-implementation.md) | What the walking skeleton must prove, the in/out boundary, the six build phases, and the acceptance criteria. | accepted |
-| [RI fixture spec](../.konspekt/instance/artifacts/artifact-ri-fixtures-spec.md) | The synthetic test corpus: one backpatch with every value fixed, the L0–L9 set, and the known-bad variants each expected to be refused by a named rule. **A living draft** — open items in §9. | proposed |
+| [RI fixture spec](../.konspekt/instance/artifacts/artifact-ri-fixtures-spec.md) | The synthetic test corpus: one backpatch with every value fixed, the L0–L9 set, and the known-bad variants each expected to be refused by a named rule. | accepted |
 | [Paper outline](../.konspekt/instance/artifacts/artifact-paper-outline.md) | Structure of the working paper. | accepted |
 
 Decisions with their rejected alternatives are recorded separately under
@@ -83,8 +88,7 @@ the whole design.
 Written for the OSERA formation working group rather than for this repository.
 Each was **reconstructed on 2026-07-17** from design conversations that were not
 persisted, and each carries a provenance note naming the sections that survived
-intact and those that are partial. Treat the marked sections as incomplete, and
-read them against the vocabulary table above: all four predate it.
+intact and those that are partial. Treat the marked sections as incomplete.
 
 | Note | Covers |
 |---|---|
@@ -94,10 +98,11 @@ read them against the vocabulary table above: all four predate it.
 | [Standards register](osera-standards-register.md) | Standards, formats and protocols across the lifecycle, with the load-bearing ones starred. §6–§9 are partial, and the Maven-specific framing is generalized by `noteworthy-ecosystem-generalization`. |
 | [Bank schematic](osera-bank-schematic.svg) | Diagram of the ingestion path. Predates the split; still draws the single machine. |
 
-These five also name the provider as **Moderne** throughout, which the diagram
-set and the artifacts have since replaced with the role name. That is left
-standing: they are a record of the working-group framing at a date, not live
-documents.
+These carried the provider's company name throughout until the rename pass; the
+role placeholder **Provider P** now stands in its place, including in the layout
+functionary keys and the contract schema's party URL. What remains historical
+about them is their *content* — the recovery gaps, the superseded partial-
+fulfilment recommendation, the 13-rule ruleset — not their vocabulary.
 
 ## Figures
 
@@ -106,15 +111,16 @@ documents.
 
 | Figure | State |
 |---|---|
-| `p1-lifecycle.svg` | **current** — redrawn for the three machines, three bands with their identities, hinge and handover labelled. One stale label: it still reads *15 rules* |
-| `p2-datamodel.svg` | pending — still names `candidate-version` and `candidateKey` |
-| `p3-architecture.svg` | pending — the component map is current, but it names the provider as *maker*, a console screen as *candidate*, and *15 admission rules* |
-| `code-tracer-topology.svg` | pending — the store map is current, but it names the provider as *maker* and the quarantine subject as *candidate* |
+| `p1-lifecycle.svg` | **current** — three machines, three bands with their identities, hinge and handover labelled, 16 rules |
+| `p2-datamodel.svg` | **current** — `package-version`, `lineKey`, `packageRef` |
+| `p3-architecture.svg` | **current** — nine components, 16 admission rules, roles named |
+| `code-tracer-topology.svg` | pending — the store map is current, but it still names the provider as *maker* and the quarantine subject as *candidate* |
 
 `paper/` holds the working paper: the `part-*.md` sources and the built outputs
-(HTML, DOCX, PDF). **Both** predate the vocabulary reconciliation, so
-regenerating alone will not fix the terms — the sources need the rename pass
-first. See the vocabulary table above for what changes.
+(HTML, DOCX, PDF). The **sources** carry the current vocabulary. The **built
+outputs** predate it and must be regenerated before circulating — they are a
+projection over the parts, so rebuild rather than edit
+(`noteworthy-authoritative-form`).
 
 ## The mockup
 
