@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-25T00:00:00Z
+  updatedAt: 2026-07-27T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   sourceRef: a587d0575d65f1fb3c3ef862c269af41ea2e94df
   contentHash: a587d0575d65f1fb3c3ef862c269af41ea2e94df
   timestamp: 2026-07-21T21:00:00Z
 createdAt: 2026-07-21T21:00:00Z
-updatedAt: 2026-07-25T00:00:00Z
+updatedAt: 2026-07-27T00:00:00Z
 ```
 # code_tracer — Physical topology
 
@@ -37,10 +37,10 @@ rather than described abstractly.
 ## 0. Conventions
 
 **Actors are named by role, never by company.** The party that hardens artifacts
-is the **maker**; the parties that independently re-derive the result are
+is the **provider**; the parties that independently re-derive the result are
 **verifiers**; the party that commissions is the **issuer** (the alliance); the
 party that admits is the **bank**. Specific vendors fill these roles, but the
-design binds to the role — a maker is whoever signs L0–L7 against a contract they
+design binds to the role — a provider is whoever signs L0–L7 against a contract they
 countersigned.
 
 | Notation | Meaning |
@@ -58,7 +58,7 @@ The framing this design started from was "two GitHubs, Maven, and all." That is
 not the shape, though git turns out to matter more than the first correction
 allowed. **The alliance master repo publishes two authoritative files** — the
 signed L-1 contract and the evidence core (`noteworthy-core-manifest`) — while
-the maker's git holds recipes and is a publishing surface only.
+the provider's git holds recipes and is a publishing surface only.
 
 **Neither repository's own hashing is load-bearing.** Both files are identified
 by `sha256` over their canonical bytes; git supplies a path, a history, and a
@@ -72,8 +72,8 @@ the artifact's purl type as the uncontrolled anchor.
 
 | Store | Physically | Written by | Read by |
 |---|---|---|---|
-| Package registry | the ecosystem's own service — `repo1.maven.org`, `registry.npmjs.org`, `pypi.org`, `crates.io`, `proxy.golang.org` | upstream maintainers — **nobody in the alliance** | ⑦ at commissioning; maker at build; verifiers at rebuild; gate at rule 3 |
-| Upstream git | the project's own forge (GitHub/GitLab/self-hosted) | upstream maintainers | maker; verifiers |
+| Package registry | the ecosystem's own service — `repo1.maven.org`, `registry.npmjs.org`, `pypi.org`, `crates.io`, `proxy.golang.org` | upstream maintainers — **nobody in the alliance** | ⑦ at commissioning; provider at build; verifiers at rebuild; gate at rule 3 |
+| Upstream git | the project's own forge (GitHub/GitLab/self-hosted) | upstream maintainers | provider; verifiers |
 | OSV / NVD | `api.osv.dev` REST; NVD JSON feeds | upstream | ⑦ at scoping |
 | Go checksum log | `sum.golang.org` (Trillian-backed) | Go team | verifiers |
 
@@ -93,7 +93,7 @@ Anchor strength is not uniform — npm and PyPI permit deletion, so those need a
 | **Fulcio / CA** | either the public Sigstore Fulcio, or a FINOS-operated instance. **UNDECIDED** — public is simpler; a private CA fits embargo handling | X.509 chain |
 | **Artifact store** | the ecosystem-native repository for the purl type. Artifact bytes are **never duplicated** into OCI | native repo |
 | **Attestation store + index** | attestations as OCI blobs / Archivista, plus the **digest → attestation index**. The index is **untrusted** — a lookup, never evidence — and rebuildable by replaying Rekor (`noteworthy-attestation-index`) | OCI blobs + index |
-| Maker build infra, recipe repo | maker's own CI and git | not ours |
+| Provider build infra, recipe repo | provider's own CI and git | not ours |
 | Verifier rebuild infra × n | each verifier's own CI — mostly peer on-prem | not ours; harness must be distributable (§7) |
 
 ## 4. The perimeter
