@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-21T22:30:00Z
+  updatedAt: 2026-07-27T00:00:00Z
 provenance:
   conversationId: konspekt-ri-scoping
   sourceRef: dadaff950befab61c9a7d73ec19d1500c7c0c65a
   contentHash: dadaff950befab61c9a7d73ec19d1500c7c0c65a
   timestamp: 2026-07-21T22:30:00Z
 createdAt: 2026-07-17T21:00:00Z
-updatedAt: 2026-07-21T22:30:00Z
+updatedAt: 2026-07-27T00:00:00Z
 ```
 # code_tracer — RI Phase 0 fixture spec
 
@@ -33,6 +33,11 @@ decidable from fixture data — see the coverage table in §7.
 > set, the delivery-manifest / evidence-bundle split, and rules 14–15 — and
 > closes both remaining §9 items.
 
+> **Amendment 2026-07-27.** Rule 16 (CVE-record integrity) added to
+> `artifact-architecture` §3.7; `cve-record-tampered` re-keyed from rule 13 to
+> rule 16 and given its own coverage row. Vocabulary per
+> `noteworthy-lifecycle-nouns`.
+
 ## 1. Scenario — one backpatch, every value fixed
 
 A single class-(a) bridge; fixing the values is what makes every downstream
@@ -42,9 +47,9 @@ digest consistent and the run reproducible.
 - **Baseline** `@3.2.1` → **Hardened** `@3.2.1-osera.1` (Maven's suffix form —
   `noteworthy-purl-namespace`; the ordering invariant holds here because Maven's
   version grammar sorts the qualifier above the bare version)
-- **candidateKey:** `…/commons-collections?osera.line=3`, so `contract.osera.line = "3"`
+- **lineKey:** `…/commons-collections?osera.line=3`, so `contract.osera.line = "3"`
 - **Contract:** `OSERA-2026-0142` v1
-- **Governance:** mutualized, trust path `osera-root` (a `delegated:` variant is
+- **Governance:** team, trust path `osera-root` (a `delegated:` variant is
   listed in §7 so both paths are exercised and shown to admit identically)
 - **In-scope CVE:** `CVE-2025-40142` (synthetic — fixtures use synthetic CVE ids)
 - **Out-of-scope CVE:** `CVE-2024-40099`, reason "no upstream fix path"
@@ -72,7 +77,7 @@ Offline/hermetic, so Sigstore's keyless path is faked with static keys — the R
 needs *a* trust root, not the *right* one (the deferred TUF gap).
 
 - **ed25519** keypairs, each derived deterministically from a fixed seed:
-  `maker`, `verifier-1`…`verifier-4`, `bank`, `osera-root`, `delegated-bank-a`.
+  `provider`, `verifier-1`…`verifier-4`, `bank`, `osera-root`, `delegated-bank-a`.
 - **`osera-root`** is the fixture trust anchor — a static root that certifies the
   functionary keys, standing in for Fulcio; rule 1's "certs chain to a trusted
   root" is checked against it locally.
@@ -109,13 +114,13 @@ commissioning) + `affectedRange` checked against that snapshot.
     "status": "ACCEPTED",
     "osera": { "line": "3" },
     "governance": {                                  // noteworthy-governance-modes
-      "mode": "mutualized",
+      "mode": "team",
       "sponsor": "https://osera.finos.org",
       "mandateRef": { "sha256": "<vote_record_digest>" },
       "trustPath": "osera-root"
     },
     "issuer": { "id": "https://osera.finos.org", "role": "commissioner" },
-    "maker":  { "id": "https://maker.example",   "role": "producer/tester" },
+    "provider":  { "id": "https://provider.example",   "role": "producer/tester" },
     "scope": {
       "cvesInScope": [
         { "id": "CVE-2025-40142",
@@ -180,14 +185,14 @@ Each a DSSE envelope; `asserts` follows data-model §4.
 
 | Lvl | Subject | Signer | Key `asserts` (fixture values) |
 |---|---|---|---|
-| L0 | baseline_digest | maker | sourceRef, coordinates == contract.baseline |
-| L1 | baseline_digest | maker | cves:[CVE-2025-40142], baselineSbomRef |
-| L2 | baseline→hardened | maker | patch.digest (the PATCHED delta) |
-| L3 | hardened_digest | maker | builder, materials=[L0.digest, L2.digest, toolchain.digest] |
-| L4 | hardened_digest | maker | corpus.digest == contract corpus, patchedPathCoverage:0.95 |
-| L5 | hardened_digest | maker | per cve: failsOnBaseline:true, passesOnHardened:true |
-| L6 | hardened_digest | maker | CycloneDX sbom.digest, diffVsL0 (declared only) |
-| L7 | hardened_digest | maker | per cve: status:fixed, justifiedBy:<L5 id> |
+| L0 | baseline_digest | provider | sourceRef, coordinates == contract.baseline |
+| L1 | baseline_digest | provider | cves:[CVE-2025-40142], baselineSbomRef |
+| L2 | baseline→hardened | provider | patch.digest (the PATCHED delta) |
+| L3 | hardened_digest | provider | builder, materials=[L0.digest, L2.digest, toolchain.digest] |
+| L4 | hardened_digest | provider | corpus.digest == contract corpus, patchedPathCoverage:0.95 |
+| L5 | hardened_digest | provider | per cve: failsOnBaseline:true, passesOnHardened:true |
+| L6 | hardened_digest | provider | CycloneDX sbom.digest, diffVsL0 (declared only) |
+| L7 | hardened_digest | provider | per cve: status:fixed, justifiedBy:<L5 id> |
 | L8 ×4 | hardened_digest | verifier-1..4 | rebuild.digestMatch:true, log.checkpoint:{…}, osera.contract.conformance:FULL |
 | L9 | hardened_digest | bank | bankTests.pass:true, promotedTo:golden |
 
@@ -196,7 +201,7 @@ which is what rule 6 reads and no more (§9).
 
 ## 6. On-disk layout
 
-Two containers, matching `artifact-evidence-bundle` §1: the maker's **delivery
+Two containers, matching `artifact-evidence-bundle` §1: the provider's **delivery
 manifest** (L-1 + L0–L7, frozen at hand-off) and the bank-assembled **evidence
 bundle** that adds L8, the compiled layout, the policy, and trust material. The
 local directory stands in for OCI referrers plus the attestation index.
@@ -205,14 +210,14 @@ local directory stands in for OCI referrers plus the attestation index.
 fixtures/conforming/
   artifacts/   baseline.blob  hardened.blob
   contract/    osera-2026-0142.intoto.jsonl
-  delivery/    manifest.json                 # L-1 + L0–L7 digests, maker-assembled
+  delivery/    manifest.json                 # L-1 + L0–L7 digests, provider-assembled
                manifest.logentry.json        # synthetic inclusion proof (the freeze)
   chain/       L0.jsonl … L7.jsonl  L8.verifier-{1..4}.jsonl  L9.jsonl
   policy/      layout.json                   # compiled from the contract
                layout.compilerVersion        # rule 14 — bank recompiles and compares
                admission.rego                # semantic pass
                schema-v1.json                # pinned; never fetched at verify
-  trust/       osera-root.pub  maker.pub  verifier-{1..4}.pub  bank.pub
+  trust/       osera-root.pub  provider.pub  verifier-{1..4}.pub  bank.pub
                tuf-snapshot.json             # version + expires, rule 15
                checkpoints.json              # four observed log heads
   deps/        resolved-manifest.json        # dependencyLock.digest target
@@ -250,7 +255,7 @@ Stored as overlays (`fixtures/bad/<variant>/`) so the diff documents the test.
 | `version-string-subject` | one subject identified by version string, no digest | 12 |
 | `scope-mismatch` | L7 marks a CVE not in cvesInScope | 13 |
 | `trustpath-mismatch` | `governance.trustPath` ≠ the signing namespace | 13 |
-| `cve-record-tampered` | OSV snapshot digest ≠ contract recordDigest | 13 / referent-binding |
+| `cve-record-tampered` | OSV snapshot digest ≠ contract recordDigest | 16 |
 | `layout-digest-mismatch` | distributed layout ≠ locally recompiled layout | 14 |
 | `stale-trust-root` | TUF snapshot older than 7 days against fixture `now` | 15 |
 | `stale-checkpoint` | checkpoint set older than 24 hours against fixture `now` | 15 |
@@ -278,11 +283,12 @@ One **positive** variant, which must still ADMIT:
 | 10 VEX ↔ proof linkage | `vex-unjustified` |
 | 11 SBOM integrity | `undeclared-sbom` |
 | 12 digest binding | `version-string-subject` |
-| 13 contract binding | `scope-mismatch`, `trustpath-mismatch`, `cve-record-tampered` |
+| 13 contract binding | `scope-mismatch`, `trustpath-mismatch` |
 | 14 compile agreement | `layout-digest-mismatch` |
 | 15 freshness | `stale-trust-root`, `stale-checkpoint` |
+| 16 CVE-record integrity | `cve-record-tampered` |
 
-All fifteen rules are now exercised. `corpus-substituted` is the most important
+All sixteen rules are now exercised. `corpus-substituted` is the most important
 single variant in the corpus: substituting an easier test suite after the fact is
 the loophole the commissioned specification exists to close, and before this
 revision no variant tested it.
