@@ -149,3 +149,8 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-prod-gate-inbound | produces | node:goal-admission-gate | noteworthy:noteworthy-inbound-asymmetry | |
 | e-notes-inbound-arch | notes | noteworthy:noteworthy-inbound-asymmetry | artifact:artifact-architecture | |
 | e-rel-inbound-paper | relates | noteworthy:noteworthy-inbound-asymmetry | artifact:artifact-paper-outline | 0.85 |
+| e-prod-gate-recdigest | produces | node:goal-admission-gate | noteworthy:noteworthy-record-digest | |
+| e-notes-recdigest-arch | notes | noteworthy:noteworthy-record-digest | artifact:artifact-architecture | |
+| e-notes-recdigest-fixspec | notes | noteworthy:noteworthy-record-digest | artifact:artifact-ri-fixtures-spec | |
+| e-notes-recdigest-bundle | notes | noteworthy:noteworthy-record-digest | artifact:artifact-evidence-bundle | |
+| e-rel-recdigest-referent | relates | noteworthy:noteworthy-record-digest | noteworthy:noteworthy-referent-binding | 0.95 |
