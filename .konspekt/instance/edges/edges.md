@@ -145,3 +145,7 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-rel-nouns-candkey | relates | noteworthy:noteworthy-lifecycle-nouns | noteworthy:noteworthy-candidate-key | 0.95 |
 | e-rel-nouns-governance | relates | noteworthy:noteworthy-lifecycle-nouns | noteworthy:noteworthy-governance-modes | 0.9 |
 | e-rel-nouns-ecosystem | relates | noteworthy:noteworthy-lifecycle-nouns | noteworthy:noteworthy-ecosystem-generalization | 0.85 |
+| e-notes-referent-bundle | notes | noteworthy:noteworthy-referent-binding | artifact:artifact-evidence-bundle | |
+| e-prod-gate-inbound | produces | node:goal-admission-gate | noteworthy:noteworthy-inbound-asymmetry | |
+| e-notes-inbound-arch | notes | noteworthy:noteworthy-inbound-asymmetry | artifact:artifact-architecture | |
+| e-rel-inbound-paper | relates | noteworthy:noteworthy-inbound-asymmetry | artifact:artifact-paper-outline | 0.85 |
