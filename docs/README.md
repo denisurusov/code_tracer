@@ -36,6 +36,14 @@ Retired: *candidate* (it spanned three grains), *maker* (now provider),
 *mutualized* (now team). The four working-group notes below predate this and
 still use the old terms.
 
+**The rename pass has not run.** `noteworthy-lifecycle-nouns` deferred the
+identifier churn so the reasoning could land first, and that pass is still
+outstanding. Today only `osera-lifecycle.md`, `resource/p1-lifecycle.svg` and
+this table use the new terms; the artifacts themselves — including
+`artifact-architecture` — still say *maker*, *mutualized* and *candidate*
+throughout. Until the pass runs across the graph and these notes together, the
+vocabulary above describes the decision rather than the state of the repository.
+
 ---
 
 ## The design artifacts
@@ -82,22 +90,31 @@ read them against the vocabulary table above: all four predate it.
 |---|---|
 | [Backpatch contract](osera-backpatch-contract.md) | The **L-1 contract** — the binding artifact that scopes a job before work starts and becomes the root everything else is verified against. Includes the machine-readable schema. Cited by the fixture spec. Superseded on partial fulfilment: its §6 item 2 recommends PARTIAL-promotable, which `noteworthy-conformance-binary` rejected. |
 | [Bank-side fulfilment verification](osera-bank-verification.md) | How a bank verifies a contract was *fulfilled* before ingesting code — and the finding the whole design rests on: the bank needs no new verification mechanism, because the contract compiles to a layout its existing in-toto verifier already enforces. |
-| [Attestation chain](osera-attestation-chain.md) | The L0–L9 chain, core principles, the anchor problem, admission rules, and quorum verification. **Superseded** — now inlined and extended as [Architecture §3](../.konspekt/instance/artifacts/artifact-architecture.md), which carries 15 rules to this note's 13; kept for the working-group framing and its open questions. |
+| [Attestation chain](osera-attestation-chain.md) | The L0–L9 chain, core principles, the anchor problem, admission rules, and quorum verification. **Superseded** — now inlined and extended as [Architecture §3](../.konspekt/instance/artifacts/artifact-architecture.md), which carries 16 rules to this note's 13; kept for the working-group framing and its open questions. |
 | [Standards register](osera-standards-register.md) | Standards, formats and protocols across the lifecycle, with the load-bearing ones starred. §6–§9 are partial, and the Maven-specific framing is generalized by `noteworthy-ecosystem-generalization`. |
 | [Bank schematic](osera-bank-schematic.svg) | Diagram of the ingestion path. Predates the split; still draws the single machine. |
 
+These five also name the provider as **Moderne** throughout, which the diagram
+set and the artifacts have since replaced with the role name. That is left
+standing: they are a record of the working-group framing at a date, not live
+documents.
+
 ## Figures
 
-`resource/` carries the working-paper figures.
+`resource/` carries the working-paper figures. Four views, indexed in
+[`resource/README.md`](resource/README.md).
 
 | Figure | State |
 |---|---|
-| `p1-lifecycle.svg` | **current** — redrawn for the three machines, three bands with their identities, hinge and handover labelled |
+| `p1-lifecycle.svg` | **current** — redrawn for the three machines, three bands with their identities, hinge and handover labelled. One stale label: it still reads *15 rules* |
 | `p2-datamodel.svg` | pending — still names `candidate-version` and `candidateKey` |
-| `p3-*.svg` | check against the current artifacts before reuse |
+| `p3-architecture.svg` | pending — the component map is current, but it names the provider as *maker*, a console screen as *candidate*, and *15 admission rules* |
+| `code-tracer-topology.svg` | pending — the store map is current, but it names the provider as *maker* and the quarantine subject as *candidate* |
 
-`paper/` holds the built outputs (HTML, DOCX, PDF). They are generated, and all
-predate the vocabulary reconciliation — regenerate before circulating.
+`paper/` holds the working paper: the `part-*.md` sources and the built outputs
+(HTML, DOCX, PDF). **Both** predate the vocabulary reconciliation, so
+regenerating alone will not fix the terms — the sources need the rename pass
+first. See the vocabulary table above for what changes.
 
 ## The mockup
 
