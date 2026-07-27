@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-26T17:00:00Z
+  updatedAt: 2026-07-27T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   sourceRef: c284e12b3f1e77a4f712644a85aba7e8195b4648
   contentHash: c284e12b3f1e77a4f712644a85aba7e8195b4648
   timestamp: 2026-07-21T14:00:00Z
 createdAt: 2026-07-21T14:00:00Z
-updatedAt: 2026-07-26T17:00:00Z
+updatedAt: 2026-07-27T00:00:00Z
 ```
 # code_tracer — Project lifecycle (issuer side)
 
@@ -32,6 +32,14 @@ delivered against and verified.
 > Delivered and Fulfilled are states of the *work* rather than of the document.
 > **maker → provider** and **mutualized → team** throughout.
 
+> **Amendment 2026-07-27.** §1's Proposed row said the state was backed by an
+> "L-1 candidate". That was the last bare use of the retired noun in the graph,
+> and it carried a *fourth* sense — a contract awaiting countersignature —
+> distinct from all three grains the split identified, which is a fair measure
+> of how overloaded the word had become. It now reads **proposed L-1**, chosen
+> over *L-1 draft* because Drafted is the state immediately above it and reusing
+> that word would blur two adjacent rows.
+
 **Why a separate artifact.** The three machines track different referents: this
 one tracks a **commitment**, the package machine tracks an **artifact**, the
 product machine tracks a **bridge**. They have different actors, different zones,
@@ -43,7 +51,7 @@ unfulfilled) without any package ever existing.
 | State | Actor | Meaning | Backed by |
 |---|---|---|---|
 | Drafted | issuer | governance, scope, baseline, corpus, schedule, `osera.line` authored; unsigned | draft record (mutable) |
-| Proposed | issuer | issued to the provider for acceptance; terms frozen pending signature | L-1 candidate, signed by issuer |
+| Proposed | issuer | issued to the provider for acceptance; terms frozen pending signature | proposed L-1, signed by issuer |
 | Accepted | provider | provider countersigns; scope/baseline/acceptanceCriteria immutable | **L-1 contract** (the root referent) |
 | Delivered | provider | L0–L7 minted and handed off under a frozen delivery manifest | provider claims + delivery manifest |
 | Fulfilled | quorum | k-of-n VSAs assert conformance == FULL | L8 set |
