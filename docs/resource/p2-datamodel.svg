@@ -68,7 +68,7 @@
 <rect x="964" y="390" width="472" height="122" rx="7" fill="#fff" stroke="#c7bced"/>
 <rect x="964" y="532" width="472" height="96" rx="7" fill="#f7f6fd" stroke="#ddd6f3"/>
 </g>
-<text x="980" y="118" font-size="12" font-weight="700" fill="#334155">candidate-version — the spine</text>
+<text x="980" y="118" font-size="12" font-weight="700" fill="#334155">package-version — the spine</text>
 <text x="980" y="138" font-size="10.5" font-family="monospace" font-weight="700" fill="#64748b">id = hardened_digest</text>
 <text x="980" y="155" font-size="10.5" font-family="monospace" fill="#64748b">purl = …@&lt;upstream&gt;-osera.N · class a|b</text>
 <text x="980" y="172" font-size="10.5" font-family="monospace" fill="#64748b">contractRef · chain[L0…L9] · supersedes</text>
@@ -81,14 +81,14 @@
 <text x="980" y="333" font-size="10.5" font-family="monospace" fill="#64748b">decision = admit | reject · failingRule?</text>
 <text x="980" y="354" font-size="9.5" font-style="italic" fill="#94a3b8">these three are why a regulator re-running this reaches the same answer</text>
 <text x="980" y="412" font-size="12" font-weight="700" fill="#5b3fa8">ledger-event — append-only, hash-chained</text>
-<text x="980" y="432" font-size="10.5" font-family="monospace" fill="#6b5aa5">id = sha256 · prev = prior event for candidateKey</text>
-<text x="980" y="449" font-size="10.5" font-family="monospace" font-weight="700" fill="#6b5aa5">candidateKey = version-less purl + osera.line</text>
+<text x="980" y="432" font-size="10.5" font-family="monospace" fill="#6b5aa5">id = sha256 · prev = prior event for lineKey</text>
+<text x="980" y="449" font-size="10.5" font-family="monospace" font-weight="700" fill="#6b5aa5">lineKey = version-less purl + osera.line</text>
 <text x="980" y="466" font-size="10.5" font-family="monospace" fill="#6b5aa5">kind = issued|renewed|expired|retired|verifier-revoked</text>
 <text x="980" y="483" font-size="10.5" font-family="monospace" fill="#6b5aa5">coveredCves[ ] ← from L-1 scope</text>
 <text x="980" y="502" font-size="9.5" font-style="italic" fill="#7c6bb0">break one hash and the whole tail is invalid</text>
 <text x="980" y="554" font-size="12" font-weight="700" fill="#5b3fa8">PROJECTIONS — replayed, never authoritative</text>
-<text x="980" y="574" font-size="10.5" font-family="monospace" fill="#6b5aa5">state-pointer: candidateKey → current id + state</text>
-<text x="980" y="591" font-size="10.5" font-family="monospace" fill="#6b5aa5">ledger-row: (appId, candidateKey) → window, expiresAt</text>
+<text x="980" y="574" font-size="10.5" font-family="monospace" fill="#6b5aa5">state-pointer: lineKey → current id + state</text>
+<text x="980" y="591" font-size="10.5" font-family="monospace" fill="#6b5aa5">ledger-row: (appId, lineKey) → window, expiresAt</text>
 <text x="980" y="611" font-size="9.5" font-weight="700" fill="#b91c1c">Expiring is COMPUTED (now ≥ expiresAt − window), never stored</text>
 
 <g stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#b)">
@@ -106,11 +106,11 @@
 <path d="M120 196 C 200 640, 880 640, 1090 460"/>
 </g>
 <text x="330" y="716" font-size="10.5" font-weight="700" fill="#b45309">schedule.bridgeExpiry → ledger-row.expiresAt</text>
-<text x="330" y="662" font-size="10.5" font-weight="700" fill="#b45309">osera.line → candidateKey (declared, never derived)</text>
+<text x="330" y="662" font-size="10.5" font-weight="700" fill="#b45309">osera.line → lineKey (declared, never derived)</text>
 
 <rect x="24" y="748" width="1412" height="164" rx="10" fill="#fff5f5" stroke="#f3c7c7"/>
 <text x="44" y="772" font-size="12.5" font-weight="700" fill="#b91c1c">WHAT THIS PAGE IS FOR</text>
-<text x="44" y="794" font-size="11" fill="#7f1d1d">Every orange arrow is an admission rule in disguise. The gate does not ask "did the maker do good work?" — it asks whether each of these bindings holds:</text>
+<text x="44" y="794" font-size="11" fill="#7f1d1d">Every orange arrow is an admission rule in disguise. The gate does not ask "did the provider do good work?" — it asks whether each of these bindings holds:</text>
 <text x="44" y="815" font-size="11" fill="#7f1d1d">the baseline they started from IS the one commissioned · the corpus they ran IS the one named by digest · every CVE in scope has a proof that fails on the</text>
 <text x="44" y="836" font-size="11" fill="#7f1d1d">baseline and passes on the hardened build · every "fixed" in the VEX points at that proof · and k independent parties re-derived the same digest with no dissent.</text>
 <text x="44" y="864" font-size="11" fill="#7f1d1d">Two grains, one rule: <tspan font-weight="700">the immutable store never references the mutable store.</tspan> Every pointer runs mutable → immutable, so a content hash can never</text>
