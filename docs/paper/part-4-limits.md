@@ -22,18 +22,18 @@ proves.
 
 Independent rebuild establishes that the artifact corresponds to the stated
 inputs: this source, this transformation, this toolchain, producing exactly these
-bytes. Every verifier confirming the same digest confirms that the maker's
+bytes. Every verifier confirming the same digest confirms that the provider's
 described change was applied faithfully and that nothing else was introduced
 during the build.
 
-It says nothing about whether the change itself is benign. A maker who inserts a
+It says nothing about whether the change itself is benign. A provider who inserts a
 backdoor *into the declared transformation* produces an artifact that rebuilds
 identically for every verifier, passes the vulnerability proofs, passes the test
 corpus, and conforms perfectly to the contract. The quorum will agree, correctly,
 that this is what the recipe produces.
 
 The model therefore shifts the trust question rather than eliminating it: from
-*did the maker test adequately?* — which it answers well — to *is the maker
+*did the provider test adequately?* — which it answers well — to *is the provider
 acting in good faith?* — which it does not address at all. Source review of the
 transformation remains a separate control, and the contract's requirement that
 the recipe set be content-addressed exists to make that review possible and
