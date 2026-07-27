@@ -154,3 +154,9 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-notes-recdigest-fixspec | notes | noteworthy:noteworthy-record-digest | artifact:artifact-ri-fixtures-spec | |
 | e-notes-recdigest-bundle | notes | noteworthy:noteworthy-record-digest | artifact:artifact-evidence-bundle | |
 | e-rel-recdigest-referent | relates | noteworthy:noteworthy-record-digest | noteworthy:noteworthy-referent-binding | 0.95 |
+| e-prod-gate-interop | produces | node:goal-admission-gate | noteworthy:noteworthy-interop-stance | |
+| e-notes-interop-arch | notes | noteworthy:noteworthy-interop-stance | artifact:artifact-architecture | |
+| e-notes-interop-bundle | notes | noteworthy:noteworthy-interop-stance | artifact:artifact-evidence-bundle | |
+| e-rel-interop-purl | relates | noteworthy:noteworthy-interop-stance | noteworthy:noteworthy-purl-namespace | 0.9 |
+| e-rel-interop-ecosystem | relates | noteworthy:noteworthy-interop-stance | noteworthy:noteworthy-ecosystem-generalization | 0.85 |
+| e-rel-interop-twosited | relates | noteworthy:noteworthy-interop-stance | noteworthy:noteworthy-two-sited-scope | 0.9 |
