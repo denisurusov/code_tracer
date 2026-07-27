@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-21T20:20:00Z
+  updatedAt: 2026-07-26T18:45:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: ce42f850ccfc660dde5fce05f46db479f0993fe0
   contentHash: ce42f850ccfc660dde5fce05f46db479f0993fe0
   timestamp: 2026-07-17T18:45:00Z
 createdAt: 2026-07-17T18:45:00Z
-updatedAt: 2026-07-21T20:20:00Z
+updatedAt: 2026-07-26T18:45:00Z
 ```
 # Decision: purl namespace for backpatched artifacts
 
@@ -32,9 +32,9 @@ which every coordinate-keyed scanner, SBOM diff, and dependency resolver
 conflates.
 
 **Why B.**
-- The supersedes chain (lifecycle §5) becomes self-describing: successive
-  bridges read as `-osera.1`, `-osera.2`, not identical purls separable only by
-  digest — the audit story §5 exists to make easy.
+- The supersedes chain (`artifact-product-lifecycle` §7) becomes self-describing:
+  successive bridges read as `-osera.1`, `-osera.2`, not identical purls separable
+  only by digest — the audit story that section exists to make easy.
 - It survives the bank boundary into repository managers and app manifests, where
   a distinct coordinate is pinnable and visible; a same-coordinate/different-
   digest artifact is a footgun for ordinary tooling that doesn't key on digests.
@@ -84,5 +84,12 @@ than a formatting detail.
 **Unchanged by this amendment:** digest remains identity; the purl remains a
 label; the is-hardening-of relationship remains declared in L2/L6/L7.
 
-**Binds:** `artifact-data-model` `candidate-version.purl` (§4). **Resolves:** the
+---
+
+## Amendment 2026-07-26 — record name
+
+The record this decision binds is now `package-version`
+(`noteworthy-lifecycle-nouns`); the field it fixes is unchanged.
+
+**Binds:** `artifact-data-model` `package-version.purl` (§4). **Resolves:** the
 purl question in `artifact-architecture` §7.
