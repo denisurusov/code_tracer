@@ -86,7 +86,7 @@ later from stored inputs. Every admission rule must be decidable from bundle
 contents alone; a rule that isn't is either a wrong rule or a missing bundle
 element.
 
-The bundle carries the artifact reference, the maker's attestations, the
+The bundle carries the artifact reference, the provider's attestations, the
 verifiers' summaries, the signed contract, the compiled policy, a snapshot of the
 trust root, and the certificate chain. Two properties matter more than the
 inventory.
@@ -126,7 +126,7 @@ institutions already run both — the policy engine is frequently already deploy
 for Kubernetes admission control. The gate is stateless: it reads a bundle and
 writes a verdict.
 
-**The storage is unremarkable.** A quarantine repository for arriving candidates,
+**The storage is unremarkable.** A quarantine repository for arriving packages,
 which nothing but the gate may read. A registry for bundles. A directory of trust
 material — a trust-root snapshot, certificate roots, checkpoints, the schema and
 policy the bundle pinned — refreshed on a schedule under ordinary configuration
@@ -188,7 +188,7 @@ mode.
 ### Renewal is a new artifact, not a status change
 
 When a bridge approaches expiry and upstream still isn't adoptable, the response
-is a **renewal** — and a renewal is a new candidate that supersedes the old one,
+is a **renewal** — and a renewal is a new package that supersedes the old one,
 not a date extension on the existing one.
 
 This is not bookkeeping pedantry. The second bridge has its own commissioned
@@ -212,7 +212,7 @@ trigger for the risk function to judge case by case.
 
 The alternative is worse than it first appears. Automatically invalidating
 everything a revoked key touched would let a single trust event pull hundreds of
-candidates out of production simultaneously — a self-inflicted outage triggered
+packages out of production simultaneously — a self-inflicted outage triggered
 by key hygiene rather than by any defect in an artifact. This is tolerable
 precisely because of the zero-dissent quorum: with a floor of three independent
 verifiers and no disagreement permitted, no single verifier was ever the sole
