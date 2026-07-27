@@ -20,7 +20,7 @@ settle before any of the engineering matters.
 ## 6. Issuance, and what happens when delivery falls short
 
 The contract has its own lifecycle, separate from the artifact's. It is drafted,
-proposed to the maker, accepted when the maker countersigns, delivered, and
+proposed to the provider, accepted when the provider countersigns, delivered, and
 finally fulfilled when the quorum confirms conformance. It can also be withdrawn
 before acceptance, breached on delivery, or lapse if the delivery window passes
 with nothing produced.
@@ -31,10 +31,10 @@ and the artifact lifecycle begins. Everything Part I claims about commissioned
 specification rests on that one transition being clean.
 
 The hand-off at delivery deserves a note, because it closes a loophole one layer
-out from the corpus problem. The maker assembles a **delivery manifest** — the
+out from the corpus problem. The provider assembles a **delivery manifest** — the
 contract plus its own attestations — and its digest is written to a transparency
 log. This establishes that this exact set existed at this time, and it stops the
-maker adjusting the submission after seeing how verification went. Deliberately,
+provider adjusting the submission after seeing how verification went. Deliberately,
 the freeze is a log entry rather than a signature: an inclusion proof cannot be
 misread as anyone's endorsement of the contents.
 
@@ -58,7 +58,7 @@ discretionary state has no representation at all.
 
 **An honest shortfall routes through amendment.** If a fifth CVE proves
 unfixable, the contract is amended: that CVE moves to the explicitly-out-of-scope
-list with a stated reason, the maker countersigns the new version, and delivery
+list with a stated reason, the provider countersigns the new version, and delivery
 is then *full* against a contract that tells the truth. The residual exposure is
 recorded in a signed document that the receiving institution can read, rather
 than buried inside a softened verdict.
@@ -97,7 +97,7 @@ uses thresholds wherever a single key would otherwise be load-bearing.
 
 ### Bilateral work needs a delegated namespace
 
-Not all work is commissioned collectively. An institution may contract a maker
+Not all work is commissioned collectively. An institution may contract a provider
 directly, for a library only it cares about. That work should not be signed under
 the alliance's root, because the alliance did not commission it and cannot stand
 behind the judgement.
@@ -151,7 +151,7 @@ the pool of verifiers is the membership, so quorum size scales with the alliance
 rather than being separately negotiated.
 
 It also clarifies what the two commissioning modes actually change. In
-**mutualized** mode, members vote work in and share the cost and the
+**team** mode, members vote work in and share the cost and the
 responsibility. In **solo** mode, one institution commissions and funds alone and
 is solely accountable for that judgement. The mode determines who answers for
 *deciding to commission this work at all*. It has no effect on how strictly the
@@ -176,7 +176,7 @@ would silently move the target.
 
 One consequence has to be stated because it affects formation planning: until
 three verifiers are active, nothing can be admitted at all. Verifier recruitment
-is a launch prerequisite. An alliance that signs a maker before it has three
+is a launch prerequisite. An alliance that signs a provider before it has three
 verifying members will have commissioned work that cannot be consumed.
 
 ---
