@@ -33,25 +33,25 @@
 
 | #  | Attestation | Signer | Asserts | Subject |
 |----|-------------|--------|---------|---------|
-| L0 | **Baseline** | Moderne | This is the upstream artifact and source commit we started from | baseline_digest |
-| L1 | **Vulnerability Assessment** | Moderne | These CVEs affect these components in the baseline SBOM | baseline_digest |
-| L2 | **Transformation** | Moderne | This content-addressed recipe set / source patch was applied | baseline → hardened |
-| L3 | **Build Provenance** (SLSA v1) | Moderne | Hardened artifact was built from L0 source + L2 patch on pinned toolchain | hardened_digest |
-| L4 | **Test Results** | Moderne | Upstream suite result set vs baseline; API/ABI compat; patched-path coverage | hardened_digest |
-| L5 | **Vulnerability Proof** | Moderne | Per CVE: PoC fails on baseline_digest, passes on hardened_digest | both |
-| L6 | **SBOM (out)** + diff | Moderne | Composition of hardened artifact, and delta vs L0 SBOM | hardened_digest |
-| L7 | **VEX** (OpenVEX/CSAF) | Moderne | Per CVE: `fixed`, justified by reference to L5 | hardened_digest |
+| L0 | **Baseline** | Provider P | This is the upstream artifact and source commit we started from | baseline_digest |
+| L1 | **Vulnerability Assessment** | Provider P | These CVEs affect these components in the baseline SBOM | baseline_digest |
+| L2 | **Transformation** | Provider P | This content-addressed recipe set / source patch was applied | baseline → hardened |
+| L3 | **Build Provenance** (SLSA v1) | Provider P | Hardened artifact was built from L0 source + L2 patch on pinned toolchain | hardened_digest |
+| L4 | **Test Results** | Provider P | Upstream suite result set vs baseline; API/ABI compat; patched-path coverage | hardened_digest |
+| L5 | **Vulnerability Proof** | Provider P | Per CVE: PoC fails on baseline_digest, passes on hardened_digest | both |
+| L6 | **SBOM (out)** + diff | Provider P | Composition of hardened artifact, and delta vs L0 SBOM | hardened_digest |
+| L7 | **VEX** (OpenVEX/CSAF) | Provider P | Per CVE: `fixed`, justified by reference to L5 | hardened_digest |
 | L8 | **VSA** | **FINOS** | Independently rebuilt → digest match; re-ran L4/L5 → result match; policy vX passed | hardened_digest |
 | L9 | **Acceptance** | **Bank** | Internal contract/integration tests passed; promoted to golden repo | hardened_digest |
 
-L0–L7 are the maker's claims. **L8 is the only attestation that converts claims
+L0–L7 are the provider's claims. **L8 is the only attestation that converts claims
 into evidence.** L9 is the bank's own control and never leaves the bank.
 
 ---
 
 ## 3. The anchor problem (read this one twice)
 
-L0 is a *self-claim*. If Moderne merely asserts "we started from
+L0 is a *self-claim*. If Provider P merely asserts "we started from
 `commons-x:1.2.3`", the entire chain is a self-claim with eight extra steps.
 
 L0 is only load-bearing if it is **independently re-derivable from public data**:
@@ -74,7 +74,7 @@ preserved verbatim:
 
 ```
  13. resolve contract C = V.osera.contract.digest
-     AND C.status == ACCEPTED, signed by maker trust-anchor
+     AND C.status == ACCEPTED, signed by provider trust-anchor
      AND V.osera.contract.conformance == "FULL"
      AND C.scope.cvesInScope ⊆ (CVEs marked fixed in L7 VEX)
      → otherwise: DO NOT PROMOTE
@@ -96,7 +96,7 @@ for the model.
 
 **8.4 — Why push this at formation stage.**
 - Strictly stronger than a single-verifier model: resistant to *checker*
-  compromise, not just maker compromise.
+  compromise, not just provider compromise.
 - Turns verification from a FINOS cost centre into a **mutualised** one — fits
   OSERA's per-project pooled funding model.
 - Gives participating firms a reason to run verification infrastructure they
