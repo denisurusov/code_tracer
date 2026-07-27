@@ -45,7 +45,7 @@ different clocks, so each gets its own container.
 
 | | **Delivery manifest** | **Evidence core** | **Ingest envelope** |
 |---|---|---|---|
-| Assembled by | maker | issuer, once | resolver ③, once per consuming bank |
+| Assembled by | provider | issuer, once | resolver ③, once per consuming bank |
 | At | Delivered | Fulfilled | Verified → Resolved |
 | Holds | L-1 + L0–L7 | delivery manifest + L-1 + L0–L8 + layout + policy bundle | core digest + trust material + local locator |
 | Identity | logged digest | **one digest, shared by every bank** | bank-local digest |
@@ -72,7 +72,7 @@ its own admission moment, and must be free to tighten the window. Per-bank
 assembly is cheap: it is discovery and copy, and OCI blob sharing means the core
 is referenced rather than duplicated.
 
-**The delivery manifest freezes the hand-off.** Its job is to stop the maker
+**The delivery manifest freezes the hand-off.** Its job is to stop the provider
 adjusting what it submitted after seeing how verification went — the same
 loophole `L-1` closes for the test corpus, one layer out. It is checked
 mechanically against `contract.requiredAttestations`.
@@ -83,9 +83,9 @@ manifest digest at hand-off in the shared FINOS Rekor instance
 T"*, which is the property actually wanted, and asserts nothing about
 correctness — an inclusion proof cannot be misread as an endorsement.
 
-**Rejected: an alliance signature over a maker-assembled container.** Two
+**Rejected: an alliance signature over a provider-assembled container.** Two
 faults. *Timing* — before testing, the container holds only L-1 and L0–L7, so it
-is the maker's submission rather than the artifact that crosses the perimeter;
+is the provider's submission rather than the artifact that crosses the perimeter;
 L8 is the only element that converts claims into evidence. *Instrument* — such a
 signature attests "this is the set the vendor handed us," which is provenance of
 receipt masquerading as verification of contents. Issuer assembly of the **core**
@@ -94,7 +94,7 @@ digest over independently signed elements rather than an assertion about them.
 
 **Rejected: a single per-bank bundle with the delivery-manifest log entry as the
 shared identifier.** The manifest digest is already logged and already common, so
-it looks like a free answer. It covers L-1 and L0–L7 and stops at the maker's
+it looks like a free answer. It covers L-1 and L0–L7 and stops at the provider's
 submission — it names what was handed over, not what was verified, omitting the
 L8 set, the compiled layout and the policy bundle. An identifier for the evidence
 has to include the evidence.
@@ -106,8 +106,8 @@ has to include the evidence.
 | Element | Why it must be inside |
 |---|---|
 | Artifact digest and purl | the subject |
-| Delivery manifest + its log inclusion proof | the frozen maker hand-off |
-| Attestation set L0–L8, DSSE-wrapped | the maker's claims and the quorum's VSAs, each carrying the tree head its verifier observed |
+| Delivery manifest + its log inclusion proof | the frozen provider hand-off |
+| Attestation set L0–L8, DSSE-wrapped | the provider's claims and the quorum's VSAs, each carrying the tree head its verifier observed |
 | L-1 contract, signed, with countersignature | the root referent every link is checked against |
 | Compiled layout + `compilerVersion` | structural verification; the bank recompiles and compares (rule 14) |
 | Rego policy bundle + version | semantic verification; the meaning layer |
