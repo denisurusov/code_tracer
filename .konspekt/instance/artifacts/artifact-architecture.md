@@ -27,7 +27,8 @@ evidence-chain axis:
 - **Evidence chain** — the L-1…L9 attestation format the gate consumes. §3 below.
 - **Contract lifecycle** — the issuer-side commitment machine (Drafted…Fulfilled)
   that produces the root referent. `artifact-contract-lifecycle`.
-- **Product lifecycle** — the candidate state machine (Commissioned…Sunset).
+- **Package and product lifecycles** — the digest-keyed package machine and
+  the lineage-keyed product machine.
   `artifact-product-lifecycle`.
 - **Data model** — the records backing each state. `artifact-data-model`.
 
@@ -200,7 +201,7 @@ chain above it is verified *against*. It freezes:
   issuance, so the artifact is judged against the quorum in force when it was
   commissioned.
 - **Line** — `contract.osera.line`, declared not derived, fixing which bridge
-  lineage this candidate continues (`noteworthy-candidate-key`).
+  lineage this package continues (`noteworthy-candidate-key`).
 - **Schedule** — delivery window and bridge expiry.
 
 The contract is machine-readable and content-addressed. It **compiles directly
@@ -391,7 +392,7 @@ recruitment a launch prerequisite rather than a growth activity.
 
 ### 3.7 Admission policy
 
-The gate resolves the evidence bundle for a candidate artifact digest `D`, then
+The gate resolves the evidence bundle for a package digest `D`, then
 evaluates the policy below. Rules run in two passes: **structural**
 (`in-toto-verify` against the compiled layout — right steps, right signers, DAG
 intact) and **semantic** (Rego/Witness over the resolved predicate contents).
@@ -525,7 +526,7 @@ deliberately does not:
 ## 4. The verification gate
 
 The gate is the product surface that does not exist off-the-shelf. It runs
-inside the bank, hermetic and offline, in two passes over a candidate artifact:
+inside the bank, hermetic and offline, in two passes over a package:
 
 1. **Structural** — `in-toto-verify` against the layout compiled from the L-1
    contract. Confirms the right steps ran, signed by the right parties, with the
@@ -586,16 +587,16 @@ carrying its own `sha256` and chaining to the prior event for its `lineKey`
 not authoritative state, and `Expiring` is a computed view, never a stored status
 (`artifact-data-model` §2–§5). Event sourcing, not last-write, is what lets the
 bank answer "which bridge was in force in March, and what did it cover?" — the
-audit question a mutable row cannot — and equally "which admitted candidates rest
+audit question a mutable row cannot — and equally "which admitted packages rest
 on a verifier whose key was later revoked?"
 
 **Revocation records an exposure, it does not invalidate.** A revoked verifier
 key does not retract past verdicts: admission was valid at the time against a
 pinned `trustRootVersion`, and the artifacts are unchanged. Forcing
-re-verification would let one key invalidate hundreds of candidates at once — a
+re-verification would let one key invalidate hundreds of packages at once — a
 self-inflicted outage from a trust event rather than an artifact event. Instead
 the console (⑥) raises a review trigger and the risk function judges per
-candidate. Tolerable precisely because k ≥ 3 with zero dissent means no single
+package. Tolerable precisely because k ≥ 3 with zero dissent means no single
 verifier was ever the sole basis for an admission
 (`noteworthy-revocation-semantics`).
 
@@ -702,7 +703,7 @@ are recorded on the verdict for attribution, never treated as a weaker tier
 ## 9. Open questions / decisions
 
 Cross-cutting; several are now load-bearing elsewhere — the data model
-(`artifact-data-model` §6), the candidate lifecycle
+(`artifact-data-model` §6), the package and product lifecycles
 (`artifact-product-lifecycle` §8), the contract lifecycle
 (`artifact-contract-lifecycle` §8) and the physical topology
 (`artifact-deployment-topology` §7).
