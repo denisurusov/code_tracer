@@ -74,7 +74,7 @@
 <text x="980" y="172" font-size="10.5" font-family="monospace" fill="#64748b">contractRef · chain[L0…L9] · supersedes</text>
 <text x="980" y="191" font-size="9.5" font-style="italic" fill="#94a3b8">supersedes and osera.line must agree — a checkable invariant</text>
 <text x="980" y="242" font-size="12" font-weight="700" fill="#334155">verdict — immutable, self-contained for replay</text>
-<text x="980" y="262" font-size="10.5" font-family="monospace" fill="#64748b">candidateRef · inputs{layoutRef, policyRef}</text>
+<text x="980" y="262" font-size="10.5" font-family="monospace" fill="#64748b">packageRef · inputs{layoutRef, policyRef}</text>
 <text x="980" y="280" font-size="10.5" font-family="monospace" font-weight="700" fill="#b91c1c">bundleDigest</text>
 <text x="980" y="297" font-size="10.5" font-family="monospace" font-weight="700" fill="#b91c1c">trustRootVersion</text>
 <text x="980" y="314" font-size="10.5" font-family="monospace" font-weight="700" fill="#b91c1c">trustPath = osera-root | delegated:&lt;bank&gt;</text>
