@@ -50,7 +50,7 @@ stores are `artifact-deployment-topology`.
 > `noteworthy-revocation-semantics` and `noteworthy-quorum-parameters`.
 
 > **Amendment 2026-07-21 (ecosystem & roles).** Actors are named by **role** —
-> maker, verifier, issuer, bank — never by company; a maker is whoever signs
+> provider, verifier, issuer, bank — never by company; a provider is whoever signs
 > L0–L7 against a contract they countersigned. The anchor is **the canonical
 > public registry for the artifact's purl type**, not Maven specifically. Per
 > `noteworthy-ecosystem-generalization` and `noteworthy-attestation-index`.
@@ -68,14 +68,14 @@ alliance-side tooling that *commissions* hardened open source, and the bank-side
 gate and ledger that *admits and tracks* it. It is not the supply chain itself.
 OSERA (Open Source Enterprise Resiliency Alliance, a FINOS coalition) mutualizes
 the backpatching of old, widely-shared open source across regulated banks: a
-patching vendor — the **maker** — hardens vulnerable upstream artifacts, and the
+patching vendor — the **provider** — hardens vulnerable upstream artifacts, and the
 alliance distributes the result with machine-readable evidence.
 
 **What it is:**
 - **Issuer side** — authoring and issuing the L-1 backpatch contract, and
   curating the verifier registry and trust root the gate verifies against
   (`goal-issuer-side`, components ⑦⑧⑨).
-- **Consumer side** — the gate (does this artifact conform to a scope the maker
+- **Consumer side** — the gate (does this artifact conform to a scope the provider
   committed to before starting, independently verified?) and the ledger (which
   of our applications run a time-bound backpatch, and when does it lapse?)
   (`goal-the-gate`, components ①–⑥).
@@ -95,14 +95,14 @@ evidence trustworthy rather than circular:
   upstream git repositories, OSV/NVD. **Nobody in the alliance controls it**,
   which is exactly why it is the anchor (§3.4). Integrated-against, never
   annexed.
-- **Outside (alliance + maker)** — commission, build, test, verify. The issuer
-  side runs here, alongside the maker's and quorum's infrastructure; the
+- **Outside (alliance + provider)** — commission, build, test, verify. The issuer
+  side runs here, alongside the provider's and quorum's infrastructure; the
   evidence-**production** half.
 - **Inside (bank)** — resolve, verify, accept, re-test, deploy, adopt, track. The
   bank's on-prem gate and ledger; the evidence-**consumption** half.
 
 Everything code_tracer does **inside the bank is hermetic and offline** — no
-callout to the maker, no live trust query — so that a regulator can re-run the
+callout to the provider, no live trust query — so that a regulator can re-run the
 entire admission decision from stored inputs and reach the same verdict. The
 issuer side existing does not relax this: because the bank verifies offline, the
 perimeter crossing is a **copy of a self-contained evidence bundle**, not a
@@ -114,7 +114,7 @@ offline, and the perimeter is that line.
 The alliance commissions work in either of two modes, which map onto the two
 trust paths rather than onto two sets of rules:
 
-- **Mutualized** — members vote a project in; spend, benefit and responsibility
+- **Team** — members vote a project in; spend, benefit and responsibility
   are shared. Trust path `osera-root`.
 - **Solo** — a single bank commissions and funds alone and is solely accountable
   for that judgement. Trust path `delegated:<bank>`.
@@ -183,8 +183,8 @@ verifier registry (§5.1).
 ### 3.2 The L-1 backpatch contract — the root referent
 
 Before any work starts, the alliance issues a **backpatch contract** and the
-maker **signs acceptance** of it. This makes the deliverable a *commissioned
-spec*, not a post-hoc submission — it closes the loophole where a maker picks an
+provider **signs acceptance** of it. This makes the deliverable a *commissioned
+spec*, not a post-hoc submission — it closes the loophole where a provider picks an
 easy test corpus after the fact. The contract is **L-1**: the root the entire
 chain above it is verified *against*. It freezes:
 
@@ -211,29 +211,29 @@ Accepted, Delivered, Fulfilled, and three terminals — is
 
 ### 3.3 The chain, L0–L9
 
-Signers are named by **role**. In the OSERA instance the maker is a patching
+Signers are named by **role**. In the OSERA instance the provider is a patching
 vendor and the verifiers are member institutions, but nothing in the chain
 depends on which organisations fill those roles.
 
 | #  | Attestation | Signer | Asserts | Subject |
 |----|-------------|--------|---------|---------|
-| L0 | **Baseline** | Maker | This is the upstream artifact and source commit we started from | baseline_digest |
-| L1 | **Vulnerability Assessment** | Maker | These CVEs affect these components in the baseline SBOM | baseline_digest |
-| L2 | **Transformation** | Maker | This content-addressed recipe set / source patch was applied | baseline → hardened |
-| L3 | **Build Provenance** (SLSA v1) | Maker | Hardened artifact was built from L0 source + L2 patch on a pinned toolchain | hardened_digest |
-| L4 | **Test Results** | Maker | Upstream suite results vs baseline; API/ABI compat; patched-path coverage | hardened_digest |
-| L5 | **Vulnerability Proof** | Maker | Per CVE: PoC fails on baseline_digest, passes on hardened_digest | both |
-| L6 | **SBOM (out)** + diff | Maker | Composition of the hardened artifact, and delta vs the L0 SBOM | hardened_digest |
-| L7 | **VEX** (OpenVEX/CSAF) | Maker | Per CVE: `fixed`, justified by reference to L5 | hardened_digest |
+| L0 | **Baseline** | Provider | This is the upstream artifact and source commit we started from | baseline_digest |
+| L1 | **Vulnerability Assessment** | Provider | These CVEs affect these components in the baseline SBOM | baseline_digest |
+| L2 | **Transformation** | Provider | This content-addressed recipe set / source patch was applied | baseline → hardened |
+| L3 | **Build Provenance** (SLSA v1) | Provider | Hardened artifact was built from L0 source + L2 patch on a pinned toolchain | hardened_digest |
+| L4 | **Test Results** | Provider | Upstream suite results vs baseline; API/ABI compat; patched-path coverage | hardened_digest |
+| L5 | **Vulnerability Proof** | Provider | Per CVE: PoC fails on baseline_digest, passes on hardened_digest | both |
+| L6 | **SBOM (out)** + diff | Provider | Composition of the hardened artifact, and delta vs the L0 SBOM | hardened_digest |
+| L7 | **VEX** (OpenVEX/CSAF) | Provider | Per CVE: `fixed`, justified by reference to L5 | hardened_digest |
 | L8 | **VSA** | **Verifier(s)** | Independently rebuilt → digest match; re-ran L4/L5 → result match; policy passed; conforms to contract; **the log checkpoint this verifier observed** | hardened_digest |
 | L9 | **Acceptance** | **Bank** | Internal contract/integration tests passed; promoted to golden repo | hardened_digest |
 
-L0–L7 are the **maker's claims**. **L8 is the only attestation that converts
+L0–L7 are the **provider's claims**. **L8 is the only attestation that converts
 claims into evidence** — an independent party re-derived the result. L9 is the
 bank's own control and never leaves the bank.
 
-The maker's hand-off of L0–L7 is itself frozen: a **delivery manifest**,
-assembled by the maker at the Delivered transition, checked for completeness
+The provider's hand-off of L0–L7 is itself frozen: a **delivery manifest**,
+assembled by the provider at the Delivered transition, checked for completeness
 against `contract.requiredAttestations`, and fixed in time by a transparency-log
 entry rather than a signature — see `artifact-contract-lifecycle` §2 and
 `artifact-evidence-bundle` §1.
@@ -244,7 +244,7 @@ cannot be split without producing a dissent (`noteworthy-transparency-log`).
 
 ### 3.4 The anchor problem
 
-L0 is a *self-claim*. If the maker merely asserts "we started from
+L0 is a *self-claim*. If the provider merely asserts "we started from
 `commons-x:1.2.3`," the entire chain is a self-claim with eight extra steps. L0
 is only load-bearing if it is **independently re-derivable from public data**:
 
@@ -291,7 +291,7 @@ link points back to**:
   more (silent scope creep), no fewer (under-delivery). Out-of-scope CVEs must
   match `explicitlyOutOfScope`.
 - **L4 Test Results** must be results *of the corpus named in*
-  `contract.acceptanceCriteria.testCorpus`, verified by digest, so the maker
+  `contract.acceptanceCriteria.testCorpus`, verified by digest, so the provider
   cannot substitute an easier suite.
 - **L5 Vuln Proof** must exist for each `cvesInScope` entry, satisfying the
   fail-on-baseline / pass-on-hardened obligation the contract fixed in advance.
@@ -320,12 +320,12 @@ delivered, but have no admission path — the contract is on a course toward
 smart-contract execution, and executable terms have no room for a discretionary
 middle state. An honest shortfall routes through **contract amendment**, not a
 softened verdict: the unfixable CVE moves to `explicitlyOutOfScope` with a stated
-reason, the maker re-countersigns, and delivery is `FULL` against a contract that
+reason, the provider re-countersigns, and delivery is `FULL` against a contract that
 tells the truth (`noteworthy-conformance-binary`,
 `artifact-contract-lifecycle` §4–§5).
 
-**Net effect:** the gate no longer asks "did the maker do good work?" It asks
-"did the output conform to a scope the maker committed to *before starting*,
+**Net effect:** the gate no longer asks "did the provider do good work?" It asks
+"did the output conform to a scope the provider committed to *before starting*,
 independently verified?" That is a categorically stronger control statement, and
 it is the sentence that belongs in the DORA/CRA narrative (§8).
 
@@ -345,14 +345,14 @@ expensive to produce and **cheap to verify**. Here, reproducing a build and
 re-running a suite costs roughly what producing it cost — **verification does not
 compress.** Consequence: a single checker is both a throughput bottleneck and a
 single point of trust. Compromise one verifier's keys or build infrastructure
-and the whole model collapses in one move; the maker/checker split hardens
-against *maker* compromise and does nothing about *checker* compromise.
+and the whole model collapses in one move; the provider/checker split hardens
+against *provider* compromise and does nothing about *checker* compromise.
 
 **The fix is a quorum, not a chain.** Reproducible builds are deterministic, so
 independent verifiers converge on the same digest **without coordinating** — a
 natural Schelling point. Agreement without a consensus protocol.
 
-- **The maker mints** L0–L7 (producer, and tester).
+- **The provider mints** L0–L7 (producer, and tester).
 - **N independent verifiers** each rebuild, re-run the suite, and replay the vuln
   proofs. Because verification is a **duty of membership**, `n` is the active
   verifier registry rather than a separately negotiated set; the marginal cost is
@@ -431,7 +431,7 @@ Promote only if every rule holds.
      baseline_digest and hardened_digest both present on every link that
      requires them.                                     [digest-binding, §3.1]
  13. Resolve contract C = VSA.osera.contract.digest; C.status == ACCEPTED,
-     signed by maker trust-anchor; VSA.osera.contract.conformance == "FULL";
+     signed by provider trust-anchor; VSA.osera.contract.conformance == "FULL";
      C.scope.cvesInScope ⊆ (CVEs marked fixed in L7 VEX);
      C.governance.trustPath matches the signing namespace.   [contract binding]
  14. Recompile layout L' locally from the signed contract C; digest(L') equals
@@ -480,7 +480,7 @@ with the range in the record as it read when the work was commissioned.
 Verification runs against the snapshot rather than the live feed, because
 advisory records legitimately move: a range widened six months later is
 enrichment working correctly, and gating on it would reject a conforming
-artifact over something the maker never controlled. The live URI stays advisory
+artifact over something the provider never controlled. The live URI stays advisory
 and belongs to the ledger (⑤), where drift since commissioning surfaces as an
 exposure finding. Evaluated in the semantic pass, component ②
 (`noteworthy-referent-binding`).
@@ -580,7 +580,7 @@ it is admitted, and drives the sunset/re-verification cycle.
 
 The ledger backs the `Active`/`Sunset` states of the lifecycle. Its durable
 substrate is an **append-only, hash-chained event log** — `ledger-event`s, each
-carrying its own `sha256` and chaining to the prior event for its `candidateKey`
+carrying its own `sha256` and chaining to the prior event for its `lineKey`
 (`issued → renewed → expired → retired`, plus `verifier-revoked`);
 `ledger-row` and `state-pointer` are **projections replayed** from that chain,
 not authoritative state, and `Expiring` is a computed view, never a stored status
@@ -639,13 +639,13 @@ attestation index, the OCI bundle over its tar export
 | **Build — consumer side** (bank) | ① layout compiler (shared, dual-sited) · ② Rego semantic policy · ③ attestation resolver + bundle assembly · ④ acceptance inspection harness · ⑤ exposure/sunset tracker · ⑥ lifecycle console (UI over the mutable projections; `task-lifecycle-ui`) |
 | **Build — issuer side** (alliance) | ⑦ contract authoring UI (`task-contract-authoring`) · ⑧ contract issuance & countersignature (`task-contract-issuance`) · ⑨ verifier registry & TUF trust root (`task-verifier-registry`) · ① layout compiler (same deterministic compiler, issuer siting) |
 | **Integrate** (proven OSS, wired in) | `in-toto-verify` (structural) · Witness/OPA (Rego eval) · cosign / Sigstore (resolution + signature) · Rekor (FINOS-operated) · TUF (trust root) · Archivista (attestation index — load-bearing for resolution, optional for transport) · the bank's existing CMDB (app inventory) |
-| **Not ours** (upstream, integrated-against) | the maker's patching pipeline (L0–L7 production) · the verifier quorum's rebuild infra (L8) · public package registries and upstream repos (the anchor) |
+| **Not ours** (upstream, integrated-against) | the provider's patching pipeline (L0–L7 production) · the verifier quorum's rebuild infra (L8) · public package registries and upstream repos (the anchor) |
 | **The gap** (unresolved) | Alliance **governance policy** — who sits in the trust-root threshold, verifier on/offboarding criteria, and the procedure on suspected compromise. Mechanism is built (⑨); these are formation-stage alliance business |
 
 Trust-root governance has moved from *the gap* to *build* in mechanism:
 `noteworthy-trust-root-ownership` fixes the root as **k-of-m co-signed** across
 the alliance and member institutions (so root re-signing survives any one party
-disappearing), with **TUF delegation** for bilateral bank↔maker namespaces.
+disappearing), with **TUF delegation** for bilateral bank↔provider namespaces.
 Quorum sizing is likewise settled (`noteworthy-quorum-parameters`). What remains
 is who those parties are and how they are admitted or removed.
 
@@ -685,11 +685,11 @@ EU CRA, DORA, NIS2, NIST SSDF, SR 23-4.
 
 The sentence code_tracer lets the bank make to a regulator is the §3.5 net
 effect: *not* "we trust the vendor's testing," but "every admitted artifact
-provably conforms to a scope the maker committed to before starting,
+provably conforms to a scope the provider committed to before starting,
 independently re-verified by a k-of-n quorum with zero dissent, and separately
 acceptance-tested inside our own environment — and we can re-run that decision
 offline on demand." That is a DORA/CRA-grade control statement, and it is the
-reason the maker/checker split, the L-1 contract, and the quorum all exist.
+reason the provider/checker split, the L-1 contract, and the quorum all exist.
 
 It holds **without qualification across trust paths and governance modes**: an
 artifact arriving over a delegated bilateral namespace, or commissioned by a
@@ -719,7 +719,7 @@ Cross-cutting; several are now load-bearing elsewhere — the data model
   paths; no weaker tier. `noteworthy-trust-root-ownership`.
 - **Conformance** — binary at the gate; amendment is the route for shortfall.
   `noteworthy-conformance-binary`.
-- **Governance modes** — mutualized and solo; verification is a duty, not a
+- **Governance modes** — team and solo; verification is a duty, not a
   credit. `noteworthy-governance-modes`.
 - **Transparency log** — shared FINOS Rekor, witnessed by the quorum.
   `noteworthy-transparency-log`.
