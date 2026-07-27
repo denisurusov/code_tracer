@@ -73,6 +73,7 @@ was a deck.
 prose), `artifact-paper-outline` (Part I §1 opens on the same bind, from the
 dependency-coupling angle rather than the governance-asymmetry one).
 
-**Open:** whether `artifact-architecture` §1 should carry this framing directly.
-It currently opens on what code_tracer *is* rather than on why the gap exists,
-and a reader arriving cold gets the mechanism before the motivation.
+**Applied 2026-07-27.** `artifact-architecture` §1 now opens on this framing,
+under the heading *Why the gap exists*, so a reader arriving cold gets the
+motivation before the mechanism. The not-symmetric caveat travels with it, since
+that is the misreading the pairing invites. No open items remain on this record.
