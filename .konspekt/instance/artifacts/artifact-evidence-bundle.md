@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-25T00:00:00Z
+  updatedAt: 2026-07-27T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   sourceRef: 05038f93a541216c0f6713ea13bcff58a40d823d
   contentHash: 05038f93a541216c0f6713ea13bcff58a40d823d
   timestamp: 2026-07-21T15:10:00Z
 createdAt: 2026-07-21T15:10:00Z
-updatedAt: 2026-07-25T00:00:00Z
+updatedAt: 2026-07-27T00:00:00Z
 ```
 # code_tracer — The evidence bundle: core and envelope (perimeter interface)
 
@@ -111,6 +111,7 @@ has to include the evidence.
 | L-1 contract, signed, with countersignature | the root referent every link is checked against |
 | Compiled layout + `compilerVersion` | structural verification; the bank recompiles and compares (rule 14) |
 | Rego policy bundle + version | semantic verification; the meaning layer |
+| Pinned advisory snapshots, one per `cvesInScope` entry | the frozen records the contract's scope is checked against (rule 16); absent them, the range check becomes a live lookup |
 | Core manifest | digest over every element above; the shared identity |
 
 **Ingest envelope** — sealed by ③ at the crossing, one per bank per ingest.
