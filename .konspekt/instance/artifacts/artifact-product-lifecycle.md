@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-26T18:00:00Z
+  updatedAt: 2026-07-27T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: 37d8d29a487a1e1e02ec3995be23d7d422179fab
   contentHash: 37d8d29a487a1e1e02ec3995be23d7d422179fab
   timestamp: 2026-07-17T17:15:00Z
 createdAt: 2026-07-17T17:15:00Z
-updatedAt: 2026-07-26T18:00:00Z
+updatedAt: 2026-07-27T00:00:00Z
 ```
 # code_tracer — Package and product lifecycles
 
@@ -39,8 +39,15 @@ lapsing, renewing). They are distinct from the **evidence chain** (L-1…L9,
 > - **Active, Sunset, Retired** are product-grain, keyed by lineage. §4–§5.
 >
 > `candidateKey` is renamed **`lineKey`** in the same pass
-> (`noteworthy-candidate-key`, amended); `candidate-version` survives as a field
-> name pending the rest of the rename.
+> (`noteworthy-candidate-key`, amended).
+
+> **Amendment 2026-07-27.** The identifier rename pass is complete.
+> `candidate-version` → **`package-version`** and `verdict.candidateRef` →
+> **`packageRef`** (`noteworthy-lifecycle-nouns`, amended), alongside
+> **maker → provider** and **mutualized → team** across every artifact. The
+> retired noun now survives only where it names the decision that retired it,
+> and in the entity id `noteworthy-candidate-key`, which keeps its name because
+> renaming a content-addressed id would orphan the citations to it.
 
 ## 1. The boundary
 
@@ -142,8 +149,8 @@ overwriting the prior contract it was verified against.
 Consequences, which the data model inherits:
 
 - **Append-only, content-addressed.** `commons-x:3.2.1-osera.1` and
-  `…-osera.2` are two immutable package records, each with its own frozen
-  evidence chain, linked by a `supersedes` edge (osera.2 → osera.1).
+  `…-osera.2` are two immutable `package-version` records, each with its own
+  frozen evidence chain, linked by a `supersedes` edge (osera.2 → osera.1).
 - **Audit-answerable.** The bank can reconstruct exactly which bridge was in
   force at any past date, and what scope it covered — a question a mutable
   status field cannot answer after the fact.
@@ -180,8 +187,6 @@ Consequences, which the data model inherits:
 - **Sunset signaling** — how far ahead of lapse the ledger (⑤) surfaces an
   Active product as approaching Sunset. The computed-view decision is settled
   (`artifact-data-model` §5); the window value is not.
-- **Identifier rename pass** — `candidateKey` is now `lineKey`;
-  `candidate-version` is package-grain and still carries the retired noun.
 - **Multi-package products** — a product shipping as several packages currently
   yields one lineage per package, so one backpatch touching three modules is
   three lineages for one project.
