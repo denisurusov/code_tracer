@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="code_tracer — design mockup walking one security fix across the whole admission lifecycle, from contract to expiry.">
 <meta name="color-scheme" content="light dark">
-<title>Lifecycle mockup — one candidate, end to end</title>
+<title>Lifecycle mockup — one package, end to end</title>
 
 <style>
   :root {
@@ -703,7 +703,7 @@ Keyboard:: Tab to reach, Esc to close">dotted underline</span>
     </div>
   </header>
 
-  <!-- ============ THE CANDIDATE ============ -->
+  <!-- ============ THE PACKAGE ============ -->
   <section class="section">
     <header>
       <span class="eyebrow">The subject</span>
@@ -718,7 +718,7 @@ Keyboard:: Tab to reach, Esc to close">dotted underline</span>
     <div class="screen">
       <div class="screen-bar">
         <span class="title">Fix package</span>
-        <span class="sub mono">candidate · OSERA-2026-0142</span>
+        <span class="sub mono">package · OSERA-2026-0142</span>
       </div>
       <div class="screen-body">
         <div class="kv">
@@ -837,7 +837,7 @@ Tracked in:: the exposure table">30 Jun 2027</span>
         </div>
 
         <div class="keyline">
-          <span class="term">candidateKey</span>
+          <span class="term">lineKey</span>
           <span>
             One tracking handle follows this library through every re-issue of the fix —
             <span class="mono">commons-collections ? osera.line=3</span>. The version changes; the handle does not.
@@ -862,7 +862,7 @@ Tracked in:: the exposure table">30 Jun 2027</span>
     <div class="screen">
       <div class="screen-bar">
         <span class="title">Lifecycle</span>
-        <span class="sub">this candidate's actual path · dates from the fixture scenario</span>
+        <span class="sub">this package's actual path · dates from the fixture scenario</span>
       </div>
       <div class="screen-body">
         <div class="scroller">
@@ -874,7 +874,7 @@ Tracked in:: the exposure table">30 Jun 2027</span>
             <div class="stop outside">
               <span class="n">01</span>
               <span class="plain">Contract agreed</span>
-              <span class="term">Commissioned</span>
+              <span class="term">Accepted</span>
               <span class="when">01 Jul 2026</span>
             </div>
             <div class="stop outside">
@@ -925,7 +925,7 @@ Tracked in:: the exposure table">30 Jun 2027</span>
         <div class="zone-legend">
           <span><span class="swatch out"></span> Hatched — outside the bank, observed only</span>
           <span><span class="swatch in"></span> Solid — inside the bank, the part code_tracer runs</span>
-          <span><span class="chip accent">underlined</span> where this candidate sits today</span>
+          <span><span class="chip accent">underlined</span> where this package sits today</span>
         </div>
       </div>
     </div>
@@ -1073,15 +1073,15 @@ Upgrade scheduled:: [bad] no"><span class="dot"></span>expiring 41d</span>
           <div class="verdict">
             <span class="headline hov" tabindex="0" data-tip-label="Decision record"
               data-tip="Outcome:: [ok] accepted
-Rules checked:: 14
-Rules passed:: [ok] 14
+Rules checked:: 16
+Rules passed:: [ok] 16
 Recorded:: 2026-07-21T09:14:00Z
 Record fingerprint:: sha256:6ab4e701…f38d
 Network calls:: [ok] none
 Re-checkable:: [ok] yes — same inputs, same outcome
 Standard:: Rego, evaluated by Witness">Accepted</span>
             <span class="detail">
-              All 14 admission rules passed · checked 21 Jul 2026, 09:14 UTC ·
+              All 16 admission rules passed · checked 21 Jul 2026, 09:14 UTC ·
               <span class="mono">verdict</span> recorded, offline
             </span>
           </div>
@@ -1259,7 +1259,7 @@ Challenge this:: An early delivery leaves no residual risk the way thin test cov
                     <td class="req">Our own applications still work</td>
                     <td class="num hov" tabindex="0" data-tip-label="Bank-side, not contract"
                       data-tip="Source:: this bank
-Note:: The one check the alliance cannot perform for us — our application tests run against the candidate before it is approved. Recorded as trail L9.">all must pass</td>
+Note:: The one check the alliance cannot perform for us — our application tests run against the package before it is approved. Recorded as trail L9.">all must pass</td>
                     <td class="hov" tabindex="0" data-tip-label="Our application tests"
                       data-tip="Applications tested:: 3
 Tests run:: 1,204
@@ -1306,47 +1306,47 @@ Standard:: in-toto Statement in a DSSE envelope">What was agreed — scope, test
                 data-tip="Subject:: sha256:4d81b7e0…19d3e8
 Source:: git+github.com/apache/commons-collections
 Matches contract:: [ok] yes
-Matches public copy:: [ok] yes">The original 3.2.1, identified exactly</span><span class="who">maker</span></div>
+Matches public copy:: [ok] yes">The original 3.2.1, identified exactly</span><span class="who">provider</span></div>
               <div class="chain-row outside"><span class="lvl">L1</span><span class="hov" tabindex="0" data-tip-label="L1 · flaws before the fix"
                 data-tip="Flaws found:: CVE-2025-40142
 Parts list:: sha256:5c31ba07…e920
 Scanner:: pinned, offline database
-Note:: Establishes what was wrong before anything was changed.">Flaws present before the fix</span><span class="who">maker</span></div>
+Note:: Establishes what was wrong before anything was changed.">Flaws present before the fix</span><span class="who">provider</span></div>
               <div class="chain-row outside"><span class="lvl">L2</span><span class="hov" tabindex="0" data-tip-label="L2 · the change"
                 data-tip="From:: sha256:4d81b7e0…19d3e8
 To:: sha256:9f2c1a84…eda417
 Change fingerprint:: sha256:a70b3c68…d5f1
 Size:: 124 lines, 3 files
-New features:: [ok] none — contract forbids them">The change itself, and nothing else</span><span class="who">maker</span></div>
+New features:: [ok] none — contract forbids them">The change itself, and nothing else</span><span class="who">provider</span></div>
               <div class="chain-row outside"><span class="lvl">L3</span><span class="hov" tabindex="0" data-tip-label="L3 · the build"
                 data-tip="Built:: 2026-07-14T11:02:00Z
 Toolchain:: JDK 8u402, Maven 3.9.6 — pinned
 Inputs:: L0 (original), L2 (the change)
 Output:: sha256:9f2c1a84…eda417
 Reproducible:: [ok] declared digest-identical
-Standard:: SLSA provenance">How it was built, on a pinned toolchain</span><span class="who">maker</span></div>
+Standard:: SLSA provenance">How it was built, on a pinned toolchain</span><span class="who">provider</span></div>
               <div class="chain-row outside"><span class="lvl">L4</span><span class="hov" tabindex="0" data-tip-label="L4 · tests and coverage"
                 data-tip="Suite fingerprint:: [ok] matches contract
 Upstream tests:: 2,841 passed · 6 skipped
 Supplemental:: 12 passed
 Changed-line coverage:: [ok] 95.2% (floor 90%)
-Duration:: 4m 20s">The test run and its coverage</span><span class="who">maker</span></div>
+Duration:: 4m 20s">The test run and its coverage</span><span class="who">provider</span></div>
               <div class="chain-row outside"><span class="lvl">L5</span><span class="hov" tabindex="0" data-tip-label="L5 · proof of fix"
                 data-tip="Flaw:: CVE-2025-40142
 On 3.2.1:: [ok] failed, as required
 On the fix:: [ok] passed
-Note:: The single most load-bearing record — without it, 'fixed' is only a claim.">Proof the flaw fails on 3.2.1 and passes here</span><span class="who">maker</span></div>
+Note:: The single most load-bearing record — without it, 'fixed' is only a claim.">Proof the flaw fails on 3.2.1 and passes here</span><span class="who">provider</span></div>
               <div class="chain-row outside"><span class="lvl">L6</span><span class="hov" tabindex="0" data-tip-label="L6 · parts list"
                 data-tip="Format:: CycloneDX 1.5
 Fingerprint:: sha256:d0f82b13…7c66
 Components:: 41
-Changed vs original:: 0 added · 0 removed">Full parts list of what shipped</span><span class="who">maker</span></div>
+Changed vs original:: 0 added · 0 removed">Full parts list of what shipped</span><span class="who">provider</span></div>
               <div class="chain-row outside"><span class="lvl">L7</span><span class="hov" tabindex="0" data-tip-label="L7 · flaw status after"
                 data-tip="CVE-2025-40142:: [ok] fixed
 Justified by:: L5 (proof of fix)
 Flaws claimed beyond scope:: [ok] none
 Note:: Claiming a fix outside the agreed scope is itself a refusal.
-Standard:: OpenVEX · CSAF">Flaw status after the fix</span><span class="who">maker</span></div>
+Standard:: OpenVEX · CSAF">Flaw status after the fix</span><span class="who">provider</span></div>
               <div class="chain-row outside"><span class="lvl">L8</span><span class="hov" tabindex="0" data-tip-label="L8 · independent rebuilds"
                 data-tip="Rebuilds:: 4 (see below)
 Required to agree:: 3
@@ -1360,7 +1360,7 @@ Tests:: [ok] 1,204 passed · 0 failed
 Run:: 2026-07-21T08:55:00Z
 Network:: [ok] none — fully offline
 Outcome:: promoted to the approved repository
-Standard:: in-toto inspection">Our own application tests against the candidate</span><span class="who">this bank</span></div>
+Standard:: in-toto inspection">Our own application tests against the package</span><span class="who">this bank</span></div>
             </div>
           </div>
 
@@ -1633,7 +1633,7 @@ Evidence:: [ok] intact and still re-checkable">3.2.1-osera.1</span>
           </div>
 
           <div class="keyline">
-            <span class="term">candidateKey</span>
+            <span class="term">lineKey</span>
             <span>
               All three rows share one tracking handle, which is why this history exists as a list
               rather than three unrelated records.
@@ -1860,7 +1860,7 @@ Hook:: the third-party risk regime the bank's risk function applies first, befor
     <div class="screen">
       <div class="screen-body">
         <div class="glossary">
-          <div class="gloss"><span class="t">Commissioned</span><span class="d"><b>Contract agreed</b> — scope and deadlines frozen.</span></div>
+          <div class="gloss"><span class="t">Accepted</span><span class="d"><b>Contract agreed</b> — scope and deadlines frozen.</span></div>
           <div class="gloss"><span class="t">Built</span><span class="d"><b>Fix built</b> — the patched version exists.</span></div>
           <div class="gloss"><span class="t">Verified</span><span class="d"><b>Rebuilt by others</b> — independent parties reproduced it.</span></div>
           <div class="gloss"><span class="t">Resolved</span><span class="d"><b>Evidence gathered</b> — the records reached the bank.</span></div>
@@ -1868,8 +1868,8 @@ Hook:: the third-party risk regime the bank's risk function applies first, befor
           <div class="gloss"><span class="t">Adopted</span><span class="d"><b>Approved</b> — cleared for use.</span></div>
           <div class="gloss"><span class="t">Active</span><span class="d"><b>Running in production</b> — and being tracked.</span></div>
           <div class="gloss"><span class="t">Sunset</span><span class="d"><b>Support ended</b> — move on or re-issue.</span></div>
-          <div class="gloss"><span class="t">candidate</span><span class="d"><b>Fix package</b> — one patched version under consideration.</span></div>
-          <div class="gloss"><span class="t">candidateKey</span><span class="d"><b>Tracking handle</b> — constant across re-issues.</span></div>
+          <div class="gloss"><span class="t">package</span><span class="d"><b>Fix package</b> — one patched version under consideration.</span></div>
+          <div class="gloss"><span class="t">lineKey</span><span class="d"><b>Tracking handle</b> — constant across re-issues.</span></div>
           <div class="gloss"><span class="t">backpatch / bridge</span><span class="d"><b>Temporary fix</b> — buys time until a real upgrade.</span></div>
           <div class="gloss"><span class="t">bridgeExpiry</span><span class="d"><b>Must move by</b> — the date the fix stops being supported.</span></div>
           <div class="gloss"><span class="t">k-of-n quorum</span><span class="d"><b>Independent rebuilds</b> — how many parties must agree.</span></div>
