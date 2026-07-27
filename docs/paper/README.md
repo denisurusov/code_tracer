@@ -8,7 +8,7 @@ regulated estate.** Working draft, ~7,900 words, four figures, 27 pages in print
 | File | Contents |
 |---|---|
 | `00-front-matter.md` | abstract, scope note, how to read |
-| `part-1-the-model.md` | the bind · why maker evidence isn't evidence · commissioned specification · the anchor · verification does not compress |
+| `part-1-the-model.md` | the bind · why provider evidence isn't evidence · commissioned specification · the anchor · verification does not compress |
 | `part-2-commissioning-and-trust.md` | issuance and amendment · trust root · quorum sizing |
 | `part-3-admission-and-afterlife.md` | compile · perimeter · what you actually deploy · the ledger · ecosystems |
 | `part-4-limits.md` | what the model does not do |
