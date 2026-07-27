@@ -85,7 +85,7 @@
 <text x="876" y="391" font-size="9.5" fill="#64748b" text-anchor="middle">bundle sealed by ③</text>
 <text x="1056" y="374" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Gate</text>
 <text x="1056" y="390" font-size="9.5" fill="#64748b" text-anchor="middle">structural → semantic → L9</text>
-<text x="1056" y="403" font-size="9.5" fill="#64748b" text-anchor="middle">15 rules · ①②④</text>
+<text x="1056" y="403" font-size="9.5" fill="#64748b" text-anchor="middle">16 rules · ①②④</text>
 <text x="1236" y="374" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Adopted</text>
 <text x="1236" y="391" font-size="9.5" fill="#64748b" text-anchor="middle">golden repo · L9</text>
 <text x="1236" y="404" font-size="9" font-style="italic" fill="#94a3b8" text-anchor="middle">last package state</text>
