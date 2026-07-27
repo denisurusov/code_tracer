@@ -30,7 +30,7 @@ the primitives we invented, under standard names:
 | OSERA design element | in-toto primitive | What it means |
 |---|---|---|
 | The contract (L-1) | **Layout** | The signed policy: required steps, authorized keys, artifact rules, expiry |
-| Moderne, FINOS, quorum firms, the bank | **Functionaries** | Named actors, each with a signing keypair |
+| Provider P, FINOS, quorum firms, the bank | **Functionaries** | Named actors, each with a signing keypair |
 | Attestations L0–L8 | **Links / Statements** | Signed evidence that one step executed |
 | "both digests in every link" | **Materials / Products rules** | The product of step N must be the material of step N+1 — this threads the DAG and is *enforced*, not just documented |
 | k-of-n quorum verification | **Threshold** | A step may require m-of-n functionary signatures — native, not bolted on |
@@ -38,7 +38,7 @@ the primitives we invented, under standard names:
 | Bridge expiry | Layout **expiration** | Verification fails after the layout expires |
 | The admission gate | `in-toto-verify` | The single command that evaluates all of the above |
 
-**Consequence:** "did the maker fulfil the contract" becomes a mechanical
+**Consequence:** "did the provider fulfil the contract" becomes a mechanical
 question — `in-toto-verify` passes or it doesn't. No human reads a PDF. No
 bespoke checker to build, certify, or get a second-line sign-off on.
 
@@ -60,7 +60,7 @@ Sketch of the compiled layout (elided to the load-bearing parts):
   "readme": "OSERA-2026-0142 v1 compiled layout",
 
   "keys": {
-    "moderne":  { /* maker pubkey */ },
+    "provider-p":  { /* provider pubkey */ },
     "finos":    { /* verifier-quorum root, or threshold group */ },
     "verifier-db": {}, "verifier-gs": {}, "verifier-ms": {},
     "bank-self": { /* the bank's own inspection key */ }
@@ -76,7 +76,7 @@ Sketch of the compiled layout (elided to the load-bearing parts):
         ["DISALLOW", "*"]
       ],
       "expected_products": [["ALLOW", "commons-x-1.2.3.jar"]],
-      "pubkeys": ["moderne"], "threshold": 1
+      "pubkeys": ["provider-p"], "threshold": 1
     },
     {
       "name": "transform",
@@ -85,13 +85,13 @@ Sketch of the compiled layout (elided to the load-bearing parts):
                               "FROM", "baseline"]],
       "expected_products": [["ALLOW", "commons-x-1.2.3-osera.1.jar"],
                             ["ALLOW", "*.recipe"]],
-      "pubkeys": ["moderne"], "threshold": 1
+      "pubkeys": ["provider-p"], "threshold": 1
     },
     {
       "name": "build-provenance",
       "expected_materials": [["MATCH", "*", "WITH", "PRODUCTS", "FROM", "transform"]],
       "expected_products": [["ALLOW", "commons-x-1.2.3-osera.1.jar"]],
-      "pubkeys": ["moderne"], "threshold": 1
+      "pubkeys": ["provider-p"], "threshold": 1
     },
     {
       "name": "quorum-verify",
@@ -107,7 +107,7 @@ Sketch of the compiled layout (elided to the load-bearing parts):
   "inspections": [
     {
       // the bank runs its OWN rebuild/acceptance at verify time.
-      // if THIS fails, ingest fails — regardless of what the maker/quorum signed.
+      // if THIS fails, ingest fails — regardless of what the provider/quorum signed.
       "name": "bank-acceptance",
       "expected_materials": [["MATCH", "commons-x-1.2.3-osera.1.jar",
                               "WITH", "PRODUCTS", "FROM", "quorum-verify"]],
