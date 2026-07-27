@@ -38,6 +38,14 @@ decidable from fixture data — see the coverage table in §7.
 > rule 16 and given its own coverage row. Vocabulary per
 > `noteworthy-lifecycle-nouns`.
 
+> **Amendment 2026-07-27 (recordDigest).** `recordDigest` is **`sha256` over the
+> pinned advisory snapshot exactly as carried**, not over a canonical form — see
+> `noteworthy-record-digest`. This is a deliberate exception to §2's general
+> canonicalize-then-hash rule, and it is what makes the `cve-record-tampered`
+> variant constructible: without it, the generator would be hashing by a
+> convention no other implementation is bound to, and the corpus would pass
+> against itself while testing nothing.
+
 ## 1. Scenario — one backpatch, every value fixed
 
 A single class-(a) bridge; fixing the values is what makes every downstream
@@ -62,8 +70,15 @@ digest consistent and the run reproducible.
 Same `git hash-object` discipline as the `sources/` store, because
 reproducibility *is* the replay property.
 
-- Canonicalize every JSON object (sorted keys, no insignificant whitespace,
-  UTF-8) → `sha256` → `sha256:<hex>`.
+- Canonicalize every JSON object the generator **authors** (sorted keys, no
+  insignificant whitespace, UTF-8) → `sha256` → `sha256:<hex>`. This covers the
+  contract, the attestation envelopes, the layout and the manifests — objects
+  the fixture generator creates and therefore controls.
+- **Exception: `recordDigest`.** Advisory snapshots are objects the generator
+  *carries* rather than authors, and rule 16 digests them **as carried**. Hash
+  the file bytes; do not canonicalize, re-indent or re-encode. Every consumer —
+  gate, quorum, tar export — must preserve those bytes unchanged
+  (`noteworthy-record-digest`).
 - The two artifacts are tiny synthetic blobs, distinct by construction:
   - baseline  = `commons-collections-3.2.1\nUNPATCHED\n`
   - hardened  = `commons-collections-3.2.1-osera.1\nPATCHED:CVE-2025-40142\n`
@@ -97,7 +112,8 @@ Schema from `osera-backpatch-contract.md` §3, filled in. Per
 is the immutable-anchor case (digest + re-derivable purl/sourceRef, must-match-
 live); **in-scope CVEs** are the mutable-snapshot case — `source` (live OSV
 locator, advisory) + `recordDigest` (frozen snapshot of the record at
-commissioning) + `affectedRange` checked against that snapshot.
+commissioning, digested as carried) + `affectedRange` checked against that
+snapshot.
 
 ```jsonc
 {
@@ -127,7 +143,7 @@ commissioning) + `affectedRange` checked against that snapshot.
           "affectedComponent": "pkg:maven/org.apache.commons/commons-collections",
           "affectedRange": ">=3.0,<3.2.2",           // must match the pinned snapshot
           "source": "https://osv.dev/vulnerability/CVE-2025-40142",  // live locator, advisory
-          "recordDigest": { "sha256": "<osv_record_digest>" }         // frozen OSV snapshot
+          "recordDigest": { "sha256": "<osv_record_digest>" }         // sha256 of the snapshot AS CARRIED
         }
       ],
       "explicitlyOutOfScope": [
@@ -222,7 +238,7 @@ fixtures/conforming/
                checkpoints.json              # four observed log heads
   deps/        resolved-manifest.json        # dependencyLock.digest target
   anchor/      registry/commons-collections-3.2.1.jar   # faked public anchor
-               osv/CVE-2025-40142.json       # frozen snapshot recordDigest pins
+               osv/CVE-2025-40142.json       # frozen snapshot — recordDigest is sha256 of THIS FILE
                osv/CVE-2024-40099.json       # out-of-scope advisory (locator only)
   index.json                                 # digest → attestation refs (untrusted lookup)
   manifest.json                              # bundle manifest: digest → path
@@ -230,7 +246,9 @@ fixtures/conforming/
 
 `index.json` exists so the resolver's discovery path is exercised, and is
 deliberately **not** consulted by any admission rule
-(`noteworthy-attestation-index`).
+(`noteworthy-attestation-index`). The `anchor/osv/` files are **byte-stable
+fixtures**: once generated, they are never reformatted, because their bytes are
+what `recordDigest` commits to.
 
 ## 7. Known-bad variants — the Phase 0 test matrix
 
@@ -255,11 +273,18 @@ Stored as overlays (`fixtures/bad/<variant>/`) so the diff documents the test.
 | `version-string-subject` | one subject identified by version string, no digest | 12 |
 | `scope-mismatch` | L7 marks a CVE not in cvesInScope | 13 |
 | `trustpath-mismatch` | `governance.trustPath` ≠ the signing namespace | 13 |
-| `cve-record-tampered` | OSV snapshot digest ≠ contract recordDigest | 16 |
+| `cve-record-tampered` | alter one byte of `anchor/osv/CVE-2025-40142.json`, leaving `recordDigest` unchanged | 16 |
+| `cve-range-mismatch` | contract `affectedRange` disagrees with the (untampered) snapshot | 16 |
 | `layout-digest-mismatch` | distributed layout ≠ locally recompiled layout | 14 |
 | `stale-trust-root` | TUF snapshot older than 7 days against fixture `now` | 15 |
 | `stale-checkpoint` | checkpoint set older than 24 hours against fixture `now` | 15 |
 | `expired-bridge` | bridgeExpiry in the past | expiry |
+
+Rule 16 gets **two** variants because it has two clauses, and they fail for
+different reasons: `cve-record-tampered` breaks the digest (the snapshot was
+altered in transit), while `cve-range-mismatch` leaves the digest intact and
+breaks the agreement between contract and snapshot (the contract misstates what
+the advisory says). A single variant would leave one clause untested.
 
 One **positive** variant, which must still ADMIT:
 
@@ -286,7 +311,7 @@ One **positive** variant, which must still ADMIT:
 | 13 contract binding | `scope-mismatch`, `trustpath-mismatch` |
 | 14 compile agreement | `layout-digest-mismatch` |
 | 15 freshness | `stale-trust-root`, `stale-checkpoint` |
-| 16 CVE-record integrity | `cve-record-tampered` |
+| 16 CVE-record integrity | `cve-record-tampered`, `cve-range-mismatch` |
 
 All sixteen rules are now exercised. `corpus-substituted` is the most important
 single variant in the corpus: substituting an easier test suite after the fact is
@@ -304,9 +329,12 @@ revision no variant tested it.
 - **The transparency log is synthetic.** Checkpoints are fixture-generated
   triples, and the delivery manifest's inclusion proof is fabricated. This
   exercises the *shape* of split-view detection without a real log.
-- **CVE live-pull is faked.** Per `noteworthy-referent-binding` the `source`
-  pointer is advisory-only in production; in the fixture it resolves to the local
-  `anchor/osv/` snapshot, and only `recordDigest` gates.
+- **CVE live-pull is faked, and faithfulness is untested.** Per
+  `noteworthy-referent-binding` the `source` pointer is advisory-only in
+  production; in the fixture it resolves to the local `anchor/osv/` snapshot, and
+  only `recordDigest` gates. Note what this does *not* cover: whether the
+  snapshot is faithful to what OSV actually served is an issuer-side question,
+  open in `artifact-architecture` §9, and no fixture here speaks to it.
 - **`now` is supplied, never read from the clock.** Rules 15 and the expiry check
   evaluate against a fixture-supplied timestamp so the corpus does not rot and
   runs identically in a year.
@@ -322,6 +350,10 @@ revision no variant tested it.
   (digest + purl + sourceRef, must-match-live). In-scope CVEs are the mutable-
   snapshot case: `source` (live OSV) + `recordDigest` (frozen snapshot) +
   checkable `affectedRange`. See `noteworthy-referent-binding`.
+- **`recordDigest` form — decided: bytes as carried.** No canonicalization, per
+  `noteworthy-record-digest`. This is what makes the two rule-16 variants
+  constructible and keeps the generator from inventing a convention no other
+  implementation is bound to.
 - **SLSA materials depth (L3) — decided: digest-only, plus the toolchain.**
   Rule 6 asks whether the artifact was built from L0 source + L2 transformation
   on the pinned toolchain. Digest references to L0 and L2 cover two of the three
