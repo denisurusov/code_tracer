@@ -7,7 +7,7 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-21T20:30:00Z
+  updatedAt: 2026-07-27T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   inputs:
@@ -15,7 +15,7 @@ provenance:
     - osera-bank-schematic.svg      # artifact #2
     - osera-standards-register.md   # artifact #3
 createdAt: 2026-07-17T00:00:00Z
-updatedAt: 2026-07-21T20:30:00Z
+updatedAt: 2026-07-27T00:00:00Z
 ```
 
 # code_tracer — Architecture & Design
@@ -54,6 +54,10 @@ stores are `artifact-deployment-topology`.
 > L0–L7 against a contract they countersigned. The anchor is **the canonical
 > public registry for the artifact's purl type**, not Maven specifically. Per
 > `noteworthy-ecosystem-generalization` and `noteworthy-attestation-index`.
+
+> **Amendment 2026-07-27 (referent binding).** §3.4 and §3.7 amended per
+> `noteworthy-referent-binding`: the two binding modes named explicitly, and
+> CVE-record integrity added as rule 16.
 
 ---
 
@@ -266,6 +270,16 @@ that "this digest was the published artifact at time T" survives the artifact's
 removal. The contract records which anchor class applies
 (`noteworthy-ecosystem-generalization` §1).
 
+**Two referent modes.** The anchor property above is the *immutable* mode:
+artifacts, source commits, test corpora and lock manifests are
+immutable-by-nature and bind by digest with **must-match-live** verification,
+where drift means tampering. Advisory records — CVE/OSV now, licence texts and
+policy objects later — are mutable-by-nature, and bind by stable id + live
+locator + a **frozen snapshot digest** taken at commissioning, verified against
+the snapshot with the live pointer advisory. Anchor the immutable, snapshot the
+mutable; the referent's nature picks the mode, and neither is ever left bound by
+bare id alone (`noteworthy-referent-binding`).
+
 ### 3.5 How the contract binds the chain
 
 The L-1 contract is not a document beside the chain — it is the **referent every
@@ -424,6 +438,11 @@ Promote only if every rule holds.
      the digest of the layout as distributed.       [layout-compile agreement]
  15. Trust-root snapshot age ≤ 7 days; checkpoint set age ≤ 24 hours (limits
      tightenable per bank, never loosenable).            [bundle freshness]
+ 16. Every `cvesInScope` entry names a pinned advisory snapshot carried in the
+     bundle: sha256 over the canonicalized record equals the entry's
+     recordDigest, and the entry's affectedComponent and affectedRange agree
+     with that snapshot. The live source URI is never read at the gate.
+                                                    [CVE-record integrity, §3.4]
 
      → any rule fails: DO NOT PROMOTE.
 ```
@@ -453,6 +472,19 @@ is reading the console, which is not a control. Re-resolution is cheap: the
 artifact and its attestations are unchanged, only the trust material refreshes
 (`noteworthy-bundle-freshness`).
 
+**Rule 16.** Scope was the last part of the contract still resting on an
+author's claim: `affectedRange` is written by whoever drafts the contract, and
+nothing checked it against the advisory it cites. Pinning the OSV record at
+commissioning makes it checkable — the range asserted in the contract must agree
+with the range in the record as it read when the work was commissioned.
+Verification runs against the snapshot rather than the live feed, because
+advisory records legitimately move: a range widened six months later is
+enrichment working correctly, and gating on it would reject a conforming
+artifact over something the maker never controlled. The live URI stays advisory
+and belongs to the ledger (⑤), where drift since commissioning surfaces as an
+exposure finding. Evaluated in the semantic pass, component ②
+(`noteworthy-referent-binding`).
+
 **Offline decidability.** Every rule above must be decidable from the evidence
 bundle alone. A rule that requires a live lookup is either wrong or evidence of a
 missing bundle element — the test that keeps hermeticity falsifiable
@@ -464,9 +496,9 @@ admission rule depends on it (`noteworthy-attestation-index`).
 > design conversations. Rules 1–12 are a **reconstruction** — derived from the
 > chain (§3.1–§3.6) and its principles, not recovered from the original
 > enumerated ruleset (which did not persist). Rules 14 and 15 are new
-> (2026-07-21), as are the checkpoint clause in rule 1, the trustPath clause in
-> rule 13, and the anchor-class clause in rule 3. Review against the original if
-> it resurfaces.
+> (2026-07-21) and rule 16 is new (2026-07-27), as are the checkpoint clause in
+> rule 1, the trustPath clause in rule 13, and the anchor-class clause in rule 3.
+> Review against the original if it resurfaces.
 
 ### 3.8 The legal stub
 
