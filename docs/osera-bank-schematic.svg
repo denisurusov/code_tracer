@@ -12,7 +12,7 @@
 
   <!-- Contract bar -->
   <g filter='url(#soft)'><rect x='150' y='74' width='1014' height='34' rx='7' fill='#1a2332'/></g>
-  <text x='168' y='95' font-size='12' font-weight='700' fill='#ffffff'>&#9312; OSERA BACKPATCH CONTRACT (L-1)  &#8212;  issued by alliance, accepted by maker before work starts  &#183;  compiles to the in-toto layout the gate checks against</text>
+  <text x='168' y='95' font-size='12' font-weight='700' fill='#ffffff'>&#9312; OSERA BACKPATCH CONTRACT (L-1)  &#8212;  issued by alliance, accepted by provider before work starts  &#183;  compiles to the in-toto layout the gate checks against</text>
 
   <!-- lifecycle overlay -->
   <text x='150' y='130' font-size='11' font-weight='700' fill='#94a3b8' letter-spacing='2'>PRODUCE</text>
@@ -40,7 +40,7 @@
 
   <!-- ZONE 2: FINOS-neutral -->
   <rect x='24' y='272' width='1152' height='210' rx='10' fill='#fef6ec' stroke='#f3ddc0'/>
-  <text x='40' y='292' font-size='12' font-weight='700' fill='#a1651a'>FINOS-NEUTRAL &#183; maker mint chain + peer-verifier quorum</text>
+  <text x='40' y='292' font-size='12' font-weight='700' fill='#a1651a'>FINOS-NEUTRAL &#183; provider mint chain + peer-verifier quorum</text>
 
   <!-- mint chain L0-L7 -->
   <g filter='url(#soft)'><rect x='60' y='306' width='470' height='150' rx='9' fill='#fff' stroke='#e6c9a0'/></g>
@@ -50,7 +50,7 @@
     <text x='80' y='368'>L3 Build-provenance (SLSA) &#183; L4 Test-results</text>
     <text x='80' y='386'>L5 Vuln-proof &#183; L6 SBOM+diff &#183; L7 VEX</text>
   </g>
-  <text x='80' y='414' font-size='10' font-style='italic' fill='#a1651a'>the maker claims &#8212; signed links, one per step</text>
+  <text x='80' y='414' font-size='10' font-style='italic' fill='#a1651a'>the provider claims &#8212; signed links, one per step</text>
   <rect x='80' y='424' width='200' height='18' rx='9' fill='#fff7ed' stroke='#e6c9a0'/>
   <text x='180' y='437' font-size='9.5' fill='#a1651a' text-anchor='middle'>someone else builds &#183; not ours</text>
 
