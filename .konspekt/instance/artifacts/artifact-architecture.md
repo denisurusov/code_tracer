@@ -60,9 +60,39 @@ stores are `artifact-deployment-topology`.
 > `noteworthy-referent-binding`: the two binding modes named explicitly, and
 > CVE-record integrity added as rule 16.
 
+> **Amendment 2026-07-27 (framing).** §1 now opens on the inbound/outbound
+> governance asymmetry per `noteworthy-inbound-asymmetry`, so the document states
+> why the gap exists before describing what fills it.
+
 ---
 
 ## 1. Context & scope
+
+### Why the gap exists
+
+A bank that contributes to open source already runs a **governed egress path**.
+Contributions to FINOS leave through one inspected, policy-enforced route —
+machinery that exists, that the risk function understands, and that nobody
+disputes.
+
+**Nothing equivalent governs the other direction.** Hardened releases and
+FINOS-native projects arrive carrying claims about themselves, and no mechanism
+checks those claims before the code is inside. The gap is not that inbound is
+unmanaged in every sense — there are scanners, repository managers, approval
+workflows — but that none of them verifies the *provenance of the assertion*. A
+scanner reads the artifact; it does not ask whether the party who produced it did
+what they committed to do.
+
+That gap is what this design closes. **The answer is not symmetric with the
+outbound control**, and reading it as "a GitProxy for inbound" misses the design:
+egress inspects content leaving a boundary the bank controls end to end, whereas
+on ingress the bank controls neither the production of the artifact nor the
+production of the evidence about it. That is why the answer is a commissioned
+specification (§3.2) and an independent quorum (§3.6) rather than an inspection
+proxy — and why it needs an afterlife, since egress is a moment while ingress
+creates a standing exposure (§5). See `noteworthy-inbound-asymmetry`.
+
+### What this is
 
 code_tracer is the machinery at the **two ends of the OSERA supply chain** — the
 alliance-side tooling that *commissions* hardened open source, and the bank-side
@@ -577,7 +607,9 @@ The build components that make this work:
 
 This is deliberately downstream of the gate: the gate decides *whether* an
 artifact is admissible; the ledger tracks *what the bank is now exposed to* once
-it is admitted, and drives the sunset/re-verification cycle.
+it is admitted, and drives the sunset/re-verification cycle. It is also the half
+that has no outbound counterpart — egress is a moment, ingress creates a standing
+exposure (§1).
 
 The ledger backs the `Active`/`Sunset` states of the lifecycle. Its durable
 substrate is an **append-only, hash-chained event log** — `ledger-event`s, each
@@ -748,6 +780,10 @@ Cross-cutting; several are now load-bearing elsewhere — the data model
   so the gate must evaluate every schema version ever issued. Schemas live in the
   alliance master repo and ship pinned inside the bundle; the versioning and
   compatibility rules are unspecified.
+- **`recordDigest` canonicalization** — rule 16 compares a digest over the
+  canonicalized advisory record, and no canonical form is fixed. Issuer and gate
+  must agree byte-for-byte or the rule fails on conforming evidence, and the
+  fixture generator has no correct baseline to perturb. Blocks RI Phase 0.
 - **semver hardened-coordinate encoding** — pre-release sorts *below* the
   baseline and build metadata is ignored for precedence, so npm and cargo have no
   valid encoding yet. May constrain which ecosystems are viable.
