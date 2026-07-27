@@ -64,6 +64,11 @@ stores are `artifact-deployment-topology`.
 > governance asymmetry per `noteworthy-inbound-asymmetry`, so the document states
 > why the gap exists before describing what fills it.
 
+> **Amendment 2026-07-27 (recordDigest).** Rule 16 digests the pinned snapshot
+> **as carried in the bundle**, not a canonical form derived from it. Per
+> `noteworthy-record-digest`, which also splits snapshot *faithfulness* out as a
+> separate, issuer-side question (§9).
+
 ---
 
 ## 1. Context & scope
@@ -470,7 +475,7 @@ Promote only if every rule holds.
  15. Trust-root snapshot age ≤ 7 days; checkpoint set age ≤ 24 hours (limits
      tightenable per bank, never loosenable).            [bundle freshness]
  16. Every `cvesInScope` entry names a pinned advisory snapshot carried in the
-     bundle: sha256 over the canonicalized record equals the entry's
+     bundle: sha256 over that snapshot **as carried** equals the entry's
      recordDigest, and the entry's affectedComponent and affectedRange agree
      with that snapshot. The live source URI is never read at the gate.
                                                     [CVE-record integrity, §3.4]
@@ -515,6 +520,18 @@ artifact over something the provider never controlled. The live URI stays adviso
 and belongs to the ledger (⑤), where drift since commissioning surfaces as an
 exposure finding. Evaluated in the semantic pass, component ②
 (`noteworthy-referent-binding`).
+
+**The digest is over bytes, not a canonical form.** The snapshot ships inside the
+bundle, so the gate holds the identical bytes the issuer froze and `sha256` over
+a file is already unambiguous; reading `affectedRange` out of it needs parsing
+rather than canonicalization. Requiring a canonical form would import a
+canonicalization dependency into the offline path — one more place two conforming
+implementations can diverge — to serve a comparison the gate is forbidden from
+performing. This follows DSSE, already the envelope every attestation here rides
+in, which signs payload bytes as transmitted for the same reason. **Consequence
+for ③:** bundle assembly must preserve the snapshot verbatim, in both the OCI and
+tar forms — no reformatting, re-indenting or re-encoding
+(`noteworthy-record-digest`).
 
 **Offline decidability.** Every rule above must be decidable from the evidence
 bundle alone. A rule that requires a live lookup is either wrong or evidence of a
@@ -586,7 +603,8 @@ The build components that make this work:
   never evidence — collects them, and **assembles the evidence bundle** bank-side
   as an OCI image index, with a deterministic tar export for air-gapped transfer.
   Assembly confers no authority: the bundle is a container, never a credential,
-  so ③ stays a resolver rather than a trusted packager.
+  so ③ stays a resolver rather than a trusted packager. It must carry pinned
+  advisory snapshots through **verbatim**, since rule 16 digests them as bytes.
   *(task-attestation-resolver)*
 - **④ Bank-acceptance inspection harness.** The **L9** step *inside* the gate:
   runs the bank's own app-team contract/integration tests as an in-toto
@@ -696,14 +714,14 @@ The load-bearing standards, mapped to the level or component that consumes each.
 | ★ **in-toto** + Attestation Framework | ① compiler, gate | The framework the whole chain compiles to: layout + links + `in-toto-verify`; thresholds = the k-of-n quorum; inspections = ④ acceptance |
 | ★ **SLSA** | L3 | Build-provenance predicate + levels; the vocabulary the risk function already knows |
 | ★ **VSA** | L8 | The verifier's attestation — result of checking someone else's artifact, now also carrying the observed log checkpoint |
-| ★ **DSSE** | all | The signing envelope in-toto / Sigstore attestations ride in |
+| ★ **DSSE** | all | The signing envelope in-toto / Sigstore attestations ride in. Signs **payload bytes as transmitted** rather than a canonical form — the precedent rule 16's digest follows (`noteworthy-record-digest`) |
 | ★ **Sigstore** (Cosign/Fulcio/Rekor) | ③ resolver, ⑧ issuance | Keyless signing, cert authority, transparency log. Rekor is a **shared FINOS-operated instance, witnessed by the quorum** — each VSA carries the checkpoint it observed, so split views surface as dissent. The log also fixes the delivery manifest in time |
 | ★ **Reproducible Builds** | L8, §3.6 | Bit-for-bit rebuild → digest equality; the Schelling point behind the quorum, and the feasibility gate on which ecosystems can be supported at all |
 | ★ **TUF** | ⑨ registry, gate | Trust root, key rotation, compromise recovery — **built, not a gap**: k-of-m co-signed root, delegated targets for bilateral namespaces, snapshot pinned into the evidence bundle with a 7-day freshness limit. Also the registry's replay-log mechanism (§5.1) |
 | ★ **CycloneDX** (authoritative) / **SPDX** (projection) | L6 | CycloneDX is the source of truth — security/backpatch-native, purl-first, its `pedigree` models the is-hardening-of link directly; SPDX license IDs are embedded inside it, and an SPDX view is emitted on demand. VEX is **not** carried inline — it stays OpenVEX at L7 |
 | ★ **OpenVEX** / **CSAF 2.0** | L7 | "fixed, not exploitable, here's the evidence" — must reference L5 to be evidence, not a claim; CSAF is the regulator-facing variant |
 | ★ **Rego / OPA** (via Witness) | ② policy | The semantic gate the meaning-checks run in |
-| **OSV schema** | L1, ⑤ ledger, ⑦ authoring | Vuln records keyed by `purl` — cleaner than CPE for the exposure graph; the publicly re-derivable source for `cvesInScope` at commissioning |
+| **OSV schema** | L1, ⑤ ledger, ⑦ authoring | Vuln records keyed by `purl` — cleaner than CPE for the exposure graph; the publicly re-derivable source for `cvesInScope` at commissioning. Specifies record *structure*, and says nothing about digesting one — hence `noteworthy-record-digest` |
 | **Ecosystem checksum logs** | §3.4 anchor | Where an ecosystem already publishes an independent append-only checksum log (`sum.golang.org`), the anchor is stronger than anything this design builds by hand. Where deletion is permitted (npm, PyPI), a supplementary log witness is required instead |
 | **CPE** | *trap* | Why scanners still fire on a backpatched artifact — CPE match ignores the patch. The suffixed purl turns that mismatch into an explicit, machine-readable is-hardening-of relationship (declared in L2/L6/L7) rather than a hidden coordinate collision. A problem to suppress (via VEX), not a tool to use |
 
@@ -770,6 +788,9 @@ Cross-cutting; several are now load-bearing elsewhere — the data model
 - **Attestation discovery** — a central index (Archivista), deliberately
   untrusted and rebuildable from Rekor; artifact bytes are never duplicated.
   `noteworthy-attestation-index`.
+- **`recordDigest`** — `sha256` over the pinned snapshot as carried in the
+  bundle; no canonicalization at the gate, following DSSE. Bundle assembly must
+  preserve the snapshot verbatim. `noteworthy-record-digest`.
 
 **Open:**
 
@@ -780,10 +801,15 @@ Cross-cutting; several are now load-bearing elsewhere — the data model
   so the gate must evaluate every schema version ever issued. Schemas live in the
   alliance master repo and ship pinned inside the bundle; the versioning and
   compatibility rules are unspecified.
-- **`recordDigest` canonicalization** — rule 16 compares a digest over the
-  canonicalized advisory record, and no canonical form is fixed. Issuer and gate
-  must agree byte-for-byte or the rule fails on conforming evidence, and the
-  fixture generator has no correct baseline to perturb. Blocks RI Phase 0.
+- **Snapshot faithfulness** — whether ⑦ records anything at commissioning that
+  lets a third party confirm the pinned advisory matches what OSV actually
+  served, and whether the quorum checks it. Comparing two independently fetched
+  byte sequences *does* need a canonical form, so JCS may return here — scoped to
+  the issuer side, where a live fetch is legitimate, never to the gate.
+- **Conformance test vectors** — the failure mode for both of the above is two
+  conforming implementations disagreeing, which prose cannot catch. The alliance
+  master repo carries `schemas/`; it should carry a frozen vector corpus beside
+  them.
 - **semver hardened-coordinate encoding** — pre-release sorts *below* the
   baseline and build metadata is ignored for precedence, so npm and cargo have no
   valid encoding yet. May constrain which ecosystems are viable.
