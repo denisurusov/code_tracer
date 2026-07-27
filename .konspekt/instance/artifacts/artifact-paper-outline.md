@@ -7,12 +7,12 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-21T23:10:00Z
+  updatedAt: 2026-07-27T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   timestamp: 2026-07-21T23:10:00Z
 createdAt: 2026-07-21T23:10:00Z
-updatedAt: 2026-07-21T23:10:00Z
+updatedAt: 2026-07-27T00:00:00Z
 ```
 # Paper — Contract-Bound Evidence
 
@@ -49,13 +49,13 @@ decision record ends in a `Binds:` line. The paper and the graph share vocabular
 | Part | Sections | Words | Audience weight |
 |---|---|---|---|
 | Front matter | thesis, generality caveat, worked example introduced | 700 | both |
-| **I — The model** | 1 the bind · 2 why maker-produced evidence isn't evidence · 3 commissioned specification · 4 the chain and the anchor · 5 **verification does not compress** | 2,200 | both; §5 is the centrepiece |
+| **I — The model** | 1 the bind · 2 why provider-produced evidence isn't evidence · 3 commissioned specification · 4 the chain and the anchor · 5 **verification does not compress** | 2,200 | both; §5 is the centrepiece |
 | **II — Commissioning & trust** | 6 issuance, amendment, binary conformance · 7 trust root without a weaker tier · 8 verification as duty, and what k should be | 1,600 | FINOS WG |
 | **III — Admission & afterlife** | 9 contract compiles to layout · 10 the perimeter and the evidence bundle · **what you actually deploy** · 11 bridges expire · 12 ecosystem support | 2,400 | bank OSPO |
 | **IV — Limits** | 13 malicious-but-reproducible patch · semver · schema compatibility · n < 3 | 900 | both |
 | Close | the control statement | 200 | both |
 
-**Appendices:** the 15 admission rules · the diagram set (`docs/resource/`) · the
+**Appendices:** the 16 admission rules · the diagram set (`docs/resource/`) · the
 worked example end to end · `code_tracer` component register.
 
 ## The worked example — jackson-databind
