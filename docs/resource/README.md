@@ -5,7 +5,7 @@ Rendered from the SVG sources here; regenerate PNGs with any SVG renderer.
 
 | Page | Question it answers | Read when |
 |---|---|---|
-| `p1-lifecycle.svg` | **What states exist, and where is the boundary?** Contract lifecycle (a commitment) above, candidate lifecycle (an artifact) below, split at the bank perimeter. Renewal loop, terminals, and the class (a)/(b) invariant. | first |
+| `p1-lifecycle.svg` | **What states exist, and where is the boundary?** Three machines at three grains — project (a commitment), package (an artifact), product (a bridge) — split at the bank perimeter. Renewal loop, terminals, the hinge and the handover. | first |
 | `p2-datamodel.svg` | **Which attribute binds to which?** L-1 contract fields on the left, evidence chain in the middle, bank records on the right. Every orange arrow is an admission rule in disguise. | second |
 | `p3-architecture.svg` | **What are the components and what do they touch?** Nine components across issuer and consumer sides, stores in one line each, the five properties everything serves. Assumes p1 and p2. | third |
 | `code-tracer-topology.svg` | **Where do the bytes physically live?** Store-by-store read/write map — which are ours, which are third-party services, which are files in git. Companion to `artifact-deployment-topology`. | when deploying |
