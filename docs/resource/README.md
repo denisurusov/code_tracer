@@ -17,7 +17,7 @@ Rendered from the SVG sources here; regenerate PNGs with any SVG renderer.
 - **W:** what is written into a store (or, for an actor, what it writes out).
   **R:** what is read from it.
 - Solid arrow = write path · dashed = read path · green = the admitted artifact.
-- Actors are named by **role** — maker, verifier, issuer, bank — never by company.
+- Actors are named by **role** — provider, verifier, issuer, bank — never by company.
 
 ## Provenance
 
