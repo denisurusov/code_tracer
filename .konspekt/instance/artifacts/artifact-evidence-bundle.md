@@ -157,7 +157,7 @@ two together.
   core has no clock — evidence does not expire, and a core sealed a year ago
   re-admits under a fresh envelope.
 - **Re-admissible.** Because the core is stable and the envelope is cheap, a bank
-  re-running an old admission, or a second bank admitting the same candidate
+  re-running an old admission, or a second bank admitting the same package
   later, works from the same core digest with an envelope of its own.
 
 ## 4. What is deliberately *not* in it
@@ -180,7 +180,7 @@ component ③ assembles.
 
 The `verdict` carries **`coreDigest`** — the shared evidence set — alongside
 `bundleDigest` for the envelope actually verified, plus `trustRootVersion` and
-`trustPath` (`artifact-data-model` §4). Two banks admitting the same candidate
+`trustPath` (`artifact-data-model` §4). Two banks admitting the same package
 produce different `bundleDigest`s and the *same* `coreDigest`, which is exactly
 the comparison the shared identifier exists to permit.
 
