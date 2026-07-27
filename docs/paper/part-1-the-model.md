@@ -78,19 +78,19 @@ they did?*
 
 ---
 
-## 2. Why maker-produced evidence is not evidence
+## 2. Why provider-produced evidence is not evidence
 
-The natural response is to ask the maker for proof. Publish the SBOM, the test
+The natural response is to ask the provider for proof. Publish the SBOM, the test
 results, the vulnerability analysis, the build provenance — sign all of it, attach
 it to the artifact, let the consumer verify the signatures.
 
 This is better than nothing and it is not sufficient, for a reason that has
 nothing to do with anyone's honesty.
 
-**The party producing the evidence is the party being evaluated.** The maker
+**The party producing the evidence is the party being evaluated.** The provider
 selects what to test, runs the tests, interprets the results, and signs the
 report. Every artifact in that chain is authentic — correctly signed, untampered,
-verifiable. And the chain establishes only that the maker said these things, not
+verifiable. And the chain establishes only that the provider said these things, not
 that they are true.
 
 The sharpest form of the problem is the test corpus. Consider the claim *all
@@ -105,7 +105,7 @@ whom, against what scope? *No regressions* — against which baseline? *Coverage
 meets threshold* — measured over which code, chosen when?
 
 Signing solves tampering. It does not solve self-assessment. Any design that
-treats a signed maker claim as evidence has simply relocated the trust
+treats a signed provider claim as evidence has simply relocated the trust
 relationship into a cryptographic envelope and declared the problem handled.
 
 Two moves fix this, and the rest of Part I is those two moves.
@@ -114,7 +114,7 @@ Two moves fix this, and the rest of Part I is those two moves.
 
 ## 3. Commissioned specification
 
-The first move: **fix the specification before the work starts, and have the maker
+The first move: **fix the specification before the work starts, and have the provider
 countersign it.**
 
 The alliance issues a contract. It names, by content digest rather than by
@@ -127,15 +127,15 @@ version string:
 - the **thresholds** — API/ABI stability required, patched-path coverage minimum;
 - the **schedule** — delivery window, and the sunset date of the resulting bridge.
 
-The maker countersigns before beginning. From that moment the deliverable is a
+The provider countersigns before beginning. From that moment the deliverable is a
 **commissioned specification** rather than a post-hoc submission, and the corpus
 loophole closes: *all required tests passed* now has a fixed referent that was
 frozen before anyone could see which tests would be convenient.
 
 This is a small mechanical change with a large epistemic consequence. The
-question the receiving institution asks moves from *did the maker do good work?* —
+question the receiving institution asks moves from *did the provider do good work?* —
 a judgement it is not positioned to make — to *did the output conform to a scope
-the maker committed to before starting?* The second question has a mechanical
+the provider committed to before starting?* The second question has a mechanical
 answer.
 
 Everything downstream is checked **against** this contract rather than for
@@ -182,10 +182,10 @@ likely to be quietly wrong.
 
 **The anchor must be independently observable.** The first link — *this is the
 upstream artifact and source commit we started from* — is a self-claim. If the
-maker merely asserts it, the entire structure is a self-claim with nine extra
+provider merely asserts it, the entire structure is a self-claim with nine extra
 steps and considerably better production values. It is load-bearing only if it
 can be **re-derived from public data by a party with no relationship to the
-maker**: the baseline digest must match the artifact publicly retrievable from
+provider**: the baseline digest must match the artifact publicly retrievable from
 the ecosystem's own registry at the stated coordinates, and the source reference
 must be a real commit in the public upstream repository. The verifier re-pulls and
 compares. No trust is required, and none is extended.
@@ -231,7 +231,7 @@ is what lets a network converge cheaply.
 
 **Here there is no asymmetry. Verification does not compress.** Reproducing a
 build and re-running a test suite costs approximately what producing it cost. A
-verifier is not a cheap checker; it is a second maker doing the same work and
+verifier is not a cheap checker; it is a second provider doing the same work and
 comparing notes.
 
 Two consequences follow, and they point in the same direction.
@@ -240,7 +240,7 @@ First, a single verifier is a **throughput bottleneck** — it must do the full 
 of production for every artifact in the pipeline.
 
 Second, and more seriously, a single verifier is a **single point of trust**.
-Separating maker from checker hardens the design against maker compromise and does
+Separating provider from checker hardens the design against provider compromise and does
 exactly nothing about checker compromise. Compromise one verifier's signing keys
 or build infrastructure and the entire model collapses in one move — with the
 receiving institutions seeing a perfectly valid signature over a perfectly false
