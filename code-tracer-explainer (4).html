@@ -1,0 +1,2580 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="code_tracer — design mockup walking one security fix across the whole admission lifecycle, from contract to expiry.">
+<meta name="color-scheme" content="light dark">
+<title>Lifecycle mockup</title>
+
+<style>
+  :root {
+    --ground:      #F1F4F7;
+    --surface:     #FFFFFF;
+    --surface-2:   #E7ECF2;
+    --ink:         #121821;
+    --ink-2:       #46525F;
+    --ink-3:       #6F7C8A;
+    --line:        #D5DCE4;
+    --line-2:      #BFC8D3;
+    --accent:      #3D4E8C;
+    --accent-soft: #E6EAF5;
+    --good:        #1A6E46;
+    --good-soft:   #E0EFE7;
+    --warn:        #8A6100;
+    --warn-soft:   #F6EDD8;
+    --crit:        #9E2C2C;
+    --crit-soft:   #F6E3E2;
+    --hatch:       #C9D2DC;
+
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+    --sans:  system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono:  ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+
+    --step--1: 0.78rem;
+    --step-0:  0.95rem;
+    --step-1:  1.12rem;
+    --step-2:  1.45rem;
+    --step-3:  2.0rem;
+    --step-4:  2.7rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:      #0D1219;
+      --surface:     #151B23;
+      --surface-2:   #1D2530;
+      --ink:         #E4EAF1;
+      --ink-2:       #A2AEBC;
+      --ink-3:       #7B8896;
+      --line:        #29323E;
+      --line-2:      #3A4553;
+      --accent:      #93A2DE;
+      --accent-soft: #1D2440;
+      --good:        #56B683;
+      --good-soft:   #12271D;
+      --warn:        #D2A244;
+      --warn-soft:   #2A2213;
+      --crit:        #E0776E;
+      --crit-soft:   #2B1717;
+      --hatch:       #2F3945;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #0D1219;
+    --surface:     #151B23;
+    --surface-2:   #1D2530;
+    --ink:         #E4EAF1;
+    --ink-2:       #A2AEBC;
+    --ink-3:       #7B8896;
+    --line:        #29323E;
+    --line-2:      #3A4553;
+    --accent:      #93A2DE;
+    --accent-soft: #1D2440;
+    --good:        #56B683;
+    --good-soft:   #12271D;
+    --warn:        #D2A244;
+    --warn-soft:   #2A2213;
+    --crit:        #E0776E;
+    --crit-soft:   #2B1717;
+    --hatch:       #2F3945;
+  }
+
+  :root[data-theme="light"] {
+    --ground:      #F1F4F7;
+    --surface:     #FFFFFF;
+    --surface-2:   #E7ECF2;
+    --ink:         #121821;
+    --ink-2:       #46525F;
+    --ink-3:       #6F7C8A;
+    --line:        #D5DCE4;
+    --line-2:      #BFC8D3;
+    --accent:      #3D4E8C;
+    --accent-soft: #E6EAF5;
+    --good:        #1A6E46;
+    --good-soft:   #E0EFE7;
+    --warn:        #8A6100;
+    --warn-soft:   #F6EDD8;
+    --crit:        #9E2C2C;
+    --crit-soft:   #F6E3E2;
+    --hatch:       #C9D2DC;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin-inline: auto;
+    padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 3vw, 2rem) 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+  }
+
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; text-wrap: balance; line-height: 1.2; }
+  p { max-width: 68ch; }
+
+  code, .mono { font-family: var(--mono); font-size: 0.88em; font-variant-numeric: tabular-nums; }
+
+  .eyebrow {
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--ink-3);
+  }
+
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  /* ---------- masthead ---------- */
+
+  .masthead { display: flex; flex-direction: column; gap: 1.1rem; }
+  .masthead h1 { font-size: clamp(2rem, 5vw, var(--step-4)); letter-spacing: -0.015em; }
+  .masthead .lede { font-family: var(--serif); font-size: var(--step-1); color: var(--ink-2); }
+
+
+
+  /* ---------- section shell ---------- */
+
+  .section { display: flex; flex-direction: column; gap: 1.5rem; }
+  .section > header { display: flex; flex-direction: column; gap: 0.4rem; }
+  .section > header h2 { font-size: var(--step-2); }
+  /* Section intros run the full column. They are short standfirsts sitting
+     above a framed screen of the same width, so the global 68ch measure left
+     them visibly narrower than the thing they introduce. */
+  .section > header p { color: var(--ink-2); font-family: var(--serif); max-width: none; }
+
+  .split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+  @media (min-width: 940px) {
+    .split { grid-template-columns: minmax(0, 1fr) 15.5rem; align-items: start; }
+  }
+
+  /* the framed "screen" */
+  .screen {
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .screen-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 0.6rem 0.9rem;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+    font-size: var(--step--1);
+  }
+  .screen-bar .title { font-weight: 600; letter-spacing: 0.02em; }
+  .screen-bar .sub { color: var(--ink-3); }
+  .screen-body { padding: 1.1rem; display: flex; flex-direction: column; gap: 1.1rem; }
+  .scroller { overflow-x: auto; }
+
+  /* margin annotations */
+  .notes { display: flex; flex-direction: column; gap: 0.9rem; }
+  .notes .notes-h {
+    font-size: var(--step--1); letter-spacing: 0.09em; text-transform: uppercase;
+    font-weight: 600; color: var(--ink-3);
+    padding-bottom: 0.5rem; border-bottom: 1px solid var(--line);
+  }
+  .note { display: flex; gap: 0.6rem; font-size: var(--step--1); color: var(--ink-2); line-height: 1.5; }
+  .note b { color: var(--ink); font-weight: 600; }
+
+  .pin {
+    flex: none;
+    width: 1.35rem; height: 1.35rem; margin-top: 0.1rem;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--accent); color: var(--surface);
+    font-family: var(--sans); font-size: 0.7rem; font-weight: 700;
+  }
+  .pin-inline {
+    display: inline-grid; place-items: center; vertical-align: middle;
+    width: 1.15rem; height: 1.15rem; border-radius: 50%;
+    background: var(--accent); color: var(--surface);
+    font-size: 0.65rem; font-weight: 700; margin-left: 0.35rem;
+  }
+
+  /* ---------- plain-label pattern ---------- */
+
+  .plain { font-weight: 600; color: var(--ink); }
+  .term {
+    display: inline-block;
+    font-family: var(--mono); font-size: 0.72rem;
+    color: var(--ink-3);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 0.02rem 0.3rem;
+    white-space: nowrap;
+  }
+
+  /* ---------- zone rail ---------- */
+
+  .zones { display: grid; grid-template-columns: 3fr 5fr; gap: 0; min-width: 800px; }
+  .zone-head {
+    padding: 0.5rem 0.75rem;
+    font-size: var(--step--1); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    border-bottom: 1px solid var(--line-2);
+  }
+  .zone-outside {
+    color: var(--ink-3);
+    background-image: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 7px);
+    border-right: 2px dashed var(--line-2);
+  }
+  .zone-inside { color: var(--accent); background: var(--accent-soft); }
+
+  .rail { display: grid; grid-template-columns: repeat(8, 1fr); min-width: 800px; }
+  .stop {
+    padding: 0.85rem 0.7rem;
+    border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 0.35rem;
+    position: relative;
+  }
+  .stop:last-child { border-right: 0; }
+  .stop.outside {
+    background-image: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 7px);
+  }
+  .stop.boundary { border-left: 2px dashed var(--line-2); }
+  .stop .n { font-size: 0.68rem; color: var(--ink-3); font-family: var(--mono); }
+  .stop .plain { font-size: var(--step--1); line-height: 1.25; }
+  .stop .term { font-size: 0.66rem; align-self: flex-start; }
+  .stop .when { font-size: 0.68rem; color: var(--ink-3); font-family: var(--mono); }
+  .stop.now { background: var(--surface); box-shadow: inset 0 -3px 0 var(--accent); }
+  .stop.now .plain { color: var(--accent); }
+
+  /* ---------- generic table ---------- */
+
+  table { border-collapse: collapse; width: 100%; font-size: var(--step--1); }
+  th {
+    text-align: left; font-weight: 600; color: var(--ink-3);
+    font-size: 0.72rem; letter-spacing: 0.07em; text-transform: uppercase;
+    padding: 0.4rem 0.7rem 0.4rem 0; border-bottom: 1px solid var(--line-2);
+    white-space: nowrap;
+  }
+  td { padding: 0.6rem 0.7rem 0.6rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ---------- chips ---------- */
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em;
+    padding: 0.13rem 0.45rem; border-radius: 2px; white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .chip.good { background: var(--good-soft); color: var(--good); border-color: var(--good); }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
+  .chip.crit { background: var(--crit-soft); color: var(--crit); border-color: var(--crit); }
+  .chip.calm { background: var(--surface-2); color: var(--ink-2); border-color: var(--line-2); }
+  .chip.accent { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+
+  .dot { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: currentColor; flex: none; }
+
+  /* ---------- board ---------- */
+
+  .board { display: grid; grid-template-columns: repeat(8, minmax(9.5rem, 1fr)); gap: 0.6rem; min-width: 940px; }
+  .col { display: flex; flex-direction: column; gap: 0.5rem; }
+  .col-head {
+    display: flex; flex-direction: column; gap: 0.15rem;
+    padding-bottom: 0.45rem; border-bottom: 2px solid var(--line-2);
+  }
+  .col-head .plain { font-size: 0.8rem; }
+  .col-head .count { font-size: 0.68rem; color: var(--ink-3); font-family: var(--mono); }
+  .col.outside .col-head { border-bottom-color: var(--line); }
+  .col.outside .col-head .plain { color: var(--ink-3); }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line-2); border-radius: 3px;
+    padding: 0.5rem 0.55rem; display: flex; flex-direction: column; gap: 0.3rem;
+  }
+  .card.ghost { background: transparent; border-style: dashed; opacity: 0.75; }
+  .card .pkg { font-family: var(--mono); font-size: 0.72rem; line-height: 1.3; word-break: break-word; }
+  .card .ver { font-weight: 700; }
+  .card.focus { border-color: var(--accent); border-width: 2px; box-shadow: 0 1px 0 var(--accent); }
+
+  .zone-legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: var(--step--1); color: var(--ink-2); }
+  .swatch { display: inline-block; width: 1.6rem; height: 0.8rem; vertical-align: -1px; border: 1px solid var(--line-2); }
+  .swatch.out { background-image: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 7px); }
+  .swatch.in { background: var(--accent-soft); }
+
+  /* ---------- detail ---------- */
+
+  .verdict {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem;
+    padding: 0.9rem 1rem;
+    background: var(--good-soft);
+    border: 1px solid var(--good);
+    border-radius: 3px;
+  }
+  .verdict .headline { font-family: var(--serif); font-size: var(--step-1); color: var(--good); font-weight: 700; }
+  .verdict .detail { font-size: var(--step--1); color: var(--ink-2); }
+
+  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.9rem 1.5rem; }
+  .kv > div { display: flex; flex-direction: column; gap: 0.15rem; }
+  .kv dt, .kv .k { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  .kv .v { font-size: var(--step--1); }
+
+  .subhead {
+    font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+    font-weight: 600; color: var(--ink-3);
+    padding-bottom: 0.4rem; border-bottom: 1px solid var(--line-2);
+  }
+
+  .chain { display: flex; flex-direction: column; }
+  .chain-row {
+    display: grid; grid-template-columns: 4.6rem 1fr auto; gap: 0.75rem;
+    align-items: baseline;
+    padding: 0.45rem 0; border-bottom: 1px solid var(--line);
+    font-size: var(--step--1);
+  }
+  .chain-row:last-child { border-bottom: 0; }
+  .chain-row .lvl { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3); }
+  .chain-row.outside .lvl::after { content: " ·out"; opacity: 0.6; }
+  .chain-row.inside .lvl::after { content: " ·in"; color: var(--accent); opacity: 1; }
+  .chain-row .who { color: var(--ink-3); font-size: 0.72rem; font-family: var(--mono); }
+
+  .quorum { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.6rem; }
+  .vsa {
+    border: 1px solid var(--line-2); border-radius: 3px; padding: 0.55rem 0.6rem;
+    display: flex; flex-direction: column; gap: 0.25rem; font-size: var(--step--1);
+  }
+  .vsa .who { font-family: var(--mono); font-size: 0.75rem; }
+  .vsa.agree { border-left: 3px solid var(--good); }
+
+  .action-row {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
+    padding-top: 0.9rem; border-top: 1px solid var(--line);
+  }
+  .btn {
+    font-family: var(--sans); font-size: var(--step--1); font-weight: 600;
+    padding: 0.42rem 0.85rem; border-radius: 3px;
+    border: 1px solid var(--accent); background: var(--accent); color: var(--surface);
+    cursor: pointer;
+  }
+  .btn.ghost { background: transparent; color: var(--accent); }
+  .btn.future {
+    background: transparent; color: var(--ink-3); border-style: dashed; border-color: var(--line-2);
+    cursor: not-allowed;
+  }
+  .readonly-note { font-size: var(--step--1); color: var(--ink-3); }
+
+  /* ---------- lineage ---------- */
+
+  .lineage { display: flex; flex-direction: column; gap: 0; }
+  .gen {
+    display: grid; grid-template-columns: 8.5rem 1fr; gap: 1rem;
+    padding: 0.85rem 0; border-bottom: 1px solid var(--line);
+  }
+  .gen:last-child { border-bottom: 0; }
+  .gen .rail-cell {
+    font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3);
+    display: flex; flex-direction: column; gap: 0.2rem;
+  }
+  .gen .body { display: flex; flex-direction: column; gap: 0.4rem; }
+  .gen .ver-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+  .gen .ver-line .v { font-family: var(--mono); font-weight: 700; font-size: 0.85rem; }
+  .gen .facts { font-size: var(--step--1); color: var(--ink-2); }
+  .gen.current { background: var(--accent-soft); margin-inline: -0.6rem; padding-inline: 0.6rem; border-radius: 3px; }
+
+  .keyline {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.6rem 0.7rem; border: 1px dashed var(--line-2); border-radius: 3px;
+    font-size: var(--step--1); color: var(--ink-2);
+  }
+
+  /* ---------- glossary ---------- */
+
+  .glossary { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0.9rem 1.75rem; }
+  .gloss { display: flex; flex-direction: column; gap: 0.15rem; font-size: var(--step--1); }
+  .gloss .t { font-family: var(--mono); font-size: 0.75rem; color: var(--ink-3); }
+  .gloss .d { color: var(--ink-2); }
+
+  /* ---------- reviewer note ---------- */
+
+  .review {
+    background: var(--surface); border: 1px solid var(--line-2); border-radius: 4px;
+    padding: clamp(1.1rem, 3vw, 1.8rem);
+    display: flex; flex-direction: column; gap: 1.1rem;
+  }
+  .review ol, .review ul { padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.5rem; max-width: 68ch; }
+  .review li { color: var(--ink-2); }
+  .review li b { color: var(--ink); }
+
+  .deferred {
+    border-left: 3px solid var(--crit); background: var(--crit-soft);
+    padding: 0.85rem 1rem; border-radius: 3px; font-size: var(--step--1); color: var(--ink-2);
+    /* Full column, like the banner and the section intros — it is a framed
+       panel qualifying the whole document, not a paragraph of body text. */
+    max-width: none;
+  }
+  .deferred b { color: var(--ink); }
+
+  footer { border-top: 1px solid var(--line); padding-top: 1.25rem; font-size: var(--step--1); color: var(--ink-3); }
+
+  /* ---------- hover affordance + tooltip ---------- */
+
+  .hov {
+    text-decoration: underline dotted var(--line-2);
+    text-underline-offset: 3px;
+    cursor: help;
+  }
+  .hov:hover, .hov:focus-visible { text-decoration-color: var(--accent); }
+
+  .tip {
+    position: fixed; z-index: 90; top: 0; left: 0;
+    max-width: min(24rem, calc(100vw - 1rem));
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    border-radius: 4px;
+    box-shadow: 0 6px 22px rgba(9, 14, 22, 0.22);
+    padding: 0.6rem 0.7rem;
+    display: flex; flex-direction: column; gap: 0.28rem;
+    pointer-events: none;
+  }
+  .tip[hidden] { display: none; }
+  .tip .tip-h {
+    font-size: 0.68rem; letter-spacing: 0.07em; text-transform: uppercase;
+    font-weight: 700; color: var(--ink-3);
+    padding-bottom: 0.35rem; margin-bottom: 0.1rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .tip .tip-row { display: grid; grid-template-columns: 7.5rem 1fr; gap: 0.6rem; align-items: baseline; }
+  .tip .tip-k { font-size: 0.68rem; color: var(--ink-3); font-family: var(--sans); }
+  .tip .tip-v {
+    font-family: var(--mono); font-size: 0.72rem; color: var(--ink);
+    word-break: break-all; font-variant-numeric: tabular-nums;
+  }
+  .tip .tip-note {
+    font-family: var(--sans); font-size: 0.72rem; color: var(--ink-2);
+    line-height: 1.45; padding-top: 0.15rem;
+  }
+  .tip .tip-v.ok   { color: var(--good); }
+  .tip .tip-v.bad  { color: var(--crit); }
+
+  .hint {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: var(--step--1); color: var(--ink-3);
+  }
+  .hint::before {
+    content: ""; width: 1.4rem; height: 0; flex: none;
+    border-bottom: 1px dotted var(--line-2);
+  }
+
+  /* ---------- contract criteria table ---------- */
+
+  .criteria th:first-child, .criteria td:first-child { width: 30%; }
+  .criteria td.req { color: var(--ink-2); }
+  .criteria .met { white-space: nowrap; }
+
+  /* ---------- RAG margin banding ---------- */
+
+  .rag { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
+  .rag .bar {
+    width: 2.6rem; height: 0.42rem; flex: none;
+    border-radius: 1px; overflow: hidden;
+    background: var(--surface-2); border: 1px solid var(--line-2);
+    position: relative;
+  }
+  .rag .bar span { display: block; height: 100%; background: currentColor; }
+  .rag .score { font-family: var(--mono); font-size: 0.72rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .rag.g { color: var(--good); }
+  .rag.a { color: var(--warn); }
+  .rag.r { color: var(--crit); }
+  .rag.n { color: var(--ink-3); }
+  .rag.n .bar { background: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 5px); }
+
+  .rag-key { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; font-size: var(--step--1); color: var(--ink-2); }
+  .rag-key .k-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .rag-key .k-sw { width: 1.4rem; height: 0.42rem; border-radius: 1px; border: 1px solid var(--line-2); }
+
+  /* ---------- standards spine ---------- */
+
+  .spine { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.75rem; }
+  .stage {
+    border: 1px solid var(--line); border-radius: 3px;
+    padding: 0.7rem 0.75rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+    background: var(--surface);
+    position: relative;
+  }
+  .stage .stage-n {
+    font-family: var(--mono); font-size: 0.66rem; color: var(--ink-3);
+  }
+  .stage .stage-t { font-family: var(--serif); font-size: 0.95rem; font-weight: 600; line-height: 1.25; }
+  .stage .stds { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+  .std {
+    display: inline-block;
+    font-family: var(--mono); font-size: 0.7rem; line-height: 1.35;
+    padding: 0.12rem 0.4rem;
+    border: 1px solid var(--line-2); border-radius: 2px;
+    background: var(--surface-2); color: var(--ink-2);
+    cursor: help;
+  }
+  .std.core { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+  .std.gap  { border-style: dashed; border-color: var(--warn); color: var(--warn); background: var(--warn-soft); }
+  .std:hover, .std:focus-visible { border-color: var(--accent); }
+
+  .map th:nth-child(1), .map td:nth-child(1) { width: 34%; }
+  .map th:nth-child(2), .map td:nth-child(2) { width: 24%; }
+
+  .reg-strip {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 0.5rem; align-items: center;
+    font-size: var(--step--1); color: var(--ink-2);
+  }
+
+  /* ---------- SLA strip ---------- */
+
+  .sla { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+  .sla-step {
+    flex: 1 1 8.5rem; min-width: 8.5rem;
+    padding: 0.6rem 0.7rem;
+    border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 0.15rem;
+  }
+  .sla-step:last-child { border-right: 0; }
+  .sla-step.outside { background-image: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 7px); }
+  .sla-step .lab { font-size: 0.68rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  .sla-step .val { font-family: var(--mono); font-size: 0.78rem; font-weight: 600; }
+  .sla-step .sub { font-size: 0.68rem; color: var(--ink-3); }
+  .sla-step.due .val { color: var(--ink-2); }
+  .sla-step.hit .val { color: var(--good); }
+</style>
+
+<style>
+  /* Minimal reset. The hosted artifact runtime supplies one; a standalone
+     file does not, and the layout below assumes zeroed margins throughout. */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; }
+  h1, h2, h3, h4, p, figure, blockquote { margin: 0; }
+  ul, ol { margin: 0; padding: 0; }
+  img, svg { display: block; max-width: 100%; }
+  button { font: inherit; color: inherit; }
+</style>
+
+<style>
+  /* ---------------------------------------------------------------
+     Sections 1-2 — the operating model, rebuilt from the deck.
+
+     Same tokens as everything below. The outside zone is drawn as
+     hatching rather than labelled, matching the board and the rail,
+     so the perimeter reads the same way in all four places.
+     --------------------------------------------------------------- */
+
+  /* ---------- landscape table (interop section) ---------- */
+  .lic { display: inline-block; font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase;
+         font-weight: 600; padding: 0.1rem 0.4rem; border-radius: 2px; white-space: nowrap; }
+  .lic.closed { color: var(--crit); border: 1px solid #E3C4C4; background: #FBF3F3; }
+  .lic.oss    { color: var(--good); border: 1px solid #C3D9C6; background: #F2F7F2; }
+  .lic.osssup { color: var(--accent); border: 1px solid #DCCBA8; background: #FAF6EE; }
+  .lic.spec   { color: var(--ink-2); border: 1px solid var(--line-2); background: var(--surface-2); }
+  table.land td:nth-child(2) { white-space: nowrap; }
+  table.land td:first-child { font-family: var(--serif); font-weight: 600; }
+
+  /* ---------- perimeter interface (section 3) ---------- */
+  .envs { display: grid; grid-template-columns: 1fr auto 1fr 2.2rem 1fr; gap: 0 0.9rem; align-items: stretch; min-width: 880px; }
+  .env {
+    border: 1px solid var(--line-2); border-radius: 3px;
+    display: flex; flex-direction: column; background: var(--surface);
+  }
+  .env.crosses { border-color: var(--accent); }
+  .env-h { padding: 0.8rem 0.9rem 0.7rem; border-bottom: 1px solid var(--line); }
+  .env-h .t { font-family: var(--serif); font-weight: 600; font-size: var(--step-1); }
+  .env.crosses .env-h .t { color: var(--accent); }
+  .env-h .d { font-size: var(--step--1); color: var(--ink-2); margin-top: 0.3rem; line-height: 1.45; }
+  .env-seal {
+    margin-top: 0.55rem; font-size: 0.7rem; color: var(--ink-3);
+    display: flex; align-items: baseline; gap: 0.35rem; flex-wrap: wrap;
+  }
+  .env-seal .s {
+    font-family: var(--serif); font-weight: 600; color: var(--ink-2);
+    border-bottom: 1px solid var(--line-2);
+  }
+  .env-l { list-style: none; }
+  .env-l li {
+    padding: 0.5rem 0.9rem; border-bottom: 1px solid var(--line);
+    font-size: var(--step--1);
+  }
+  .env-l li:last-child { border-bottom: 0; }
+  .env-zone {
+    font-size: var(--step--1); letter-spacing: 0.07em; text-transform: uppercase;
+    font-weight: 600; color: var(--ink-3); padding-bottom: 0.45rem;
+  }
+  .env-zone.on { color: var(--accent); }
+  .cross-arrow { align-self: center; color: var(--ink-3); font-size: var(--step-1); padding: 0 0.2rem; }
+  .env-perim { position: relative; }
+  .env-perim-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
+  .env-perim-in .r { flex: 1 1 0; border-left: 1px solid var(--accent); min-height: 0.4rem; }
+  .env-perim-in .l {
+    writing-mode: vertical-rl; flex: 0 0 auto; height: max-content;
+    padding: 0.6rem 0; white-space: nowrap;
+    font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent);
+  }
+
+  /* asymmetry */
+  .asym { display: flex; flex-direction: column; gap: 1.75rem; }
+  .asym-row { display: grid; grid-template-columns: 11rem 1fr 11rem; gap: 1.25rem; align-items: center; }
+  .endpoint {
+    border: 1px solid var(--line-2); border-radius: 3px;
+    padding: 0.85rem 0.7rem; text-align: center;
+    font-family: var(--serif); font-weight: 600; font-size: var(--step-0);
+  }
+  .endpoint.muted { color: var(--ink-3); }
+  .chan { display: flex; flex-direction: column; gap: 0.55rem; }
+  .chan .track { display: flex; align-items: center; gap: 0.4rem; }
+  .chan .track .bar { flex: 1; border-top: 2px solid var(--accent); }
+  .chan .track .head {
+    width: 0; height: 0; flex: none;
+    border-left: 0.62rem solid var(--accent);
+    border-top: 0.36rem solid transparent; border-bottom: 0.36rem solid transparent;
+  }
+  .chan.absent .track .bar { border-top: 2px dashed var(--line-2); }
+  .chan.absent .track .head {
+    border-left: 0; border-right: 0.62rem solid var(--line-2);
+    border-top: 0.36rem solid transparent; border-bottom: 0.36rem solid transparent;
+  }
+  .chan .cap { text-align: center; }
+  .chan .cap .t { font-family: var(--serif); font-weight: 600; font-size: var(--step-0); color: var(--accent); }
+  .chan.absent .cap .t { color: var(--ink-3); }
+  .chan .cap .d { font-size: var(--step--1); color: var(--ink-2); margin-top: 0.15rem; }
+  .hence {
+    display: grid; grid-template-columns: auto 1fr; gap: 1.25rem; align-items: baseline;
+    border-top: 1px solid var(--line-2); padding-top: 1rem;
+  }
+  .hence .k {
+    font-size: var(--step--1); letter-spacing: 0.09em; text-transform: uppercase;
+    font-weight: 600; color: var(--accent);
+  }
+  .hence .v { font-family: var(--serif); font-size: var(--step-0); }
+
+  /* alliance voting strip */
+  .vote {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem;
+    border-top: 1px solid var(--accent); border-bottom: 1px solid var(--accent);
+    padding: 0.8rem 0;
+  }
+  .vote .lab {
+    font-size: var(--step--1); letter-spacing: 0.09em; text-transform: uppercase;
+    font-weight: 600; color: var(--accent); margin-right: 0.4rem; white-space: nowrap;
+  }
+  .step {
+    border: 1px solid var(--line-2); border-radius: 3px; padding: 0.28rem 0.65rem;
+    font-family: var(--serif); font-weight: 600; font-size: var(--step--1); white-space: nowrap;
+  }
+  .step.key { border-color: var(--accent); color: var(--accent); }
+  .sep { color: var(--ink-3); font-size: var(--step--1); }
+  .vote .aside {
+    flex: 1 1 15rem; border: 1px dashed var(--line-2); border-radius: 3px;
+    padding: 0.4rem 0.65rem; font-size: var(--step--1); color: var(--ink-2); margin-left: 0.5rem;
+  }
+
+  /* three grains across the perimeter */
+  /* Rows must be EXPLICIT: `grid-row: 1 / -1` counts back from the last line
+     of the explicit grid, and with implicit rows only there is no line -1 to
+     reach — the divider silently collapses to row 1. Seven rows: one header,
+     then a label+states pair per grain. */
+  .grains {
+    display: grid;
+    grid-template-columns: 1fr 2.4rem 1fr;
+    grid-template-rows: auto repeat(3, auto auto);
+    row-gap: 0.4rem; min-width: 840px;
+  }
+  .grain-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: var(--step--1); letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--ink-3); font-weight: 600;
+    border-bottom: 1px solid var(--line-2); padding-bottom: 0.4rem;
+  }
+  /* The divider spans every row, so anything sized inside it would be
+     distributed across those rows and inflate them. Absolute positioning
+     keeps the vertical label out of intrinsic row sizing entirely. */
+  .perim { grid-column: 2; grid-row: 1 / -1; position: relative; }
+  .perim-in {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center;
+    overflow: hidden;
+  }
+  .perim-in .r { flex: 1 1 0; border-left: 1px solid var(--accent); min-height: 0.4rem; }
+  /* vertical-rl swaps the axes: the label's PHYSICAL height is its inline
+     size, so height:auto does not resolve to the text length and the default
+     flex-shrink collapses it to roughly one glyph. Pin both. */
+  .perim-in .l {
+    writing-mode: vertical-rl;
+    flex: 0 0 auto;
+    height: max-content;
+    padding: 0.6rem 0; white-space: nowrap;
+    font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent);
+  }
+  .grain-label { display: flex; align-items: baseline; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+  .grain-label .n {
+    font-size: var(--step--1); letter-spacing: 0.12em; text-transform: uppercase;
+    font-weight: 600; color: var(--accent); white-space: nowrap;
+  }
+  .grain-label.echo .n { color: var(--ink-3); }
+  .grain-label .d { font-size: var(--step--1); color: var(--ink-3); }
+  .states { display: flex; align-items: stretch; gap: 0.35rem; }
+  .states .st {
+    flex: 1; border: 1px solid var(--line-2); border-radius: 3px;
+    padding: 0.45rem 0.35rem; text-align: center;
+    font-family: var(--serif); font-weight: 600; font-size: var(--step--1); white-space: nowrap;
+  }
+  .states .st.key { border-color: var(--accent); color: var(--accent); }
+  .states .st.dim { border-style: dashed; color: var(--ink-3); }
+  .col-out { grid-column: 1; padding-right: 1.4rem; }
+  .col-in  { grid-column: 3; padding-left: 1.4rem; }
+  .col-out.band {
+    background-image: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 7px);
+  }
+</style>
+
+<style>
+  /* ---------------------------------------------------------------
+     Print / PDF.
+
+     Landscape, because the board and the lifecycle rail are eight
+     columns wide and reflowing them to fewer would destroy the one
+     thing they encode — the outside/inside boundary falling between
+     columns three and four.
+
+     Two things must survive the transition to paper:
+       1. Colour and hatching. The perimeter is drawn as texture, so
+          print-color-adjust:exact is load-bearing, not cosmetic.
+       2. The hover values. They cannot hover on paper, so each one
+          is numbered and collected into an appendix built at load.
+     --------------------------------------------------------------- */
+
+  .tip-appendix { display: none; }
+
+  @page { size: A4 landscape; margin: 12mm; }
+
+  @media print {
+    /* Paper is light. Pin the tokens rather than trusting the renderer. */
+    :root, :root[data-theme="dark"], :root[data-theme="light"] {
+      --ground: #FFFFFF;   --surface: #FFFFFF;  --surface-2: #EFF2F6;
+      --ink: #101720;      --ink-2: #3D4854;    --ink-3: #626E7C;
+      --line: #D2D9E1;     --line-2: #B4BEC9;
+      --accent: #33447E;   --accent-soft: #E6EAF5;
+      --good: #14603C;     --good-soft: #E1EFE7;
+      --warn: #7A5600;     --warn-soft: #F6EDD8;
+      --crit: #8C2626;     --crit-soft: #F6E3E2;
+      --hatch: #C4CDD8;
+    }
+
+    html, body {
+      background: #FFFFFF;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+
+    .wrap { max-width: none; padding: 0; gap: 2rem; }
+
+    /* Nothing interactive survives; don't imply otherwise. */
+    .tip { display: none !important; }
+    .btn { box-shadow: none; }
+
+    /* Scroll containers have no meaning on paper. */
+    .scroller { overflow: visible; }
+
+    /* Keep small units intact, but never whole sections — the detail
+       screen is taller than a page, and an avoid rule it cannot honour
+       just pushes it to a fresh page and leaves the previous one half
+       empty. Protect the pieces, let the sections flow. */
+    .note, .stage, .card, .vsa, .gen, .chain-row,
+    .sla-step, .gloss, .keyline, .verdict, tr { break-inside: avoid; }
+    thead { break-after: avoid; }
+    h1, h2, h3, .subhead { break-after: avoid-page; }
+    .section > header { break-inside: avoid-page; }
+
+    /* The inset underline that marks the current state does not print. */
+    .stop.now { box-shadow: none; outline: 2px solid var(--accent); outline-offset: -2px; }
+
+    /* Hover targets become numbered references into the appendix. */
+    .hov { text-decoration: none; }
+    .hov[data-tipn]::after,
+    .std[data-tipn]::after {
+      content: attr(data-tipn);
+      font-family: var(--sans);
+      font-size: 0.55em;
+      font-weight: 700;
+      vertical-align: super;
+      color: var(--accent);
+      margin-left: 0.15em;
+    }
+    .std { cursor: auto; }
+
+    .tip-appendix { display: block; break-before: page; }
+    .tip-appendix h2 { font-size: var(--step-2); font-family: var(--serif); }
+    .tip-appendix .grp { break-inside: avoid-page; margin-top: 1.1rem; }
+    .tip-appendix .grp-h {
+      font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+      font-weight: 700; color: var(--ink-3);
+      padding-bottom: 0.3rem; border-bottom: 1px solid var(--line-2);
+    }
+    .tip-appendix .ent {
+      display: grid; grid-template-columns: 2rem 13rem 1fr; gap: 0.5rem;
+      padding: 0.4rem 0; border-bottom: 1px solid var(--line);
+      break-inside: avoid-page;
+    }
+    .tip-appendix .ent-n { font-family: var(--sans); font-size: 0.7rem; font-weight: 700; color: var(--accent); }
+    .tip-appendix .ent-l { font-size: var(--step--1); font-weight: 600; }
+    .tip-appendix .ent-v { font-family: var(--mono); font-size: 0.68rem; color: var(--ink-2); line-height: 1.5; }
+    .tip-appendix .ent-v b { font-family: var(--sans); font-weight: 600; color: var(--ink-3); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ MASTHEAD ============ -->
+  <header class="masthead">
+    <span class="eyebrow">code_tracer · the operating model, and one fix walked through it</span>
+    <h1>OSERA working session: operating model design</h1>
+    <p class="lede">
+      <b>Part one — the model:</b> operating flow, states and transitions, evidence.<br>
+      <b>Part two — a worked example:</b> one package, Apache Commons Collections, walked
+      through every state of that model, so you can see what an operator actually looks at
+      on each day of its life.
+    </p>
+  </header>
+
+  <!-- ============ 1 · THE MISSING DIRECTION ============ -->
+  <section class="section">
+    <header>
+      <span class="eyebrow">The operating model · 1 of 2</span>
+      <h2>Governing externally built code</h2>
+      <p>
+        Contributing to open source is already a controlled path — one inspected route,
+        policy enforced, nothing leaving unexamined. Code arriving from outside has no
+        equivalent. It comes with claims about itself, and nothing checks them.
+      </p>
+    </header>
+
+    <div class="screen">
+      <div class="screen-bar">
+        <span class="title">Two directions, one control</span>
+        <span class="sub">solid = governed · dashed = the gap</span>
+      </div>
+      <div class="screen-body">
+        <div class="asym">
+
+          <div class="asym-row">
+            <div class="endpoint">The bank</div>
+            <div class="chan">
+              <div class="track"><span class="bar"></span><span class="head"></span></div>
+              <div class="cap">
+                <div class="t">Outbound · GitProxy</div>
+                <div class="d">Contributions pushed to FINOS through one inspected, policy-enforced path.</div>
+              </div>
+            </div>
+            <div class="endpoint">FINOS · open source</div>
+          </div>
+
+          <div class="asym-row">
+            <div class="endpoint muted">The bank</div>
+            <div class="chan absent">
+              <div class="cap">
+                <div class="t">Inbound · nothing equivalent</div>
+                <div class="d">Hardened releases and FINOS-native projects arrive with claims about
+                  themselves, and no mechanism that checks them.</div>
+              </div>
+              <div class="track"><span class="head"></span><span class="bar"></span></div>
+            </div>
+            <div class="endpoint muted">FINOS · open source</div>
+          </div>
+
+        </div>
+
+        <div class="hence">
+          <span class="k">Hence</span>
+          <span class="v">
+            An evidence-based trusted pipe: an on-prem gate that admits or refuses inbound
+            code mechanically, and a ledger of what we then rely on.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:var(--step--1);color:var(--ink-3);max-width:68ch">
+      The two are <span class="hov" tabindex="0" data-tip-label="Not a symmetric answer"
+      data-tip="Outbound:: inspects content leaving a boundary the bank controls end to end
+Inbound:: the bank controls neither the artifact nor the evidence about it
+Therefore:: a commissioned specification and independent rebuilds, rather than an inspection proxy
+And:: an afterlife — egress is a moment, ingress creates a standing exposure">not mirror images</span>,
+      and the design does not treat them as such.
+    </p>
+  </section>
+
+  <!-- ============ 2 · THREE MACHINES, TWO ZONES ============ -->
+  <section class="section">
+    <header>
+      <span class="eyebrow">The operating model · 2 of 2</span>
+      <h2>Three state machines across two zones</h2>
+      <p>
+        Three different things move at three different speeds, and conflating them is the
+        mistake the model exists to avoid. A <b>product</b> is the library. A <b>project</b> is
+        one scope of work on it. A <b>package</b> is what that project ships. Each has its own
+        states, and each is identified differently.
+      </p>
+    </header>
+
+    <div class="screen">
+      <div class="screen-bar">
+        <span class="title">Operating model</span>
+        <span class="sub">outside produces evidence · inside consumes it</span>
+      </div>
+      <div class="screen-body">
+
+        <div class="vote">
+          <span class="lab">Alliance voting</span>
+          <span class="step">Interest</span><span class="sep">&#8594;</span>
+          <span class="step">Backlog</span><span class="sep">&#8594;</span>
+          <span class="step">Prioritize</span><span class="sep">&#8594;</span>
+          <span class="step key">Contract</span><span class="sep">&#8594;</span>
+          <span class="step key">Acceptance</span>
+          <span class="aside"><b>Team mode / solo mode.</b> Solo mode removes the voting;
+            everything else stays exactly as it is.</span>
+        </div>
+
+        <div class="scroller">
+          <div class="grains">
+
+            <div class="grain-head col-out"><span>Outside (FINOS)</span><span>banks · providers · OSERA</span></div>
+            <div class="perim"><div class="perim-in"><span class="r"></span><span class="l">Perimeter · sealed bundle</span><span class="r"></span></div></div>
+            <div class="grain-head col-in"><span>Inside (member)</span><span>the bank</span></div>
+
+            <div class="grain-label col-out"><span class="n">Product</span><span class="d">the library across many projects — identified by lineage</span></div>
+            <div class="grain-label col-in echo"><span class="n">Product, in the bank</span></div>
+            <div class="col-out band"><div class="states"><span class="st">Active · needs patching</span><span class="st">Requested · new product</span></div></div>
+            <div class="col-in"><div class="states"><span class="st key">Active</span><span class="sep" style="align-self:center">&#8594;</span><span class="st dim">Sunset</span><span class="sep" style="align-self:center">&#8594;</span><span class="st dim">Retired</span></div></div>
+
+            <div class="grain-label col-out"><span class="n">Project</span><span class="d">one scope, one release line — identified by its contract</span></div>
+            <div class="grain-label col-in echo"><span class="n">Project, in the bank</span></div>
+            <div class="col-out band"><div class="states"><span class="st">Drafted</span><span class="sep" style="align-self:center">&#8594;</span><span class="st">Proposed</span><span class="sep" style="align-self:center">&#8594;</span><span class="st key">Accepted</span><span class="sep" style="align-self:center">&#8594;</span><span class="st">Delivered</span><span class="sep" style="align-self:center">&#8594;</span><span class="st">Fulfilled</span></div></div>
+            <div class="col-in"><div class="states"><span class="st dim">Benefits realized</span><span style="flex:1.2"></span></div></div>
+
+            <div class="grain-label col-out"><span class="n">Package</span><span class="d">what a project ships, and what evidence attaches to — identified by fingerprint</span></div>
+            <div class="grain-label col-in echo"><span class="n">Package, continued</span></div>
+            <div class="col-out band"><div class="states"><span class="st">Built</span><span class="sep" style="align-self:center">&#8594;</span><span class="st">Verified</span></div></div>
+            <div class="col-in"><div class="states"><span class="st">Resolved</span><span class="sep" style="align-self:center">&#8594;</span><span class="st key">Gate</span><span class="sep" style="align-self:center">&#8594;</span><span class="st">Adopted</span></div></div>
+
+          </div>
+        </div>
+
+        <div class="keyline">
+          <span class="chip accent"><span class="dot"></span>the hinge</span>
+          <span>
+            <b>Accepted</b> freezes the contract and starts the package work.
+            <b>Adopted &#8594; Active</b> is the handover, where the bank takes on an exposure it
+            then has to track. Everything below walks one package through exactly these states.
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3 · WHAT CROSSES ============ -->
+  <section class="section">
+    <header>
+      <span class="eyebrow">The operating model · the perimeter</span>
+      <h2>Evidence flow</h2>
+      <p>
+        Because the bank verifies offline, the boundary crossing cannot be a conversation —
+        there is no live call outward at verification time. What crosses is a copy of a sealed
+        set of files, each one <b>independently signed</b> and content-addressed; nothing is
+        ever edited, and a correction is a new record that supersedes the old one. The
+        container itself carries no signature — sealing it confers no authority on what is
+        inside.
+      </p>
+    </header>
+
+    <div class="screen">
+      <div class="screen-bar">
+        <span class="title">What crosses the perimeter</span>
+        <span class="sub">assembled at three different moments, by three different parties</span>
+      </div>
+      <div class="screen-body">
+        <div class="scroller">
+          <div class="envs">
+
+            <div style="grid-column:1"><div class="env-zone">Outside · does not cross</div></div>
+            <div style="grid-column:3"><div class="env-zone on">Crosses the perimeter</div></div>
+            <div style="grid-column:5"><div class="env-zone">Inside · sealed by the bank</div></div>
+
+            <div class="env" style="grid-column:1">
+              <div class="env-h">
+                <div class="t">Delivery manifest</div>
+                <div class="d">Assembled by the <b>provider</b> at delivery, then frozen by a
+                  transparency-log entry rather than a signature.</div>
+                <div class="env-seal">sealed at <span class="s">Delivered</span> · project machine</div>
+              </div>
+              <ul class="env-l">
+                <li>The contract</li>
+                <li>Build, tests, proof of fix</li>
+                <li>Parts list, flaw status after</li>
+              </ul>
+            </div>
+
+            <div class="cross-arrow" style="grid-column:2">&#8594;</div>
+
+            <div class="env crosses" style="grid-column:3">
+              <div class="env-h">
+                <div class="t">Evidence core</div>
+                <div class="d">Assembled once by the <b>issuer</b>. One digest, identical for
+                  every member bank — which is what lets two of them cite the same evidence.</div>
+                <div class="env-seal">sealed at <span class="s">Fulfilled</span> · project machine</div>
+              </div>
+              <ul class="env-l">
+                <li>The delivery manifest</li>
+                <li>Independent rebuilds</li>
+                <li>Compiled policy</li>
+                <li>Pinned advisory records</li>
+              </ul>
+            </div>
+
+            <div class="env-perim" style="grid-column:4"><div class="env-perim-in"><span class="r"></span><span class="l">Perimeter</span><span class="r"></span></div></div>
+
+            <div class="env" style="grid-column:5">
+              <div class="env-h">
+                <div class="t">Ingest envelope</div>
+                <div class="d">What the gate reads. The core, plus the trust it is judged
+                  against — and the only place a clock appears.</div>
+                <div class="env-seal">sealed at <span class="s">Verified &#8594; Resolved</span> · package machine</div>
+              </div>
+              <ul class="env-l">
+                <li>The evidence core, by digest</li>
+                <li><span class="hov" tabindex="0" data-tip-label="Freshness · trust root"
+                  data-tip="Maximum age:: 7 days
+Contains:: verifier registry, keys, delegations
+Why a clock:: offline verification cannot learn that a key was revoked yesterday
+Stale:: a named-rule refusal, never a warning">Trust root snapshot · at most 7 days old</span></li>
+                <li><span class="hov" tabindex="0" data-tip-label="Freshness · log checkpoints"
+                  data-tip="Maximum age:: 24 hours
+Contains:: one observed tree head per verifier, plus consistency proofs
+Why shorter:: the log moves far faster than the trust root
+Divergent heads:: disqualifying — a split view surfaces as dissent">Log checkpoints · at most 24 hours old</span></li>
+                <li>Where the artifact sits locally</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="keyline">
+          <span class="chip crit"><span class="dot"></span>the rule</span>
+          <span>
+            Anything the gate needs that is not inside the envelope is a <b>live dependency</b>
+            — and a live dependency is not hermetic. That single test is what decides whether
+            something belongs in the bundle.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:var(--step--1);color:var(--ink-3);max-width:none">
+      The split is evidence against trust material. Evidence does not go stale, so the core
+      has no clock and can be cited years later; the material used to judge signatures does,
+      so it lives in the bank's own wrapper and is refreshed on a schedule.
+    </p>
+  </section>
+
+  <!-- ============ THE PACKAGE ============ -->
+  <section class="section">
+    <header>
+      <span class="eyebrow">The worked example · the subject</span>
+      <h2>What is being admitted</h2>
+      <p>
+        An old, widely-used library that a bank cannot upgrade yet. An external party has
+        patched the security flaw without changing anything else, and is asking the bank to
+        accept that patched version. Everything below tracks that one request.
+      </p>
+    </header>
+
+    <div class="screen">
+      <div class="screen-bar">
+        <span class="title">Fix package</span>
+        <span class="sub mono">package · OSERA-2026-0142</span>
+      </div>
+      <div class="screen-body">
+        <div class="kv">
+          <div>
+            <span class="k">Library</span>
+            <span class="v mono hov" tabindex="0" data-tip-label="Package identity"
+              data-tip="Identifier:: pkg:maven/org.apache.commons/commons-collections
+Ecosystem:: Maven Central
+Tracking handle:: …commons-collections?osera.line=3
+Source:: git+github.com/apache/commons-collections
+Standard:: Package URL (purl)">org.apache.commons : commons-collections</span>
+          </div>
+          <div>
+            <span class="k">Version in use</span>
+            <span class="v mono hov" tabindex="0" data-tip-label="Original — unpatched"
+              data-tip="Version:: 3.2.1
+Fingerprint:: sha256:4d81b7e09c3a5f26b8e14d7fa03c9182ee5b4470d1c6a938f2e07b5c4a19d3e8
+Published:: 2015-11-10
+Anchor check:: [ok] matches public Maven Central copy
+Dependencies:: sha256:7b0e4c92…d1f3 (locked manifest)">3.2.1</span>
+          </div>
+          <div>
+            <span class="k">Patched version offered</span>
+            <span class="v mono hov" tabindex="0" data-tip-label="Patched — offered for admission"
+              data-tip="Version:: 3.2.1-osera.1
+Fingerprint:: sha256:9f2c1a84d5e73b06c19af482e7d5310bb64c2f9018ae7d3f5c802b6194eda417
+Built:: 2026-07-14T11:02:00Z
+Differs from original:: [ok] yes — distinct fingerprint
+Change size:: 124 lines across 3 files"><b>3.2.1-osera.1</b></span>
+          </div>
+          <div>
+            <span class="k">Flaw being fixed</span>
+            <span class="v mono hov" tabindex="0" data-tip-label="In scope — must be fixed"
+              data-tip="Flaw:: CVE-2025-40142
+Affects versions:: >=3.0, &lt;3.2.2
+Advisory:: osv.dev/vulnerability/CVE-2025-40142
+Record snapshot:: sha256:e14a77c3…9b02
+Snapshot check:: [ok] matches the copy frozen at contract time
+Standard:: OSV schema · CVE">CVE-2025-40142</span>
+          </div>
+          <div>
+            <span class="k">Supported until</span>
+            <span class="v mono hov" tabindex="0" data-tip-label="Support window"
+              data-tip="Contract agreed:: 2026-07-01
+Support ends:: 2027-06-30
+Window length:: 364 days
+Applications affected:: 3
+Note:: A patched old version is itself a standing liability, which is why the window is fixed at the outset rather than open-ended.">30 Jun 2027</span>
+          </div>
+          <div>
+            <span class="k">Intended replacement</span>
+            <span class="v mono hov" tabindex="0" data-tip-label="Where this is heading"
+              data-tip="Target:: commons-collections 4.4
+Contract field:: schedule.forwardTarget
+Note:: The upgrade the temporary fix exists to buy time for. Required at contract time, so no fix can be commissioned without a stated exit.">commons-collections 4.4</span>
+          </div>
+          <div>
+            <span class="k">Warranty offered</span>
+            <span class="v"><span class="chip warn hov" tabindex="0" data-tip-label="Legal terms"
+              data-tip="Warranty:: none
+Terms fingerprint:: sha256:b8137fe2…04ca
+Constant:: across every contract
+Note:: The alliance warrants nothing. A standing condition of the arrangement, identical on every fix — which is why it belongs here on the contract, not repeated on each decision. Formal risk-acceptance sign-off is planned for a later release."><span class="dot"></span>none</span></span>
+          </div>
+        </div>
+
+        <div>
+          <div class="subhead">Delivery timetable — what the contract required <span class="term">schedule</span></div>
+          <div class="sla" style="margin-top:0.6rem">
+            <div class="sla-step outside">
+              <span class="lab">Contract agreed</span>
+              <span class="val hov" tabindex="0" data-tip-label="Start of the clock"
+                data-tip="Field:: schedule.acceptedAt
+Timestamp:: 2026-07-01T00:00:00Z
+Contract:: OSERA-2026-0142 v1
+Status:: ACCEPTED">01 Jul 2026</span>
+              <span class="sub">scope frozen</span>
+            </div>
+            <div class="sla-step outside due">
+              <span class="lab">Delivery due</span>
+              <span class="val hov" tabindex="0" data-tip-label="The contract deadline"
+                data-tip="Field:: schedule.deliverBy
+Deadline:: 2026-07-31T00:00:00Z
+Allowed:: 30 days from agreement
+Note:: The only delivery obligation the contract imposes on the external party.">31 Jul 2026</span>
+              <span class="sub">30 days allowed</span>
+            </div>
+            <div class="sla-step outside hit">
+              <span class="lab">Actually delivered</span>
+              <span class="val hov" tabindex="0" data-tip-label="Met, with margin"
+                data-tip="Fix built:: 2026-07-14T11:02:00Z
+Rebuilds complete:: 2026-07-18T16:40:00Z
+Against deadline:: [ok] 13 days early
+Elapsed:: 17 days of the 30 allowed">18 Jul 2026</span>
+              <span class="sub">13 days early</span>
+            </div>
+            <div class="sla-step">
+              <span class="lab">Decision made</span>
+              <span class="val hov" tabindex="0" data-tip-label="Inside the bank"
+                data-tip="Evidence arrived:: 2026-07-20T08:30:00Z
+Decision recorded:: 2026-07-21T09:14:00Z
+Deadline:: none
+Note:: The contract sets no time limit on the bank's own review, and none is imposed here. The bank takes as long as the evidence requires.">21 Jul 2026</span>
+              <span class="sub">no deadline applies</span>
+            </div>
+            <div class="sla-step">
+              <span class="lab">Support ends</span>
+              <span class="val hov" tabindex="0" data-tip-label="The obligation this creates"
+                data-tip="Field:: schedule.bridgeExpiry
+Date:: 2027-06-30T00:00:00Z
+Then:: applications move to 4.4, or the fix is re-issued
+Tracked in:: the exposure table">30 Jun 2027</span>
+              <span class="sub">applications must move</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="keyline">
+          <span class="term">lineKey</span>
+          <span>
+            One tracking handle follows this library through every re-issue of the fix —
+            <span class="mono">commons-collections ? osera.line=3</span>. The version changes; the handle does not.
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ THE RAIL ============ -->
+  <section class="section">
+    <header>
+      <span class="eyebrow">The journey</span>
+      <h2>Eight states, and where the bank's responsibility begins</h2>
+      <p>
+        The first three states happen on somebody else's infrastructure — the bank observes
+        them but does not run them. Everything from the fourth onward happens inside the bank,
+        offline. That boundary is drawn on every screen in this mockup.
+      </p>
+    </header>
+
+    <div class="screen">
+      <div class="screen-bar">
+        <span class="title">Lifecycle</span>
+        <span class="sub">this package's actual path · dates from the fixture scenario</span>
+      </div>
+      <div class="screen-body">
+        <div class="scroller">
+          <div class="zones">
+            <div class="zone-head zone-outside">Outside the bank — evidence is produced</div>
+            <div class="zone-head zone-inside">Inside the bank — evidence is checked, offline</div>
+          </div>
+          <div class="rail">
+            <div class="stop outside">
+              <span class="n">01</span>
+              <span class="plain">Contract agreed</span>
+              <span class="term">Accepted</span>
+              <span class="when">01 Jul 2026</span>
+            </div>
+            <div class="stop outside">
+              <span class="n">02</span>
+              <span class="plain">Fix built</span>
+              <span class="term">Built</span>
+              <span class="when">14 Jul 2026</span>
+            </div>
+            <div class="stop outside">
+              <span class="n">03</span>
+              <span class="plain">Rebuilt by others</span>
+              <span class="term">Verified</span>
+              <span class="when">18 Jul 2026</span>
+            </div>
+            <div class="stop boundary">
+              <span class="n">04</span>
+              <span class="plain">Evidence gathered</span>
+              <span class="term">Resolved</span>
+              <span class="when">20 Jul 2026</span>
+            </div>
+            <div class="stop">
+              <span class="n">05</span>
+              <span class="plain">Under review</span>
+              <span class="term">Gate</span>
+              <span class="when">20 Jul 2026</span>
+            </div>
+            <div class="stop">
+              <span class="n">06</span>
+              <span class="plain">Approved</span>
+              <span class="term">Adopted</span>
+              <span class="when">21 Jul 2026</span>
+            </div>
+            <div class="stop now">
+              <span class="n">07</span>
+              <span class="plain">Running in production</span>
+              <span class="term">Active</span>
+              <span class="when">today</span>
+            </div>
+            <div class="stop">
+              <span class="n">08</span>
+              <span class="plain">Support ended</span>
+              <span class="term">Sunset</span>
+              <span class="when">30 Jun 2027</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="zone-legend">
+          <span><span class="swatch out"></span> Hatched — outside the bank, observed only</span>
+          <span><span class="swatch in"></span> Solid — inside the bank, the part code_tracer runs</span>
+          <span><span class="chip accent">underlined</span> where this package sits today</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VIEW 1 — BOARD ============ -->
+  <section class="section">
+    <header>
+      <span class="eyebrow">Screen 1 of 4 · shown at state 05, under review</span>
+      <h2>The board — everything in flight, by state</h2>
+      <p>
+        The daily standing view. Each column is a state; each card is one fix package. The
+        hatched columns are stages the bank watches but does not control, so a card stuck
+        there is not the bank's queue to clear — a distinction the board should make without
+        anyone having to explain it.
+      </p>
+    </header>
+
+    <div class="split">
+      <div class="screen">
+        <div class="screen-bar">
+          <span class="title">Board</span>
+          <span class="sub">14 packages in flight · 20 Jul 2026</span>
+        </div>
+        <div class="screen-body">
+          <div class="scroller">
+            <div class="board">
+
+              <div class="col outside">
+                <div class="col-head">
+                  <span class="plain">Contract agreed</span>
+                  <span class="count">2</span>
+                </div>
+                <div class="card ghost"><span class="pkg">jackson-databind<br><span class="ver">2.9.10</span></span></div>
+                <div class="card ghost"><span class="pkg">log4j-core<br><span class="ver">2.12.4</span></span></div>
+              </div>
+
+              <div class="col outside">
+                <div class="col-head">
+                  <span class="plain">Fix built</span>
+                  <span class="count">3</span>
+                </div>
+                <div class="card ghost"><span class="pkg">struts2-core<br><span class="ver">2.5.30</span></span></div>
+                <div class="card ghost"><span class="pkg">xstream<br><span class="ver">1.4.19</span></span></div>
+                <div class="card ghost"><span class="pkg">bcprov-jdk15<br><span class="ver">1.70</span></span></div>
+              </div>
+
+              <div class="col outside">
+                <div class="col-head">
+                  <span class="plain">Rebuilt by others</span>
+                  <span class="count">1</span>
+                </div>
+                <div class="card ghost"><span class="pkg">spring-core<br><span class="ver">5.3.27</span></span></div>
+              </div>
+
+              <div class="col">
+                <div class="col-head">
+                  <span class="plain">Evidence gathered</span>
+                  <span class="count">2</span>
+                </div>
+                <div class="card"><span class="pkg">netty-handler<br><span class="ver">4.1.94</span></span></div>
+                <div class="card"><span class="pkg">snakeyaml<br><span class="ver">1.33</span></span></div>
+              </div>
+
+              <div class="col">
+                <div class="col-head">
+                  <span class="plain">Under review</span>
+                  <span class="count">1</span>
+                </div>
+                <div class="card focus">
+                  <span class="pkg">commons-collections<br><span class="ver">3.2.1-osera.1</span></span>
+                  <span class="chip accent"><span class="dot"></span>checking</span>
+                </div>
+              </div>
+
+              <div class="col">
+                <div class="col-head">
+                  <span class="plain">Approved</span>
+                  <span class="count">1</span>
+                </div>
+                <div class="card"><span class="pkg">httpclient<br><span class="ver">4.5.14-osera.1</span></span></div>
+              </div>
+
+              <div class="col">
+                <div class="col-head">
+                  <span class="plain">Running in production</span>
+                  <span class="count">3</span>
+                </div>
+                <div class="card"><span class="pkg">guava<br><span class="ver">30.1-osera.2</span></span></div>
+                <div class="card"><span class="pkg">tomcat-embed<br><span class="ver">9.0.71-osera.1</span></span></div>
+                <div class="card">
+                  <span class="pkg">jetty-server<br><span class="ver">9.4.51-osera.1</span></span>
+                  <span class="chip warn hov" tabindex="0" data-tip-label="Approaching its deadline"
+                    data-tip="Must move by:: 2026-08-30
+Days remaining:: 41
+Applications affected:: 2
+Move to:: jetty-server 11.0.15
+Upgrade scheduled:: [bad] no"><span class="dot"></span>expiring 41d</span>
+                </div>
+              </div>
+
+              <div class="col">
+                <div class="col-head">
+                  <span class="plain">Support ended</span>
+                  <span class="count">1</span>
+                </div>
+                <div class="card"><span class="pkg">cxf-core<br><span class="ver">3.4.10-osera.1</span></span></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="notes">
+        <div class="notes-h">What to look at</div>
+        <div class="note"><span class="pin">1</span><span><b>The hatching stops at column four.</b> That is the bank's perimeter, drawn as texture rather than a label, so it survives being skimmed.</span></div>
+        <div class="note"><span class="pin">2</span><span><b>Cards outside are dashed and dimmed.</b> They are informational; nobody at the bank can act on them. Cards inside are solid.</span></div>
+        <div class="note"><span class="pin">3</span><span><b>Expiry surfaces on the board, not just in the ledger.</b> <span class="mono">jetty-server</span> shows "expiring 41d" — computed from today's date, never stored as a status.</span></div>
+        <div class="note"><span class="pin">4</span><span><b>No drag handles.</b> Cards cannot be moved between columns. State is a consequence of evidence, not something an operator sets.</span></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ VIEW 2 — DETAIL ============ -->
+  <section class="section">
+    <header>
+      <span class="eyebrow">Screen 2 of 4 · shown at state 05→06, the decision</span>
+      <h2>The detail — why this package was accepted</h2>
+      <p>
+        The screen an operator opens when they need to defend the decision. It leads with the
+        outcome, then shows the evidence behind it: a numbered trail of signed records, and the
+        four independent parties who rebuilt the fix from scratch to confirm it.
+      </p>
+    </header>
+
+    <div class="split">
+      <div class="screen">
+        <div class="screen-bar">
+          <span class="title">commons-collections 3.2.1-osera.1</span>
+          <span class="sub mono">sha256:9f2c…a417</span>
+        </div>
+        <div class="screen-body">
+
+          <div class="verdict">
+            <span class="headline hov" tabindex="0" data-tip-label="Decision record"
+              data-tip="Outcome:: [ok] accepted
+Rules checked:: 16
+Rules passed:: [ok] 16
+Recorded:: 2026-07-21T09:14:00Z
+Record fingerprint:: sha256:6ab4e701…f38d
+Network calls:: [ok] none
+Re-checkable:: [ok] yes — same inputs, same outcome
+Standard:: Rego, evaluated by Witness">Accepted</span>
+            <span class="detail">
+              All 16 admission rules passed · checked 21 Jul 2026, 09:14 UTC ·
+              <span class="mono">verdict</span> recorded, offline
+            </span>
+          </div>
+
+          <div class="kv">
+            <div><span class="k">Flaw fixed</span><span class="v mono hov" tabindex="0" data-tip-label="In scope"
+              data-tip="Flaw:: CVE-2025-40142
+Affects:: >=3.0, &lt;3.2.2
+Proof of fix:: [ok] recorded (see trail, L5)
+Status after fix:: [ok] fixed (see trail, L7)">CVE-2025-40142</span></div>
+            <div><span class="k">Knowingly not fixed</span><span class="v mono hov" tabindex="0" data-tip-label="Declared out of scope"
+              data-tip="Flaw:: CVE-2024-40099
+Reason:: no upstream fix path
+Advisory:: osv.dev/vulnerability/CVE-2024-40099
+Note:: Declared in the contract at the outset. An undeclared flaw appearing later is a refusal; this one was agreed and is knowingly carried.">CVE-2024-40099</span><span class="v" style="color:var(--ink-3);font-size:0.72rem">no upstream fix exists</span></div>
+            <div><span class="k">Delivered on time</span><span class="v"><span class="chip good hov" tabindex="0" data-tip-label="Delivery SLA"
+              data-tip="Due:: 2026-07-31
+Delivered:: 2026-07-18
+Margin:: [ok] 13 days early"><span class="dot"></span>13 days early</span></span></div>
+            <div><span class="k">Evidence bundle</span><span class="v mono hov" tabindex="0" data-tip-label="What the gate read"
+              data-tip="Shared core:: sha256:1c8e4a37…b402
+Same for:: every member bank — this is what lets two of them cite one evidence set
+This bank's envelope:: sha256:77b1c0e5…9f14
+Trust root version:: 41
+Trust path:: osera-root
+Sealed:: 2026-07-20T08:30:00Z
+Read at the gate:: [ok] offline — nothing outside it was consulted">core sha256:1c8e…b402</span></div>
+          </div>
+
+          <div>
+            <div class="subhead">What the contract required, and what arrived <span class="term">acceptanceCriteria</span></div>
+            <div class="scroller" style="margin-top:0.5rem">
+              <table class="criteria">
+                <thead>
+                  <tr>
+                    <th>Requirement</th>
+                    <th>The contract says</th>
+                    <th>What arrived</th>
+                    <th>Met</th>
+                    <th>Headroom</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="req">Existing tests behave exactly as before</td>
+                    <td class="num hov" tabindex="0" data-tip-label="Contract term"
+                      data-tip="Field:: acceptanceCriteria.testCorpus.requiredResult
+Value:: identical-to-baseline
+Note:: Not 'everything passes' — the same results as the unpatched version, pass or fail. A newly-passing test is as much a behaviour change as a newly-failing one.">identical to 3.2.1</td>
+                    <td class="hov" tabindex="0" data-tip-label="Upstream test suite"
+                      data-tip="Tests run:: 2,847
+On 3.2.1:: 2,841 passed · 6 skipped
+On the fix:: 2,841 passed · 6 skipped
+Difference:: [ok] none
+Suite fingerprint:: sha256:1a6f30bd…77e5
+Duration:: 4m 12s">2,841 passed, 6 skipped — both versions</td>
+                    <td class="met"><span class="chip good"><span class="dot"></span>yes</span></td>
+                    <td><span class="rag n hov" tabindex="0" data-tip-label="No scale to band"
+                      data-tip="Type:: pass or fail
+Note:: Behaviour is either identical to the original or it is not. There is no 'nearly identical', so a headroom score would be invented."><span class="bar"></span><span class="score">—</span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="req">Extra tests written for this contract</td>
+                    <td class="num hov" tabindex="0" data-tip-label="Contract term"
+                      data-tip="Field:: acceptanceCriteria.testCorpus.supplementalTests
+Fingerprint:: sha256:c9204ef1…3ab8
+Note:: Agreed at contract time and frozen, so the party cannot weaken the corpus after the fact.">all must pass</td>
+                    <td class="hov" tabindex="0" data-tip-label="Supplemental tests"
+                      data-tip="Tests run:: 12
+Passed:: [ok] 12
+Failed:: 0
+Corpus check:: [ok] fingerprint matches the contract
+Duration:: 8.4s">12 of 12 passed</td>
+                    <td class="met"><span class="chip good"><span class="dot"></span>yes</span></td>
+                    <td><span class="rag g hov" tabindex="0" data-tip-label="Headroom · green"
+                      data-tip="Score:: 100
+Basis:: 12 of 12 passed
+Band:: [ok] green — over 75"><span class="bar"><span style="width:100%"></span></span><span class="score">100</span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="req">The flaw is genuinely fixed</td>
+                    <td class="num hov" tabindex="0" data-tip-label="Contract term"
+                      data-tip="Field:: acceptanceCriteria.vulnProofRequired
+Per flaw:: true
+Must fail on original:: true
+Must pass on the fix:: true
+Note:: Both halves are required. A test that passes on the unpatched version proves nothing.">must fail on 3.2.1, pass on the fix</td>
+                    <td class="hov" tabindex="0" data-tip-label="Proof of fix — CVE-2025-40142"
+                      data-tip="On 3.2.1:: [ok] failed, as required
+On the fix:: [ok] passed
+Exploit test:: deserialization guard bypass
+Recorded in:: trail L5">fails on 3.2.1, passes on the fix</td>
+                    <td class="met"><span class="chip good"><span class="dot"></span>yes</span></td>
+                    <td><span class="rag n hov" tabindex="0" data-tip-label="No scale to band"
+                      data-tip="Type:: pass or fail
+Note:: Both halves hold or the proof is worthless. Nothing to be comfortable or marginal about."><span class="bar"></span><span class="score">—</span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="req">No change to the published interface</td>
+                    <td class="num hov" tabindex="0" data-tip-label="Contract term"
+                      data-tip="Field:: acceptanceCriteria.apiAbi
+Breaking changes allowed:: 0
+Stability:: required
+Note:: The fix must drop in without applications being recompiled or changed.">0 breaking changes</td>
+                    <td class="hov" tabindex="0" data-tip-label="Interface comparison"
+                      data-tip="Breaking changes:: [ok] 0
+Public classes compared:: 274
+Public methods compared:: 3,109
+Additions:: 0
+Removals:: 0">0 found, across 274 classes</td>
+                    <td class="met"><span class="chip good"><span class="dot"></span>yes</span></td>
+                    <td><span class="rag n hov" tabindex="0" data-tip-label="No scale to band"
+                      data-tip="Allowed:: 0
+Found:: 0
+Note:: The budget is zero, so there is no margin to spend. Any non-zero result is a refusal, not a narrow pass."><span class="bar"></span><span class="score">—</span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="req">The changed code is actually tested</td>
+                    <td class="num hov" tabindex="0" data-tip-label="Contract term"
+                      data-tip="Field:: acceptanceCriteria.patchedPathCoverage.min
+Floor:: 0.90
+Note:: A floor, not a target. Guards against a fix whose changed lines no test ever executes.">at least 90%</td>
+                    <td class="hov" tabindex="0" data-tip-label="Coverage of changed lines"
+                      data-tip="Coverage:: [ok] 95.2%
+Changed lines:: 124
+Exercised:: 118
+Not exercised:: 6
+Margin over floor:: +5.2 points">95% — 118 of 124 changed lines</td>
+                    <td class="met"><span class="chip good"><span class="dot"></span>yes</span></td>
+                    <td><span class="rag a hov" tabindex="0" data-tip-label="Headroom · amber"
+                      data-tip="Score:: 52
+Floor:: 90%
+Achieved:: 95.2%
+Calculation:: (95.2 − 90) ÷ (100 − 90)
+Band:: amber — 50 to 75
+Meaning:: Passed, but has used roughly half the room above the floor. Six changed lines are executed by no test.">
+                      <span class="bar"><span style="width:52%"></span></span><span class="score">52</span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="req">Anyone rebuilding gets the same result</td>
+                    <td class="num hov" tabindex="0" data-tip-label="Contract term"
+                      data-tip="Field:: acceptanceCriteria.reproducibility
+Required:: true
+Level:: digest-identical
+Note:: The strictest level — byte-for-byte, not merely functionally equivalent.">byte-for-byte identical</td>
+                    <td class="hov" tabindex="0" data-tip-label="Independent rebuilds"
+                      data-tip="Rebuilds:: 4
+Matching fingerprint:: [ok] 4 of 4
+Result:: sha256:9f2c1a84…eda417
+Disagreements:: [ok] none">4 rebuilds, all byte-identical</td>
+                    <td class="met"><span class="chip good"><span class="dot"></span>yes</span></td>
+                    <td><span class="rag g hov" tabindex="0" data-tip-label="Headroom · green"
+                      data-tip="Score:: 100
+Required to agree:: 3
+Agreed:: 4
+Spare:: 1 rebuild
+Band:: [ok] green — over 75"><span class="bar"><span style="width:100%"></span></span><span class="score">100</span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="req">Delivered within the agreed window</td>
+                    <td class="num hov" tabindex="0" data-tip-label="Contract term"
+                      data-tip="Field:: schedule.deliverBy
+Agreed:: 2026-07-01
+Due:: 2026-07-31
+Allowed:: 30 days">by 31 Jul 2026</td>
+                    <td class="hov" tabindex="0" data-tip-label="Actual delivery"
+                      data-tip="Fix built:: 2026-07-14
+Rebuilds complete:: 2026-07-18
+Margin:: [ok] 13 days early
+Elapsed:: 17 of 30 days">18 Jul 2026 — 13 days early</td>
+                    <td class="met"><span class="chip good"><span class="dot"></span>yes</span></td>
+                    <td><span class="rag r hov" tabindex="0" data-tip-label="Headroom · red"
+                      data-tip="Score:: 43
+Allowed:: 30 days
+Used:: 17 days
+Spare:: 13 days
+Calculation:: 13 ÷ 30
+Band:: red — under 50
+Challenge this:: An early delivery leaves no residual risk the way thin test coverage does. Consistent banding puts it red; whether timeliness belongs on the same scale is a reviewer decision.">
+                      <span class="bar"><span style="width:43%"></span></span><span class="score">43</span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="req">Our own applications still work</td>
+                    <td class="num hov" tabindex="0" data-tip-label="Bank-side, not contract"
+                      data-tip="Source:: this bank
+Note:: The one check the alliance cannot perform for us — our application tests run against the package before it is approved. Recorded as trail L9.">all must pass</td>
+                    <td class="hov" tabindex="0" data-tip-label="Our application tests"
+                      data-tip="Applications tested:: 3
+Tests run:: 1,204
+Passed:: [ok] 1,204
+Failed:: 0
+Run:: 2026-07-21T08:55:00Z, offline
+Recorded in:: trail L9">1,204 passed across 3 applications</td>
+                    <td class="met"><span class="chip good"><span class="dot"></span>yes</span></td>
+                    <td><span class="rag g hov" tabindex="0" data-tip-label="Headroom · green"
+                      data-tip="Score:: 100
+Passed:: 1,204 of 1,204
+Failed:: 0
+Band:: [ok] green — over 75"><span class="bar"><span style="width:100%"></span></span><span class="score">100</span></span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="rag-key" style="margin-top:0.8rem">
+              <span class="k-item"><span class="k-sw" style="background:var(--crit)"></span> Red — under 50, passed narrowly</span>
+              <span class="k-item"><span class="k-sw" style="background:var(--warn)"></span> Amber — 50 to 75</span>
+              <span class="k-item"><span class="k-sw" style="background:var(--good)"></span> Green — over 75, comfortable</span>
+              <span class="k-item"><span class="k-sw" style="background-image:repeating-linear-gradient(45deg,var(--hatch) 0 1px,transparent 1px 5px)"></span> Pass or fail — no scale</span>
+            </div>
+            <p style="font-size:var(--step--1);color:var(--ink-3);margin-top:0.5rem">
+              Headroom is how much room was left above the threshold, not whether the criterion was
+              met — the "Met" column answers that. A red row still passed. Four of the eight
+              criteria are pass-or-fail and are deliberately left unscored rather than given an
+              invented number.
+            </p>
+          </div>
+
+          <div>
+            <div class="subhead">The evidence trail <span class="term">L-1 … L9</span></div>
+            <div class="chain">
+              <div class="chain-row outside"><span class="lvl">L-1</span><span class="hov" tabindex="0" data-tip-label="L-1 · the contract"
+                data-tip="Contract:: OSERA-2026-0142 v1
+Signed by:: osera.finos.org
+Covers:: 3.2.1 (the original)
+Fingerprint:: sha256:2e7d90ac…b451
+Sets:: scope, test corpus, thresholds, deadlines
+Standard:: in-toto Statement in a DSSE envelope">What was agreed — scope, tests, thresholds</span><span class="who">alliance</span></div>
+              <div class="chain-row outside"><span class="lvl">L0</span><span class="hov" tabindex="0" data-tip-label="L0 · the original identified"
+                data-tip="Subject:: sha256:4d81b7e0…19d3e8
+Source:: git+github.com/apache/commons-collections
+Matches contract:: [ok] yes
+Matches public copy:: [ok] yes">The original 3.2.1, identified exactly</span><span class="who">provider</span></div>
+              <div class="chain-row outside"><span class="lvl">L1</span><span class="hov" tabindex="0" data-tip-label="L1 · flaws before the fix"
+                data-tip="Flaws found:: CVE-2025-40142
+Parts list:: sha256:5c31ba07…e920
+Scanner:: pinned, offline database
+Note:: Establishes what was wrong before anything was changed.">Flaws present before the fix</span><span class="who">provider</span></div>
+              <div class="chain-row outside"><span class="lvl">L2</span><span class="hov" tabindex="0" data-tip-label="L2 · the change"
+                data-tip="From:: sha256:4d81b7e0…19d3e8
+To:: sha256:9f2c1a84…eda417
+Change fingerprint:: sha256:a70b3c68…d5f1
+Size:: 124 lines, 3 files
+New features:: [ok] none — contract forbids them">The change itself, and nothing else</span><span class="who">provider</span></div>
+              <div class="chain-row outside"><span class="lvl">L3</span><span class="hov" tabindex="0" data-tip-label="L3 · the build"
+                data-tip="Built:: 2026-07-14T11:02:00Z
+Toolchain:: JDK 8u402, Maven 3.9.6 — pinned
+Inputs:: L0 (original), L2 (the change)
+Output:: sha256:9f2c1a84…eda417
+Reproducible:: [ok] declared digest-identical
+Standard:: SLSA provenance">How it was built, on a pinned toolchain</span><span class="who">provider</span></div>
+              <div class="chain-row outside"><span class="lvl">L4</span><span class="hov" tabindex="0" data-tip-label="L4 · tests and coverage"
+                data-tip="Suite fingerprint:: [ok] matches contract
+Upstream tests:: 2,841 passed · 6 skipped
+Supplemental:: 12 passed
+Changed-line coverage:: [ok] 95.2% (floor 90%)
+Duration:: 4m 20s">The test run and its coverage</span><span class="who">provider</span></div>
+              <div class="chain-row outside"><span class="lvl">L5</span><span class="hov" tabindex="0" data-tip-label="L5 · proof of fix"
+                data-tip="Flaw:: CVE-2025-40142
+On 3.2.1:: [ok] failed, as required
+On the fix:: [ok] passed
+Note:: The single most load-bearing record — without it, 'fixed' is only a claim.">Proof the flaw fails on 3.2.1 and passes here</span><span class="who">provider</span></div>
+              <div class="chain-row outside"><span class="lvl">L6</span><span class="hov" tabindex="0" data-tip-label="L6 · parts list"
+                data-tip="Format:: CycloneDX 1.5
+Fingerprint:: sha256:d0f82b13…7c66
+Components:: 41
+Changed vs original:: 0 added · 0 removed">Full parts list of what shipped</span><span class="who">provider</span></div>
+              <div class="chain-row outside"><span class="lvl">L7</span><span class="hov" tabindex="0" data-tip-label="L7 · flaw status after"
+                data-tip="CVE-2025-40142:: [ok] fixed
+Justified by:: L5 (proof of fix)
+Flaws claimed beyond scope:: [ok] none
+Note:: Claiming a fix outside the agreed scope is itself a refusal.
+Standard:: OpenVEX · CSAF">Flaw status after the fix</span><span class="who">provider</span></div>
+              <div class="chain-row outside"><span class="lvl">L8</span><span class="hov" tabindex="0" data-tip-label="L8 · independent rebuilds"
+                data-tip="Rebuilds:: 4 (see below)
+Required to agree:: 3
+Agreed:: [ok] 4
+Disagreements:: [ok] none
+Completed:: 2026-07-18T16:40:00Z
+Standard:: VSA (SLSA)">Four independent rebuilds — see below</span><span class="who">quorum ×4</span></div>
+              <div class="chain-row inside"><span class="lvl">L9</span><span class="hov" tabindex="0" data-tip-label="L9 · our own acceptance"
+                data-tip="Applications tested:: 3
+Tests:: [ok] 1,204 passed · 0 failed
+Run:: 2026-07-21T08:55:00Z
+Network:: [ok] none — fully offline
+Outcome:: promoted to the approved repository
+Standard:: in-toto inspection">Our own application tests against the package</span><span class="who">this bank</span></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="subhead">Independent rebuilds — 4 of 4 agreed, 3 required <span class="term">k-of-n · k=3 n=4</span></div>
+            <div class="quorum" style="margin-top:0.6rem">
+              <div class="vsa agree"><span class="who hov" tabindex="0" data-tip-label="Rebuild 1 of 4"
+                data-tip="Rebuilt:: 2026-07-16T09:20:00Z
+Result:: [ok] sha256:9f2c1a84…eda417
+Matches:: [ok] yes
+Conformance:: FULL
+Signing key:: ed25519 · 7f3a…c012">verifier-1</span><span class="chip good"><span class="dot"></span>same result</span></div>
+              <div class="vsa agree"><span class="who hov" tabindex="0" data-tip-label="Rebuild 2 of 4"
+                data-tip="Rebuilt:: 2026-07-17T13:05:00Z
+Result:: [ok] sha256:9f2c1a84…eda417
+Matches:: [ok] yes
+Conformance:: FULL
+Signing key:: ed25519 · b118…9ae4">verifier-2</span><span class="chip good"><span class="dot"></span>same result</span></div>
+              <div class="vsa agree"><span class="who hov" tabindex="0" data-tip-label="Rebuild 3 of 4"
+                data-tip="Rebuilt:: 2026-07-18T07:44:00Z
+Result:: [ok] sha256:9f2c1a84…eda417
+Matches:: [ok] yes
+Conformance:: FULL
+Signing key:: ed25519 · 20d6…4f7b">verifier-3</span><span class="chip good"><span class="dot"></span>same result</span></div>
+              <div class="vsa agree"><span class="who hov" tabindex="0" data-tip-label="Rebuild 4 of 4"
+                data-tip="Rebuilt:: 2026-07-18T16:40:00Z
+Result:: [ok] sha256:9f2c1a84…eda417
+Matches:: [ok] yes
+Conformance:: FULL
+Signing key:: ed25519 · e95c…1d38">verifier-4</span><span class="chip good"><span class="dot"></span>same result</span></div>
+            </div>
+            <p style="font-size:var(--step--1);color:var(--ink-3);margin-top:0.6rem">
+              Any single disagreement blocks acceptance, even when three still agree. The threshold
+              and the no-disagreement rule are two separate conditions.
+            </p>
+          </div>
+
+          <div class="action-row">
+            <button class="btn" type="button">Re-run the check</button>
+            <button class="btn future" type="button" disabled>Record risk acceptance — later release</button>
+            <span class="readonly-note">This screen only reads. Re-running produces a fresh decision record; it never edits this one.</span>
+          </div>
+
+        </div>
+      </div>
+
+      <aside class="notes">
+        <div class="notes-h">What to look at</div>
+        <div class="note"><span class="pin">5</span><span><b>Outcome first, evidence second.</b> The one thing an operator must be able to state out loud sits at the top in plain words.</span></div>
+        <div class="note"><span class="pin">6</span><span><b>Required beside delivered, on every row.</b> The contract's terms are worthless on screen unless the reader can see the threshold and the measurement side by side. "95%" alone says nothing; "95%, floor 90%" is a judgement.</span></div>
+        <div class="note"><span class="pin">7</span><span><b>"Identical to 3.2.1" is not "everything passes".</b> The wording matters — a newly-<em>passing</em> test is as much a behaviour change as a newly-failing one, and the column has to carry that.</span></div>
+        <div class="note"><span class="pin">8</span><span><b>Timeliness is an acceptance criterion too.</b> The delivery deadline sits in the same table as the technical thresholds, because a late fix is a failed fix.</span></div>
+        <div class="note"><span class="pin">9</span><span><b>The trail is described, not named.</b> "Proof the flaw fails on 3.2.1 and passes here" carries meaning; <span class="mono">L5</span> does not. The level codes stay as a small reference column.</span></div>
+        <div class="note"><span class="pin">10</span><span><b>Only L9 is ours.</b> The <span class="mono">·in</span> / <span class="mono">·out</span> marker keeps the perimeter visible even inside the evidence list.</span></div>
+        <div class="note"><span class="pin">11</span><span><b>"4 of 4 agreed, 3 required"</b> states the threshold and the result together, so the reader never has to know what a quorum is.</span></div>
+        <div class="note"><span class="pin">12</span><span><b>Headroom is separate from met.</b> A criterion can pass and still be uncomfortable. Coverage cleared its floor by 5.2 of the available 10 points — amber — and that is invisible if the column only shows a tick.</span></div>
+        <div class="note"><span class="pin">13</span><span><b>Four criteria are deliberately unscored.</b> Where the requirement is pass-or-fail, the headroom cell is hatched rather than given an invented number.</span></div>
+        <div class="note"><span class="pin">14</span><span><b>No clock on the bank.</b> The timetable records when the decision was made but sets no target for it — the review takes as long as the evidence requires.</span></div>
+        <div class="note"><span class="pin">15</span><span><b>One live control, and it is not a write.</b> Re-running the check emits a new decision record. The future sign-off control is visibly disabled and dated.</span></div>
+        <div class="note"><span class="pin">16</span><span><b>The bundle is named on the decision.</b> The verdict records the shared core digest and this bank's envelope separately — two banks admitting the same package produce the same core and different envelopes, which is exactly the comparison the shared identifier exists to permit.</span></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ VIEW 3 — EXPOSURE ============ -->
+  <section class="section">
+    <header>
+      <span class="eyebrow">Screen 3 of 4 · shown at state 07, running in production</span>
+      <h2>The exposure table — who is relying on this, and until when</h2>
+      <p>
+        The risk function's daily view. One row per application using the fix. A patched old
+        version is itself a temporary liability, so the column that matters most is the deadline
+        by which the application must move to a properly upgraded release.
+      </p>
+    </header>
+
+    <div class="split">
+      <div class="screen">
+        <div class="screen-bar">
+          <span class="title">Exposure</span>
+          <span class="sub">3 applications · as at 20 Jul 2026</span>
+        </div>
+        <div class="screen-body">
+          <div class="scroller">
+            <table>
+              <thead>
+                <tr>
+                  <th>Application</th>
+                  <th>Owner</th>
+                  <th>Fix in use</th>
+                  <th>In use since</th>
+                  <th>Must move by</th>
+                  <th>Time left</th>
+                  <th>Move to</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="hov" tabindex="0" data-tip-label="Payments Gateway"
+                    data-tip="Reference:: PAY-114
+Owner:: Core Payments
+Criticality:: tier 1
+Environments:: production, DR
+Source:: bank CMDB
+Application tests:: [ok] 612 passed at admission">Payments Gateway</span> <span class="mono" style="color:var(--ink-3)">PAY-114</span></td>
+                  <td>Core Payments</td>
+                  <td class="num">3.2.1-osera.1</td>
+                  <td class="num">21 Jul 2026</td>
+                  <td class="num">30 Jun 2027</td>
+                  <td><span class="chip calm hov" tabindex="0" data-tip-label="Computed, not stored"
+                    data-tip="As at:: 2026-07-20
+Must move by:: 2027-06-30
+Days remaining:: 345
+Warning threshold:: 90 days
+Turns amber:: 2027-04-01">345 days</span></td>
+                  <td class="num">4.4</td>
+                </tr>
+                <tr>
+                  <td><span class="hov" tabindex="0" data-tip-label="Client Onboarding"
+                    data-tip="Reference:: ONB-207
+Owner:: Retail Digital
+Criticality:: tier 2
+Environments:: production
+Source:: bank CMDB
+Application tests:: [ok] 341 passed at admission">Client Onboarding</span> <span class="mono" style="color:var(--ink-3)">ONB-207</span></td>
+                  <td>Retail Digital</td>
+                  <td class="num">3.2.1-osera.1</td>
+                  <td class="num">03 Aug 2026</td>
+                  <td class="num">30 Jun 2027</td>
+                  <td><span class="chip calm hov" tabindex="0" data-tip-label="Computed, not stored"
+                    data-tip="As at:: 2026-07-20
+Must move by:: 2027-06-30
+Days remaining:: 345
+Note:: The deadline comes from the fix, not from when this application adopted it — so all three rows share one date.">345 days</span></td>
+                  <td class="num">4.4</td>
+                </tr>
+                <tr>
+                  <td><span class="hov" tabindex="0" data-tip-label="Trade Capture"
+                    data-tip="Reference:: TRD-051
+Owner:: Markets Tech
+Criticality:: tier 1
+Environments:: production, UAT
+Source:: bank CMDB
+Application tests:: [ok] 251 passed at admission">Trade Capture</span> <span class="mono" style="color:var(--ink-3)">TRD-051</span></td>
+                  <td>Markets Tech</td>
+                  <td class="num">3.2.1-osera.1</td>
+                  <td class="num">12 Aug 2026</td>
+                  <td class="num">30 Jun 2027</td>
+                  <td><span class="chip calm hov" tabindex="0" data-tip-label="Computed, not stored"
+                    data-tip="As at:: 2026-07-20
+Must move by:: 2027-06-30
+Days remaining:: 345
+Upgrade to 4.4:: not yet scheduled">345 days</span></td>
+                  <td class="num">4.4</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="keyline">
+            <span class="chip warn"><span class="dot"></span>later that year</span>
+            <span>
+              The same table on 1 Jun 2027 — every row turns amber at 29 days without anything
+              being written. "Expiring" is arithmetic over today's date, not a status somebody sets.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <aside class="notes">
+        <div class="notes-h">What to look at</div>
+        <div class="note"><span class="pin">17</span><span><b>"Must move by", not "bridge expiry".</b> The column names the obligation the application owner has, in their words.</span></div>
+        <div class="note"><span class="pin">18</span><span><b>Time left is computed at render.</b> No stored countdown, no writer, no clock drift — the constraint from the data model made visible.</span></div>
+        <div class="note"><span class="pin">19</span><span><b>One fix, many applications.</b> The fix is built and checked once; only this table carries the per-application dimension.</span></div>
+        <div class="note"><span class="pin">20</span><span><b>"Move to" is always populated.</b> A temporary fix with no stated destination is the failure mode this column exists to prevent.</span></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ VIEW 4 — LINEAGE ============ -->
+  <section class="section">
+    <header>
+      <span class="eyebrow">Screen 4 of 4 · shown at state 08, support ended</span>
+      <h2>The history — what was in force, and when</h2>
+      <p>
+        When the support window ends, the application either moves to the proper upgrade or the
+        fix is re-issued for another year. A re-issue is a <em>new</em> package with its own
+        contract and its own set of flaws — never the old one with a changed date. This screen
+        answers the audit question: what was protecting us in March, and against what?
+      </p>
+    </header>
+
+    <div class="split">
+      <div class="screen">
+        <div class="screen-bar">
+          <span class="title">History</span>
+          <span class="sub mono">commons-collections ? osera.line=3</span>
+        </div>
+        <div class="screen-body">
+
+          <div class="lineage">
+            <div class="gen current">
+              <div class="rail-cell">
+                <span>in force now</span>
+                <span>Jul 2027 →</span>
+              </div>
+              <div class="body">
+                <div class="ver-line">
+                  <span class="v hov" tabindex="0" data-tip-label="Re-issue — in force now"
+                    data-tip="Version:: 3.2.1-osera.2
+Fingerprint:: sha256:3ec70b91d84a2f5c60b7e319ad4c8206ff1b53e9704ca6d28f31b7e045cc80a2
+Contract:: OSERA-2027-0311 v1
+Fixes:: CVE-2026-31180, CVE-2027-10044
+Delivered:: [ok] 9 days before deadline
+Rebuilds agreed:: [ok] 4 of 4
+Replaces:: 3.2.1-osera.1">3.2.1-osera.2</span>
+                  <span class="chip accent">re-issued</span>
+                  <span class="chip good"><span class="dot"></span>accepted</span>
+                </div>
+                <div class="facts">
+                  Contract <span class="mono">OSERA-2027-0311</span> · fixes
+                  <span class="mono">CVE-2026-31180</span>, <span class="mono">CVE-2027-10044</span> ·
+                  supported until 30 Jun 2028
+                </div>
+                <div class="facts" style="color:var(--ink-3)">
+                  Replaces 3.2.1-osera.1 <span class="term">supersedes</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="gen">
+              <div class="rail-cell">
+                <span>was in force</span>
+                <span>Jul 2026 – Jun 2027</span>
+              </div>
+              <div class="body">
+                <div class="ver-line">
+                  <span class="v hov" tabindex="0" data-tip-label="Superseded — evidence frozen"
+                    data-tip="Version:: 3.2.1-osera.1
+Fingerprint:: sha256:9f2c1a84…eda417
+Contract:: OSERA-2026-0142 v1
+Fixed:: CVE-2025-40142
+In force:: 2026-07-21 to 2027-06-30
+Applications covered:: 3
+Evidence:: [ok] intact and still re-checkable">3.2.1-osera.1</span>
+                  <span class="chip calm">support ended</span>
+                </div>
+                <div class="facts">
+                  Contract <span class="mono">OSERA-2026-0142</span> · fixed
+                  <span class="mono">CVE-2025-40142</span> · covered 3 applications
+                </div>
+                <div class="facts" style="color:var(--ink-3)">
+                  Its evidence stays frozen and re-checkable; nothing about it was rewritten.
+                </div>
+              </div>
+            </div>
+
+            <div class="gen">
+              <div class="rail-cell">
+                <span>original</span>
+                <span>before Jul 2026</span>
+              </div>
+              <div class="body">
+                <div class="ver-line">
+                  <span class="v">3.2.1</span>
+                  <span class="chip crit"><span class="dot"></span>unpatched</span>
+                </div>
+                <div class="facts">The upstream release the bank could not upgrade away from.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="keyline">
+            <span class="term">lineKey</span>
+            <span>
+              All three rows share one tracking handle, which is why this history exists as a list
+              rather than three unrelated records.
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      <aside class="notes">
+        <div class="notes-h">What to look at</div>
+        <div class="note"><span class="pin">21</span><span><b>Different flaws each time.</b> The re-issue fixes a new set — which is the argument for a new record rather than a renewed date, made visible instead of asserted.</span></div>
+        <div class="note"><span class="pin">22</span><span><b>Date ranges, not version arrows.</b> "Was in force Jul 2026 – Jun 2027" answers the auditor's question directly.</span></div>
+        <div class="note"><span class="pin">23</span><span><b>Nothing here is editable.</b> Superseded rows keep their own evidence; the screen shows history, it does not maintain it.</span></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ STANDARDS ============ -->
+  <section class="section">
+    <header>
+      <span class="eyebrow">Underneath</span>
+      <h2>Nothing on these screens is a new format</h2>
+      <p>
+        Every record, identifier and signature above is an existing open standard — most of them
+        already running somewhere in a bank. The gate is not new infrastructure to trust; it is
+        tooling the bank already operates, pointed at a new policy. That is the single most
+        important adoption argument in the design, so it gets a screen of its own.
+      </p>
+    </header>
+
+    <div class="screen">
+      <div class="screen-bar">
+        <span class="title">The stack</span>
+        <span class="sub">outlined = load-bearing · dashed = known gap</span>
+      </div>
+      <div class="screen-body">
+
+        <div class="spine">
+          <div class="stage">
+            <span class="stage-n">01</span>
+            <span class="stage-t">Naming the thing</span>
+            <div class="stds">
+              <span class="std core" tabindex="0" data-tip-label="Package URL (purl)"
+                data-tip="Steward:: ecosystem-agnostic, widely adopted
+Used for:: every package identifier on these screens
+Example:: pkg:maven/org.apache.commons/commons-collections@3.2.1
+Why:: one identifier shape across Maven, npm, PyPI and the rest — and the namespace the -osera.N suffix lives in.">purl</span>
+              <span class="std core" tabindex="0" data-tip-label="OCI digests / SHA-256"
+                data-tip="Steward:: Open Container Initiative
+Used for:: every fingerprint shown on hover
+Why:: identity is the digest, never the version string. A version string can be reused; a digest cannot.">OCI digest</span>
+              <span class="std" tabindex="0" data-tip-label="Maven coordinates"
+                data-tip="Form:: group:artifact:version
+Used for:: the Java estate this scenario targets
+Note:: Native identity for the repository the bank actually pulls from.">Maven GAV</span>
+            </div>
+          </div>
+
+          <div class="stage">
+            <span class="stage-n">02</span>
+            <span class="stage-t">Recording what happened</span>
+            <div class="stds">
+              <span class="std core" tabindex="0" data-tip-label="in-toto"
+                data-tip="Steward:: CNCF (graduated)
+Used for:: the whole L-1…L9 evidence trail
+Why:: the framework the contract compiles into — layouts, links, thresholds and inspections. The bank's existing verifier enforces it unchanged.">in-toto</span>
+              <span class="std core" tabindex="0" data-tip-label="in-toto Attestation Framework"
+                data-tip="Used for:: the shape of every record in the trail
+Model:: subject + predicate type + predicate
+Why:: one envelope shape for provenance, test results, SBOMs and VEX alike.">Attestation Framework</span>
+              <span class="std core" tabindex="0" data-tip-label="SLSA provenance"
+                data-tip="Steward:: OpenSSF
+Used for:: 'How it was built, on a pinned toolchain' — trail L3
+Why:: build provenance in vocabulary the bank's risk function already knows.">SLSA</span>
+              <span class="std core" tabindex="0" data-tip-label="Verification Summary Attestation"
+                data-tip="Steward:: SLSA
+Used for:: 'Four independent rebuilds' — trail L8
+Why:: exactly the shape needed: one verifier recording the result of checking somebody else's artifact. The quorum is a set of these.">VSA</span>
+              <span class="std core" tabindex="0" data-tip-label="Dead Simple Signing Envelope"
+                data-tip="Steward:: Secure Systems Lab / Sigstore
+Used for:: the signing envelope every record in the trail rides in
+Why:: signature and payload travel together, verifiable without the original transport.">DSSE</span>
+              <span class="std" tabindex="0" data-tip-label="Reproducible Builds"
+                data-tip="Used for:: 'byte-for-byte identical' in the contract criteria
+Why:: what lets four independent verifiers converge on the same digest without coordinating. Without it the quorum has nothing to agree about.">Reproducible Builds</span>
+            </div>
+          </div>
+
+          <div class="stage">
+            <span class="stage-n">03</span>
+            <span class="stage-t">Signing and finding it</span>
+            <div class="stds">
+              <span class="std core" tabindex="0" data-tip-label="Sigstore — cosign, Fulcio, Rekor"
+                data-tip="Steward:: OpenSSF
+Used for:: signing, and collecting evidence at the 'Evidence gathered' state
+Note:: The offline gate uses static keys rather than Sigstore's keyless path — see the gap alongside.">Sigstore</span>
+              <span class="std core" tabindex="0" data-tip-label="OCI Referrers API"
+                data-tip="Steward:: OCI Distribution Spec 1.1
+Used for:: finding the evidence attached to an artifact
+Why:: attestations are referrers of the digest, so the collector needs no out-of-band index.">OCI Referrers</span>
+              <span class="std gap" tabindex="0" data-tip-label="TUF — the known gap"
+                data-tip="Steward:: CNCF (graduated)
+Would answer:: who rotates keys, and what happens on compromise
+Status:: [bad] not implemented
+Note:: The one genuine gap in the verification story. The reference implementation uses static throwaway keys — it needs a trust root, not the right one.">TUF</span>
+            </div>
+          </div>
+
+          <div class="stage">
+            <span class="stage-n">04</span>
+            <span class="stage-t">Contents and exposure</span>
+            <div class="stds">
+              <span class="std core" tabindex="0" data-tip-label="CycloneDX"
+                data-tip="Steward:: OWASP / ECMA-424
+Used for:: 'Full parts list of what shipped' — trail L6
+Why:: strong at the ingest, generate and diff flow this gate needs, and can carry exploitability inline.">CycloneDX</span>
+              <span class="std core" tabindex="0" data-tip-label="SPDX"
+                data-tip="Steward:: Linux Foundation / ISO/IEC 5962:2021
+Used for:: SBOM interchange, and licence identifiers
+Note:: Carried alongside CycloneDX rather than instead of it — the bank's counterparties will send both.">SPDX</span>
+              <span class="std core" tabindex="0" data-tip-label="OpenVEX"
+                data-tip="Steward:: OpenSSF
+Used for:: 'Flaw status after the fix' — trail L7
+Why:: the statement that stops every scanner in the bank firing on a patched artifact. It must cite the proof of fix (L5) to be evidence rather than a claim.">OpenVEX</span>
+              <span class="std core" tabindex="0" data-tip-label="CSAF 2.0 + VEX profile"
+                data-tip="Steward:: OASIS
+Used for:: the regulator-facing form of the same exploitability statement
+Why:: advisory-grade, richer than OpenVEX where a supervisor is the reader.">CSAF</span>
+              <span class="std" tabindex="0" data-tip-label="OSV schema"
+                data-tip="Steward:: OpenSSF / Google
+Used for:: the flaw records and affected ranges shown on hover
+Why:: keyed by purl rather than CPE, which is why a patched artifact can be matched correctly instead of by product string.">OSV</span>
+              <span class="std" tabindex="0" data-tip-label="CVE / CVSS / KEV / EPSS"
+                data-tip="Used for:: naming and ranking the flaws
+Note:: Identification and severity only. None of them says whether your patched build is affected — that is what the exploitability statement is for.">CVE · CVSS</span>
+            </div>
+          </div>
+
+          <div class="stage">
+            <span class="stage-n">05</span>
+            <span class="stage-t">Making the decision</span>
+            <div class="stds">
+              <span class="std core" tabindex="0" data-tip-label="OPA / Rego"
+                data-tip="Used for:: the Accepted or Refused decision itself
+Why:: the meaning a structural verifier cannot read — is the flaw set fixed a superset of what was agreed, did coverage clear its floor, did every verifier agree.">Rego</span>
+              <span class="std core" tabindex="0" data-tip-label="Witness"
+                data-tip="Used for:: running structure and meaning as one pass
+Why:: carries the Rego policy alongside the in-toto attestations, so the compiled contract and the semantic rules are a single verifiable artifact rather than two tools glued together.">Witness</span>
+              <span class="std" tabindex="0" data-tip-label="in-toto inspections"
+                data-tip="Used for:: 'Our own application tests' — trail L9
+Why:: puts the bank's own testing inside the gate rather than after it. The layout requires the step but never supplies its command.">inspections</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="subhead" style="margin-top:0.4rem">Where each one appeared on the screens above</div>
+          <div class="scroller" style="margin-top:0.5rem">
+            <table class="map">
+              <thead>
+                <tr><th>What you saw</th><th>Standard</th><th>Doing what</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Every version and package name</td><td class="num">purl</td><td>one identifier shape across every ecosystem</td></tr>
+                <tr><td>Every fingerprint on hover</td><td class="num">SHA-256 · OCI digest</td><td>identity is the digest, not the version string</td></tr>
+                <tr><td>The eleven-record evidence trail</td><td class="num">in-toto · DSSE</td><td>subject, claim and signature travelling together</td></tr>
+                <tr><td>"How it was built, on a pinned toolchain"</td><td class="num">SLSA</td><td>build provenance</td></tr>
+                <tr><td>"Four independent rebuilds"</td><td class="num">VSA</td><td>one verifier's recorded finding; the quorum is the set</td></tr>
+                <tr><td>"Full parts list of what shipped"</td><td class="num">CycloneDX</td><td>the SBOM, and the diff against the original</td></tr>
+                <tr><td>"Flaw status after the fix"</td><td class="num">OpenVEX · CSAF</td><td>stops bank scanners firing on the patched build</td></tr>
+                <tr><td>Flaw records and affected ranges</td><td class="num">OSV · CVE</td><td>which versions a flaw actually touches</td></tr>
+                <tr><td>"Evidence gathered" — the collection step</td><td class="num">OCI Referrers · cosign</td><td>finding what is attached to a digest</td></tr>
+                <tr><td>"Byte-for-byte identical"</td><td class="num">Reproducible Builds</td><td>what lets independent verifiers converge</td></tr>
+                <tr><td>"Our own application tests"</td><td class="num">in-toto inspections</td><td>the bank's testing inside the gate, not after it</td></tr>
+                <tr><td>The Accepted decision itself</td><td class="num">Rego via Witness</td><td>structure and meaning checked in one offline pass</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="keyline" style="align-items:flex-start">
+          <span class="chip warn"><span class="dot"></span>gap</span>
+          <span>
+            <b>One piece is missing, and it is named rather than hidden.</b> Key rotation and
+            compromise recovery — <span class="mono">TUF</span> — is the single genuine gap in the
+            verification story. Nothing on these screens depends on it yet, and nothing on these
+            screens should be read as solving it.
+          </span>
+        </div>
+
+        <div class="reg-strip">
+          <span style="color:var(--ink-3);font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;font-weight:600">Answering to</span>
+          <span class="std" tabindex="0" data-tip-label="EU Cyber Resilience Act"
+            data-tip="Jurisdiction:: EU
+Hook:: SBOM and vulnerability-handling expectations
+Timing:: reporting obligations 2026, full obligations 2027">EU CRA</span>
+          <span class="std" tabindex="0" data-tip-label="Digital Operational Resilience Act"
+            data-tip="Jurisdiction:: EU
+Hook:: the ICT third-party register — where an alliance arrangement is classified and recorded">DORA</span>
+          <span class="std" tabindex="0" data-tip-label="NIS2"
+            data-tip="Jurisdiction:: EU
+Hook:: supply-chain security obligations">NIS2</span>
+          <span class="std" tabindex="0" data-tip-label="NIST SSDF — SP 800-218"
+            data-tip="Jurisdiction:: US
+Hook:: secure-development attestation; ties to EO 14028 self-attestation">NIST SSDF</span>
+          <span class="std" tabindex="0" data-tip-label="Interagency Guidance SR 23-4"
+            data-tip="Jurisdiction:: US — Federal Reserve, OCC, FDIC
+Hook:: the third-party risk regime the bank's risk function applies first, before any of the technical evidence is read">SR 23-4</span>
+          <span style="color:var(--ink-3);font-size:var(--step--1)">— regimes the evidence model is shaped by, not formats it uses.</span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GLOSSARY ============ -->
+  <section class="section">
+    <header>
+      <span class="eyebrow">Reference</span>
+      <h2>The grey chips, translated</h2>
+      <p>Every technical term used on these screens, and the plain label that carries it.</p>
+    </header>
+    <div class="screen">
+      <div class="screen-body">
+        <div class="glossary">
+          <div class="gloss"><span class="t">Accepted</span><span class="d"><b>Contract agreed</b> — scope and deadlines frozen.</span></div>
+          <div class="gloss"><span class="t">Built</span><span class="d"><b>Fix built</b> — the patched version exists.</span></div>
+          <div class="gloss"><span class="t">Verified</span><span class="d"><b>Rebuilt by others</b> — independent parties reproduced it.</span></div>
+          <div class="gloss"><span class="t">Resolved</span><span class="d"><b>Evidence gathered</b> — the records reached the bank.</span></div>
+          <div class="gloss"><span class="t">Gate</span><span class="d"><b>Under review</b> — the bank is checking it.</span></div>
+          <div class="gloss"><span class="t">Adopted</span><span class="d"><b>Approved</b> — cleared for use.</span></div>
+          <div class="gloss"><span class="t">Active</span><span class="d"><b>Running in production</b> — and being tracked.</span></div>
+          <div class="gloss"><span class="t">Sunset</span><span class="d"><b>Support ended</b> — move on or re-issue.</span></div>
+          <div class="gloss"><span class="t">package</span><span class="d"><b>Fix package</b> — one patched version under consideration.</span></div>
+          <div class="gloss"><span class="t">lineKey</span><span class="d"><b>Tracking handle</b> — constant across re-issues.</span></div>
+          <div class="gloss"><span class="t">backpatch / bridge</span><span class="d"><b>Temporary fix</b> — buys time until a real upgrade.</span></div>
+          <div class="gloss"><span class="t">bridgeExpiry</span><span class="d"><b>Must move by</b> — the date the fix stops being supported.</span></div>
+          <div class="gloss"><span class="t">k-of-n quorum</span><span class="d"><b>Independent rebuilds</b> — how many parties must agree.</span></div>
+          <div class="gloss"><span class="t">VSA</span><span class="d"><b>One rebuild result</b> — a single party's signed finding.</span></div>
+          <div class="gloss"><span class="t">attestation</span><span class="d"><b>Signed record</b> — a tamper-evident statement of fact.</span></div>
+          <div class="gloss"><span class="t">L-1 … L9</span><span class="d"><b>The evidence trail</b> — eleven records, contract to acceptance.</span></div>
+          <div class="gloss"><span class="t">verdict</span><span class="d"><b>Decision record</b> — accepted or refused, with the reason.</span></div>
+          <div class="gloss"><span class="t">supersedes</span><span class="d"><b>Replaces</b> — links a re-issue to the one before it.</span></div>
+          <div class="gloss"><span class="t">SBOM</span><span class="d"><b>Parts list</b> — everything inside what shipped.</span></div>
+          <div class="gloss"><span class="t">CVE</span><span class="d"><b>Flaw</b> — a publicly catalogued security defect.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CLOSING · THE LANDSCAPE ============ -->
+  <section class="section">
+    <header>
+      <span class="eyebrow">In closing · what this composes with</span>
+      <h2>Almost none of this is ours to invent</h2>
+      <p>
+        The gate is a composition of open standards with one bank-specific policy on top. Every
+        format it reads, every signature it checks and every log it consults is somebody else's
+        published specification. The claim is interoperability with them — not that no
+        alternative exists.
+      </p>
+    </header>
+
+    <div class="screen">
+      <div class="screen-bar">
+        <span class="title">Landscape</span>
+        <span class="sub">scanned 2026-07-27 · not exhaustive</span>
+      </div>
+      <div class="screen-body">
+        <div class="scroller">
+          <table class="land">
+            <thead>
+              <tr><th>What</th><th>Licence</th><th>Overlaps</th><th>Our stance</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>in-toto <span class="mono">+ verify</span></td><td><span class="lic oss">open source</span></td><td>the shape check</td><td><b>Conform</b> — the layout <i>is</i> the compiled contract</td></tr>
+              <tr><td>Witness · Archivista</td><td><span class="lic osssup">oss + support</span></td><td>attestation, policy, storage</td><td><b>Conform</b> — the verification engine</td></tr>
+              <tr><td>SLSA · VSA</td><td><span class="lic spec">open spec</span></td><td>build proof, rebuild summary</td><td><b>Conform</b></td></tr>
+              <tr><td>Sigstore · DSSE</td><td><span class="lic oss">open source</span></td><td>signing, log</td><td><b>Conform</b></td></tr>
+              <tr><td>TUF</td><td><span class="lic oss">open source</span></td><td>trust root, rotation</td><td><b>Conform</b></td></tr>
+              <tr><td>Rego · OPA</td><td><span class="lic oss">open source</span></td><td>the meaning check</td><td><b>Conform</b></td></tr>
+              <tr><td>CycloneDX · OpenVEX · OSV</td><td><span class="lic spec">open spec</span></td><td>parts list, flaw status</td><td><b>Conform</b></td></tr>
+              <tr><td>Attestation graph tooling</td><td><span class="lic osssup">oss + support</span></td><td>the exposure question</td><td>Coexist, possibly adopt for query</td></tr>
+              <tr><td>Independent rebuilders <span class="mono">rebuilderd</span></td><td><span class="lic oss">open source</span></td><td><b>the quorum</b></td><td><b>Study</b> — consumer-side m-of-n already ships in Linux distributions</td></tr>
+              <tr><td>Transparency-service standard <span class="mono">SCITT</span></td><td><span class="lic spec">draft spec</span></td><td>the log</td><td>Watch — a different encoding, and contracts are frozen forever</td></tr>
+              <tr><td colspan="4" style="padding-top:1.1rem;border-bottom:0"><span class="eyebrow" style="color:var(--crit)">Closed source — listed for completeness, ruled out on portability</span></td></tr>
+              <tr><td>Repository firewall / curation</td><td><span class="lic closed">closed</span></td><td>inbound quarantine</td><td>Coexist — gates on reputation, not on conformance to a commitment</td></tr>
+              <tr><td>Release-governance platforms</td><td><span class="lic closed">closed</span></td><td>evidence, promotion gates</td><td>Coexist — governs your own build, not a third party's commissioned work</td></tr>
+              <tr><td>Single-vendor LTS pipelines</td><td><span class="lic closed">closed</span></td><td><b>all of it</b></td><td>The real comparison — see below</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="keyline">
+          <span class="chip accent"><span class="dot"></span>the distinction</span>
+          <span>
+            A vendor that backports fixes, signs them, publishes a parts list and flaw status,
+            and tracks your exposure has run this end to end for two decades. That model is
+            <b>one supplier, trusted</b>. This one is <b>many parties, verified</b> — the
+            specification is agreed before the work starts, and the result is independently
+            re-derived by institutions that do not answer to the supplier.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:var(--step--1);color:var(--ink-3);max-width:none">
+      What genuinely has no precedent found: the commissioned specification — a scope and a
+      test corpus fixed and countersigned <i>before</i> the work begins, then compiled into the
+      policy that admits the result. Everything else here is assembly.
+    </p>
+  </section>
+  <footer>
+    <p style="font-size:var(--step--1);color:var(--ink-3);margin-bottom:0.6rem;max-width:none">
+      <b style="color:var(--ink-2)">The refusal case is not yet drawn.</b> Every screen here shows
+      a fix being accepted. A refused package naming the rule it failed is still to come, and until
+      it exists this mockup shows only half of what the gate does.
+      <b style="color:var(--ink-2)">Some values are invented.</b> The package, versions, contract,
+      flaws, schedule, thresholds and quorum come from the fixture scenario; fingerprints, test
+      counts, application names and the re-issue's details were made up to make the screens
+      concrete.
+    </p>
+    code_tracer · task-lifecycle-mockup · a design mockup, not an implementation ·
+    scenario from artifact-ri-fixtures-spec §1
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  var tip = document.createElement("div");
+  tip.className = "tip";
+  tip.setAttribute("role", "tooltip");
+  tip.hidden = true;
+  document.body.appendChild(tip);
+
+  var current = null;
+
+  function render(el) {
+    var raw = el.getAttribute("data-tip");
+    if (!raw) return false;
+    tip.textContent = "";
+
+    var label = el.getAttribute("data-tip-label");
+    if (label) {
+      var h = document.createElement("div");
+      h.className = "tip-h";
+      h.textContent = label;
+      tip.appendChild(h);
+    }
+
+    raw.split("\n").forEach(function (line) {
+      line = line.trim();
+      if (!line) return;
+      var split = line.indexOf("::");
+      if (split === -1) {
+        var note = document.createElement("div");
+        note.className = "tip-note";
+        note.textContent = line;
+        tip.appendChild(note);
+        return;
+      }
+      var row = document.createElement("div");
+      row.className = "tip-row";
+      var k = document.createElement("span");
+      k.className = "tip-k";
+      k.textContent = line.slice(0, split).trim();
+      var value = line.slice(split + 2).trim();
+      var v = document.createElement("span");
+      v.className = "tip-v";
+      if (value.indexOf("[ok]") === 0) { v.classList.add("ok"); value = value.slice(4).trim(); }
+      else if (value.indexOf("[bad]") === 0) { v.classList.add("bad"); value = value.slice(5).trim(); }
+      v.textContent = value;
+      row.appendChild(k);
+      row.appendChild(v);
+      tip.appendChild(row);
+    });
+    return true;
+  }
+
+  function place(el) {
+    var r = el.getBoundingClientRect();
+    var t = tip.getBoundingClientRect();
+    var top = r.top - t.height - 8;
+    if (top < 8) top = r.bottom + 8;
+    var left = r.left;
+    if (left + t.width > window.innerWidth - 8) left = window.innerWidth - t.width - 8;
+    if (left < 8) left = 8;
+    tip.style.top = Math.round(top) + "px";
+    tip.style.left = Math.round(left) + "px";
+  }
+
+  function show(el) {
+    if (!render(el)) return;
+    tip.hidden = false;
+    current = el;
+    place(el);
+  }
+
+  function hide() {
+    tip.hidden = true;
+    current = null;
+  }
+
+  function target(e) {
+    var n = e.target;
+    if (!n || typeof n.closest !== "function") return null;
+    return n.closest("[data-tip]");
+  }
+
+  document.addEventListener("mouseover", function (e) {
+    var el = target(e);
+    if (el && el !== current) show(el);
+  });
+  document.addEventListener("mouseout", function (e) {
+    var el = target(e);
+    if (el && el === current) hide();
+  });
+  document.addEventListener("focusin", function (e) {
+    var el = target(e);
+    if (el) show(el); else hide();
+  });
+  document.addEventListener("focusout", hide);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") hide();
+  });
+  window.addEventListener("scroll", function () { if (current) place(current); }, true);
+  window.addEventListener("resize", hide);
+})();
+
+/* -------------------------------------------------------------------
+   Print appendix.
+
+   A hover cannot happen on paper, so every [data-tip] is numbered in
+   document order and its contents collected into an appendix that is
+   hidden on screen and shown only when printing. Grouped by the
+   section each reference sits in, so a reader can find one without
+   scanning the whole list.
+   ------------------------------------------------------------------- */
+(function () {
+  var nodes = document.querySelectorAll("[data-tip]");
+  if (!nodes.length) return;
+
+  var wrap = document.querySelector(".wrap");
+  if (!wrap) return;
+
+  var appendix = document.createElement("section");
+  appendix.className = "tip-appendix section";
+
+  var head = document.createElement("header");
+  var eyebrow = document.createElement("span");
+  eyebrow.className = "eyebrow";
+  eyebrow.textContent = "Appendix";
+  var h2 = document.createElement("h2");
+  h2.textContent = "The values behind each reference";
+  var intro = document.createElement("p");
+  intro.textContent =
+    "On screen these appear on hover. On paper each one carries a small number; " +
+    "the underlying values are collected here, in the order they appear.";
+  head.appendChild(eyebrow);
+  head.appendChild(h2);
+  head.appendChild(intro);
+  appendix.appendChild(head);
+
+  function sectionTitle(el) {
+    var sec = el.closest("section.section");
+    if (!sec) return "Page";
+    var h = sec.querySelector("header h2");
+    return h ? h.textContent.trim() : "Page";
+  }
+
+  var groups = [];
+  var byTitle = {};
+  var n = 0;
+
+  Array.prototype.forEach.call(nodes, function (el) {
+    n += 1;
+    el.setAttribute("data-tipn", n);
+
+    var title = sectionTitle(el);
+    if (!byTitle[title]) {
+      byTitle[title] = [];
+      groups.push(title);
+    }
+    byTitle[title].push({
+      n: n,
+      label: el.getAttribute("data-tip-label") || el.textContent.trim().slice(0, 60),
+      body: el.getAttribute("data-tip") || ""
+    });
+  });
+
+  groups.forEach(function (title) {
+    var grp = document.createElement("div");
+    grp.className = "grp";
+
+    var gh = document.createElement("div");
+    gh.className = "grp-h";
+    gh.textContent = title;
+    grp.appendChild(gh);
+
+    byTitle[title].forEach(function (item) {
+      var row = document.createElement("div");
+      row.className = "ent";
+
+      var num = document.createElement("span");
+      num.className = "ent-n";
+      num.textContent = item.n;
+
+      var lab = document.createElement("span");
+      lab.className = "ent-l";
+      lab.textContent = item.label;
+
+      var val = document.createElement("span");
+      val.className = "ent-v";
+
+      item.body.split("\n").forEach(function (line) {
+        line = line.trim();
+        if (!line) return;
+        var split = line.indexOf("::");
+        var piece = document.createElement("div");
+        if (split === -1) {
+          piece.textContent = line;
+        } else {
+          var k = document.createElement("b");
+          k.textContent = line.slice(0, split).trim() + " ";
+          var text = line.slice(split + 2).trim()
+            .replace(/^\[ok\]\s*/, "✓ ")
+            .replace(/^\[bad\]\s*/, "✗ ");
+          piece.appendChild(k);
+          piece.appendChild(document.createTextNode(text));
+        }
+        val.appendChild(piece);
+      });
+
+      row.appendChild(num);
+      row.appendChild(lab);
+      row.appendChild(val);
+      grp.appendChild(row);
+    });
+
+    appendix.appendChild(grp);
+  });
+
+  wrap.appendChild(appendix);
+})();
+</script>
+</body>
+</html>
