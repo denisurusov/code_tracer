@@ -31,7 +31,7 @@
   <text x="415" y="136" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Upstream git</text>
   <text x="415" y="156" font-size="10" fill="#64748b" text-anchor="middle">R: source_ref commit SHA</text>
   <text x="630" y="136" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">OSV / NVD</text>
-  <text x="630" y="156" font-size="10" fill="#64748b" text-anchor="middle">R: CVE set at scoping</text>
+  <text x="630" y="156" font-size="10" fill="#64748b" text-anchor="middle">R: CVE record, pinned at scoping</text>
   <text x="852" y="136" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">sum.golang.org (Go only)</text>
   <text x="852" y="156" font-size="10" fill="#64748b" text-anchor="middle">R: independent checksum log</text>
   <text x="990" y="132" font-size="10.5" font-style="italic" fill="#94a3b8">Anchor strength varies: Maven/Go strong · npm, PyPI permit</text>
@@ -40,7 +40,7 @@
 
   <!-- ============ ZONE 2 : OUTSIDE ============ -->
   <rect x="24" y="204" width="1392" height="300" rx="10" fill="#fef6ec" stroke="#f3ddc0"/>
-  <text x="40" y="225" font-size="12" font-weight="700" fill="#a1651a">OUTSIDE · alliance (issuer) · provider · verifier quorum — evidence PRODUCTION</text>
+  <text x="40" y="225" font-size="12" font-weight="700" fill="#a1651a">OUTSIDE · alliance (issuer) · provider · the contract's signatories — evidence PRODUCTION</text>
 
   <!-- master repo -->
   <g filter="url(#soft)"><rect x="48" y="238" width="215" height="118" rx="9" fill="#fff" stroke="#e11d48" stroke-width="1.5"/></g>
@@ -48,8 +48,8 @@
   <text x="103" y="260" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">BUILD</text>
   <text x="155" y="282" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Master repo (git)</text>
   <text x="155" y="300" font-size="10" fill="#64748b" text-anchor="middle">W: contract schemas (all versions)</text>
-  <text x="155" y="315" font-size="10" fill="#64748b" text-anchor="middle">W: Rego policy bundles</text>
-  <text x="155" y="330" font-size="10" fill="#64748b" text-anchor="middle">W: layout compiler ①</text>
+  <text x="155" y="315" font-size="10" fill="#64748b" text-anchor="middle">W: Rego policy bundles · compiler ①</text>
+  <text x="155" y="330" font-size="10" fill="#64748b" text-anchor="middle">W: contracts/ · cores/ (canonical JSON)</text>
   <text x="155" y="347" font-size="9.5" font-style="italic" fill="#a1651a" text-anchor="middle">publishing surface — never read at verify</text>
 
   <!-- authoring/issuance -->
@@ -57,9 +57,9 @@
   <rect x="297" y="248" width="86" height="16" rx="8" fill="#e11d48"/>
   <text x="340" y="260" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">BUILD ⑦⑧</text>
   <text x="392" y="282" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Authoring + issuance</text>
-  <text x="392" y="300" font-size="10" fill="#64748b" text-anchor="middle">W: L-1 contract (signed)</text>
-  <text x="392" y="315" font-size="10" fill="#64748b" text-anchor="middle">W: compiled layout + compilerVersion</text>
-  <text x="392" y="330" font-size="10" fill="#64748b" text-anchor="middle">R: anchor · lineage projection</text>
+  <text x="392" y="300" font-size="10" fill="#64748b" text-anchor="middle">W: L-1 contract — scope, signatories,</text>
+  <text x="392" y="315" font-size="10" fill="#64748b" text-anchor="middle">rebuild inputs, pinned CVE records</text>
+  <text x="392" y="330" font-size="10" fill="#64748b" text-anchor="middle">W: compiled layout + compilerVersion</text>
   <text x="392" y="347" font-size="9.5" font-style="italic" fill="#a1651a" text-anchor="middle">holds the issuance signing key</text>
 
   <!-- TUF -->
@@ -75,11 +75,11 @@
   <!-- Rekor -->
   <g filter="url(#soft)"><rect x="744" y="238" width="200" height="118" rx="9" fill="#fff" stroke="#9fd8ce"/></g>
   <text x="844" y="264" font-size="12.5" font-weight="700" fill="#0f8a7a" text-anchor="middle">Rekor (FINOS-operated)</text>
-  <text x="844" y="284" font-size="10" fill="#0f6f63" text-anchor="middle">W: contract entry</text>
-  <text x="844" y="299" font-size="10" fill="#0f6f63" text-anchor="middle">W: delivery-manifest entry</text>
-  <text x="844" y="314" font-size="10" fill="#0f6f63" text-anchor="middle">W: attestation entries L0–L8</text>
-  <text x="844" y="333" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">quorum-witnessed: each VSA</text>
-  <text x="844" y="347" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">carries the checkpoint it observed</text>
+  <text x="844" y="284" font-size="10" fill="#0f6f63" text-anchor="middle">W: contract · delivery manifest</text>
+  <text x="844" y="299" font-size="10" fill="#0f6f63" text-anchor="middle">W: attestations L0–L8 · sealed core</text>
+  <text x="844" y="318" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">witnessed by the signatories: each L8</text>
+  <text x="844" y="332" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">carries the checkpoint it observed, so</text>
+  <text x="844" y="346" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">a split view surfaces as dissent</text>
 
   <!-- Fulcio -->
   <g filter="url(#soft)"><rect x="966" y="238" width="150" height="118" rx="9" fill="#fff" stroke="#9fd8ce"/></g>
@@ -87,7 +87,7 @@
   <text x="1041" y="288" font-size="10" fill="#0f6f63" text-anchor="middle">W: signer certs</text>
   <text x="1041" y="306" font-size="10" fill="#0f6f63" text-anchor="middle">R: cert chain</text>
   <text x="1041" y="324" font-size="10" fill="#0f6f63" text-anchor="middle">roots ship in</text>
-  <text x="1041" y="339" font-size="10" fill="#0f6f63" text-anchor="middle">the bundle</text>
+  <text x="1041" y="339" font-size="10" fill="#0f6f63" text-anchor="middle">the envelope</text>
 
   <!-- neutral repo -->
   <g filter="url(#soft)"><rect x="1138" y="238" width="250" height="118" rx="9" fill="#fff" stroke="#e6c9a0"/></g>
@@ -99,21 +99,32 @@
   <text x="1263" y="343" font-size="9.5" font-weight="700" fill="#a1651a" text-anchor="middle">expects it (Maven, npm, PyPI)</text>
 
   <!-- provider -->
-  <g filter="url(#soft)"><rect x="48" y="374" width="452" height="114" rx="9" fill="#fff" stroke="#e6c9a0"/></g>
-  <text x="70" y="397" font-size="12.5" font-weight="700" fill="#c2691a">Provider (patching vendor) — not ours</text>
-  <text x="70" y="418" font-size="10.5" fill="#7c5314">R: baseline from package registry · source from upstream git · L-1 contract</text>
-  <text x="70" y="435" font-size="10.5" fill="#7c5314">W: hardened artifact · L0–L7 attestations · recipe set (own git)</text>
-  <text x="70" y="452" font-size="10.5" fill="#7c5314">W: delivery manifest (L-1 + L0–L7), digest logged at hand-off</text>
-  <text x="70" y="474" font-size="9.5" font-style="italic" fill="#a1651a">the provider's git holds recipes only — peripheral, never on the verification path</text>
+  <g filter="url(#soft)"><rect x="48" y="374" width="382" height="114" rx="9" fill="#fff" stroke="#e6c9a0"/></g>
+  <text x="70" y="397" font-size="12.5" font-weight="700" fill="#c2691a">Provider — not ours</text>
+  <text x="70" y="418" font-size="10.5" fill="#7c5314">R: baseline from the package registry · source from upstream git · L-1</text>
+  <text x="70" y="435" font-size="10.5" fill="#7c5314">W: hardened artifact · L0–L7 · recipe set (own git)</text>
+  <text x="70" y="452" font-size="10.5" fill="#7c5314">W: delivery manifest, digest logged at hand-off</text>
+  <text x="70" y="474" font-size="9.5" font-style="italic" fill="#a1651a">the recipe repo is peripheral — never on the verification path</text>
 
-  <!-- verifiers -->
-  <g filter="url(#soft)"><rect x="522" y="374" width="594" height="114" rx="9" fill="#fff" stroke="#9fd8ce"/></g>
-  <text x="544" y="397" font-size="12.5" font-weight="700" fill="#0f8a7a">Verifier quorum — n ≈ active membership (verification is a duty) — not ours</text>
-  <text x="544" y="418" font-size="10.5" fill="#0f6f63">R: delivery manifest · baseline re-pulled from the public registry (independent anchor check)</text>
-  <text x="544" y="435" font-size="10.5" fill="#0f6f63">W: one VSA each — rebuild digest, L4/L5 recheck, conformance, observed Rekor checkpoint</text>
-  <text x="544" y="452" font-size="10.5" fill="#0f6f63">k = max(3, ceil(n/3)) · zero dissent · divergent checkpoints or digests are disqualifying</text>
-  <text x="544" y="474" font-size="9.5" font-style="italic" fill="#0f8a7a">siting is hybrid — mostly peer on-prem, so the rebuild harness must be a distributable package</text>
+  <!-- signatory verifiers -->
+  <g filter="url(#soft)"><rect x="452" y="374" width="448" height="114" rx="9" fill="#fff" stroke="#9fd8ce"/></g>
+  <text x="474" y="397" font-size="12.5" font-weight="700" fill="#0f8a7a">Signatory verifiers — not ours</text>
+  <text x="474" y="418" font-size="10.5" fill="#0f6f63">R: delivery manifest · baseline re-pulled from the public registry</text>
+  <text x="474" y="435" font-size="10.5" fill="#0f6f63">W: one L8 each — rebuild digest, L4/L5 recheck, observed checkpoint</text>
+  <text x="474" y="452" font-size="10.5" font-weight="700" fill="#0f6f63">every signatory verifies · all must agree · minimum two</text>
+  <text x="474" y="474" font-size="9.5" font-style="italic" fill="#0f8a7a">the parties that sign and fund the contract are the parties that check it</text>
 
+  <!-- evidence core -->
+  <g filter="url(#soft)"><rect x="922" y="374" width="194" height="114" rx="9" fill="#fff" stroke="#e11d48" stroke-width="1.5"/></g>
+  <rect x="934" y="382" width="96" height="16" rx="8" fill="#e11d48"/>
+  <text x="982" y="394" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">BUILD — issuer</text>
+  <text x="1019" y="416" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Evidence core</text>
+  <text x="1019" y="433" font-size="10" fill="#64748b" text-anchor="middle">sealed ONCE at Fulfilled</text>
+  <text x="1019" y="447" font-size="10" fill="#64748b" text-anchor="middle">L-1 · L0–L8 · layout · policy</text>
+  <text x="1019" y="461" font-size="10" fill="#64748b" text-anchor="middle">pinned CVE records · rebuild refs</text>
+  <text x="1019" y="478" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">ONE digest for every bank</text>
+
+  <!-- attestation index -->
   <g filter="url(#soft)"><rect x="1138" y="374" width="250" height="114" rx="9" fill="#fff" stroke="#e11d48" stroke-width="1.5"/></g>
   <rect x="1150" y="382" width="128" height="16" rx="8" fill="#e11d48"/>
   <text x="1214" y="394" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">BUILD — upstream of ③</text>
@@ -125,32 +136,32 @@
 
   <!-- ============ PERIMETER ============ -->
   <rect x="24" y="516" width="1392" height="42" rx="8" fill="#1a2332"/>
-  <text x="44" y="542" font-size="12.5" font-weight="700" fill="#ffffff">THE PERIMETER — crossed by ONE evidence bundle (OCI index; deterministic tar when air-gapped). A copy, not a protocol. Container, never a credential.</text>
-  <text x="1044" y="533" font-size="10.5" fill="#c9d3e0">RESOLUTION is online · VERIFICATION is offline</text>
-  <text x="1044" y="548" font-size="10.5" fill="#c9d3e0">freshness: TUF ≤ 7d · checkpoints ≤ 24h</text>
+  <text x="44" y="534" font-size="12.5" font-weight="700" fill="#ffffff">THE PERIMETER — a copy crosses, not a protocol. TWO containers: the issuer seals the evidence core once; each bank seals its own ingest envelope around it.</text>
+  <text x="44" y="550" font-size="10.5" fill="#c9d3e0">Sealing confers no authority on the contents · RESOLUTION is online — discovery, the pinned rebuild inputs, and the bank's own rebuild · VERIFICATION is offline · core has no clock · envelope: TUF ≤ 7d, checkpoints ≤ 24h</text>
 
   <!-- ============ ZONE 3 : BANK ============ -->
   <rect x="24" y="570" width="1392" height="300" rx="10" fill="#f2f0fb" stroke="#ddd6f3"/>
-  <text x="40" y="591" font-size="12" font-weight="700" fill="#5b3fa8">INSIDE THE BANK · hermetic and offline — no live call outward at verify time · evidence CONSUMPTION</text>
+  <text x="40" y="591" font-size="12" font-weight="700" fill="#5b3fa8">INSIDE THE BANK · the gate is hermetic and offline — no live call outward once the envelope is sealed · evidence CONSUMPTION</text>
 
   <!-- resolver -->
   <g filter="url(#soft)"><rect x="48" y="604" width="205" height="128" rx="9" fill="#fff" stroke="#e11d48" stroke-width="1.5"/></g>
   <rect x="60" y="614" width="86" height="16" rx="8" fill="#e11d48"/>
   <text x="103" y="626" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">BUILD ③</text>
-  <text x="150" y="650" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Resolver + assembly</text>
-  <text x="150" y="670" font-size="10" fill="#64748b" text-anchor="middle">R: attestation index → artifact repo</text>
-  <text x="150" y="685" font-size="10" fill="#64748b" text-anchor="middle">R: TUF snapshot · checkpoints</text>
-  <text x="150" y="700" font-size="10" fill="#64748b" text-anchor="middle">R: schema + policy (pinned)</text>
-  <text x="150" y="715" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">W: evidence bundle</text>
+  <text x="150" y="650" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Resolve + rebuild</text>
+  <text x="150" y="669" font-size="10" fill="#64748b" text-anchor="middle">R: index → artifact · core</text>
+  <text x="150" y="683" font-size="10" fill="#64748b" text-anchor="middle">R: TUF snapshot · checkpoints</text>
+  <text x="150" y="697" font-size="10" font-weight="700" fill="#b91c1c" text-anchor="middle">rebuilds from the pinned refs</text>
+  <text x="150" y="711" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">W: this bank's own L8</text>
+  <text x="150" y="725" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">W: ingest envelope</text>
 
   <!-- bundle store -->
   <g filter="url(#soft)"><rect x="275" y="604" width="185" height="128" rx="9" fill="#fff" stroke="#c7bced"/></g>
   <text x="367" y="632" font-size="12.5" font-weight="700" fill="#5b3fa8" text-anchor="middle">OCI bundle store</text>
-  <text x="367" y="654" font-size="10" fill="#6b5aa5" text-anchor="middle">W: bundles (immutable)</text>
-  <text x="367" y="669" font-size="10" fill="#6b5aa5" text-anchor="middle">R: by the gate</text>
-  <text x="367" y="690" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">blobs shared across</text>
-  <text x="367" y="704" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">bundles — trust material</text>
-  <text x="367" y="718" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">stored once, not per bundle</text>
+  <text x="367" y="654" font-size="10" fill="#6b5aa5" text-anchor="middle">W: mirrored cores</text>
+  <text x="367" y="669" font-size="10" fill="#6b5aa5" text-anchor="middle">W: this bank's envelopes</text>
+  <text x="367" y="690" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">blob sharing: one core and</text>
+  <text x="367" y="704" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">one trust snapshot stored</text>
+  <text x="367" y="718" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">once, referenced by many</text>
 
   <!-- trust store -->
   <g filter="url(#soft)"><rect x="482" y="604" width="185" height="128" rx="9" fill="#fff" stroke="#c7bced"/></g>
@@ -166,7 +177,7 @@
   <rect x="701" y="614" width="106" height="16" rx="8" fill="#e11d48"/>
   <text x="754" y="626" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">BUILD ①②④</text>
   <text x="805" y="650" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Gate runner</text>
-  <text x="805" y="670" font-size="10" fill="#64748b" text-anchor="middle">R: bundle (everything, offline)</text>
+  <text x="805" y="670" font-size="10" fill="#64748b" text-anchor="middle">R: one envelope + the core it names</text>
   <text x="805" y="685" font-size="10" fill="#64748b" text-anchor="middle">in-toto-verify → Rego → L9</text>
   <text x="805" y="700" font-size="10" fill="#64748b" text-anchor="middle">recompiles layout ① (rule 14)</text>
   <text x="805" y="715" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">W: verdict (immutable)</text>
@@ -177,7 +188,8 @@
   <text x="1028" y="656" font-size="10" fill="#6b5aa5" text-anchor="middle">runs ④ as an in-toto</text>
   <text x="1028" y="671" font-size="10" fill="#6b5aa5" text-anchor="middle">inspection at verify time</text>
   <text x="1028" y="690" font-size="10" fill="#6b5aa5" text-anchor="middle">W: L9 acceptance</text>
-  <text x="1028" y="712" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">never leaves the bank</text>
+  <text x="1028" y="710" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">unpublished, but</text>
+  <text x="1028" y="723" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">disclosable on demand</text>
 
   <!-- golden -->
   <g filter="url(#soft)"><rect x="1135" y="604" width="253" height="60" rx="9" fill="#eaf7ee" stroke="#8fce9f"/></g>
@@ -212,7 +224,7 @@
 
   <!-- ===== flow arrows ===== -->
   <g stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#aw)">
-    <line x1="1263" y1="360" x2="1263" y2="516"/>
+    <line x1="1019" y1="492" x2="1019" y2="514"/>
     <line x1="253" y1="668" x2="273" y2="668"/>
     <line x1="460" y1="668" x2="480" y2="668"/>
     <line x1="667" y1="668" x2="687" y2="668"/>
@@ -224,24 +236,19 @@
     <line x1="630" y1="176" x2="392" y2="236"/>
   </g>
   <g stroke="#5b3fa8" stroke-width="1.3" stroke-dasharray="5 3" fill="none" marker-end="url(#aw)">
-    <line x1="150" y1="558" x2="150" y2="602"/>
+    <line x1="150" y1="560" x2="150" y2="602"/>
   </g>
   <g stroke="#2f8f4e" stroke-width="1.8" fill="none" marker-end="url(#awg)">
     <line x1="921" y1="634" x2="1133" y2="634"/>
   </g>
-  <g stroke="#5b3fa8" stroke-width="1.3" stroke-dasharray="4 3" fill="none" marker-end="url(#aw)">
-    <line x1="1261" y1="732" x2="992" y2="775"/>
-    <line x1="670" y1="775" x2="1133" y2="722"/>
-  </g>
-  <text x="1272" y="440" font-size="10" font-weight="700" fill="#475569">bundle</text>
-  <text x="1272" y="454" font-size="10" font-weight="700" fill="#475569">crosses</text>
+  <text x="1030" y="505" font-size="10" font-weight="700" fill="#475569">core crosses</text>
   <text x="960" y="628" font-size="9.5" font-weight="700" fill="#2f8f4e">admit →</text>
 
   <!-- ===== footer ===== -->
   <rect x="24" y="884" width="1392" height="106" rx="8" fill="#fff5f5" stroke="#f3c7c7"/>
   <text x="44" y="906" font-size="12" font-weight="700" fill="#b91c1c">WHAT THIS PICTURE SETTLES</text>
-  <text x="44" y="927" font-size="11" fill="#7f1d1d">· It is not "two GitHubs." Git appears twice — the alliance master repo (schemas, policy, compiler) and the provider's recipe repo — and is load-bearing in neither.</text>
+  <text x="44" y="927" font-size="11" fill="#7f1d1d">· It is not "two GitHubs." Git appears twice — the alliance master repo (schemas, policy, compiler, contracts, cores) and the provider's recipe repo — and neither repository's own hashing is load-bearing.</text>
   <text x="44" y="945" font-size="11" fill="#7f1d1d">· Artifact bytes are never duplicated: they stay in the ecosystem-native repo. A central digest→attestation index supplies discovery, and it is deliberately untrusted.</text>
-  <text x="44" y="963" font-size="11" fill="#7f1d1d">· The master repo is a PUBLISHING surface. Nothing inside the bank reads it at verify time — schema and policy ship pinned inside the bundle, or hermeticity is broken.</text>
-  <text x="44" y="981" font-size="11" fill="#7f1d1d">· Open: verifier rebuild siting (hybrid → distributable harness) · the air-gapped courier variant and its staging hosts on each side of the perimeter.</text>
+  <text x="44" y="963" font-size="11" fill="#7f1d1d">· Evidence is shared because it is frozen; trust material is per-bank because its clock runs at that bank's gate. That split is why one core carries one digest for the whole membership.</text>
+  <text x="44" y="981" font-size="11" fill="#7f1d1d">· Open: verifier rebuild siting · the air-gapped courier variant and its staging hosts · rebuild-input durability, since a pinned locator can stop resolving while every digest still checks out.</text>
 </svg>
