@@ -251,8 +251,8 @@ deterministic, independent verifiers converge on the same digest **without
 coordinating**. There is no protocol between them, no messages, no leader. The
 correct answer is a natural focal point — the one result every honest party
 independently arrives at — and agreement is an artifact of determinism rather than
-of negotiation. Each verifier publishes its own signed verification summary.
-Admission requires *k* of them.
+of negotiation. Each verifier publishes its own signed verification summary, and
+admission requires the whole set to agree.
 
 The most important design decision in this paper is what happens when they
 disagree.
@@ -262,9 +262,9 @@ agree while one produces a different digest, the honest reading is *not* four
 against one. It is that something is wrong — either the toolchain specification is
 underdetermined and the build is not as reproducible as claimed, or something
 considerably worse — and either way the receiving institutions need to know
-loudly, before promotion. So the rule is *k*-of-*n* **with zero dissent**, never a
-simple majority. A dissenting verification summary triggers investigation, not
-arithmetic.
+loudly, before promotion. So the rule is **unanimity across the verifier set**,
+never a simple majority. A dissenting verification summary triggers investigation,
+not arithmetic.
 
 This inverts the usual instinct. Majority voting is designed to *tolerate*
 disagreement and produce an answer anyway. Here, disagreement is the most valuable
@@ -273,11 +273,18 @@ its own best alarm. It is also a signal **no single-checker design can produce a
 all** — with one verifier there is nothing to disagree with — and that, more than
 throughput or redundancy, is the strongest argument for the quorum.
 
-Two practical notes. The threshold should be expressed both absolutely and
-proportionally — a floor of three, rising with membership — so it cannot silently
-weaken as the alliance grows. And *k* must be **frozen into the contract at
-issuance**, so an artifact is judged against the quorum that applied when it was
-commissioned rather than one that drifted afterwards.
+Two practical notes. Who sits in that set, and how large it needs to be, is
+settled in Part II: the short version is that verification binds to the parties
+that sign and fund the contract, so the set is **named rather than sized**. And
+that set is **frozen into the contract at issuance**, so an artifact is judged
+against the parties who committed to it rather than against a membership that
+drifted afterwards.
+
+One further reproduction happens later and matters more than its position
+suggests: the institution that adopts the package rebuilds it again, inside its
+own perimeter, before admitting it. Part III describes where that sits and why it
+is what makes the whole arrangement work for a package only one institution
+commissioned.
 
 ---
 
