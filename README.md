@@ -1,6 +1,6 @@
 # code_tracer
 
-**The bank-side admission gate for externally-hardened open source.**
+**Admitting externally-hardened open source into a regulated estate.**
 
 A bank runs an old version of a widely-used library. Upgrading is a project;
 the vulnerability is now. An external party patches the old version — fixing the
@@ -8,9 +8,13 @@ flaw and nothing else — and asks the bank to accept it.
 
 code_tracer is what stands at that door: the on-prem gate that decides whether
 the patched version is admitted, and the ledger that tracks what the bank is
-relying on afterwards and until when.
+relying on afterwards and until when. It also covers the other end — the
+alliance-side tooling that commissions the work in the first place, since a gate
+that checks conformance to a commitment needs the commitment to be authored,
+signed and machine-readable before any work starts.
 
-It is **not** the supply chain. It is the gate and ledger at the *end* of one.
+It is **not** the supply chain. It is the two ends of one: what is promised, and
+what is admitted.
 
 ---
 
@@ -22,8 +26,7 @@ source across regulated banks. One party does the work once; many banks consume
 the result.
 
 That only works if each bank can verify the result **itself**, mechanically,
-without trusting the producer's word. code_tracer is one bank's half of that
-arrangement.
+without trusting the producer's word.
 
 Two ingest classes arrive at the gate:
 
@@ -33,25 +36,29 @@ Two ingest classes arrive at the gate:
   instead.
 
 From the moment evidence crosses the bank perimeter, the machine is
-class-agnostic. That invariant is load-bearing: it is what lets the gate be a
-single parameterized tool rather than two.
+class-agnostic — and mode-agnostic. That invariant is load-bearing: it is what
+lets the gate be a single parameterized tool rather than two.
 
 ## The contract
 
-The bank and the external party agree a **machine-readable contract** before any
-work starts. It fixes:
+The alliance and the external party agree a **machine-readable contract** before
+any work starts. It fixes:
 
 - the **original state** of the software, by digest, before anyone touched it
 - the **specific changes** requested — which flaws, and explicitly which not
 - the **tests expected to run**, frozen so the corpus cannot be weakened later
 - the **acceptance thresholds** — coverage floors, interface-stability budget,
   reproducibility level, delivery deadline
+- **who signs, funds and therefore verifies**, and the inputs — source,
+  transformation, toolchain — they and every later adopter rebuild from
 
 Admission is then mechanical rather than a PDF somebody reads. The contract is
 the root of all the evidence that follows, and it compiles directly into the
 policy the verifier enforces.
 
-Schema and rationale: [`docs/osera-backpatch-contract.md`](docs/osera-backpatch-contract.md).
+The project machine it drives — drafted, proposed, accepted, delivered,
+fulfilled — is
+[`artifact-contract-lifecycle`](.konspekt/instance/artifacts/artifact-contract-lifecycle.md).
 
 ## Two zones
 
@@ -60,57 +67,66 @@ which side of it something sits on.
 
 | | Outside | Inside |
 |---|---|---|
-| Whose infrastructure | the external party's and the verifiers' | the bank's |
-| What happens | build, test, independently rebuild | resolve, gate, adopt, track, sunset |
+| Whose infrastructure | the external party's and the signatories' | the bank's |
+| What happens | build, test, independently rebuild | resolve, **rebuild again**, gate, adopt, track, sunset |
 | Evidence is | **produced** | **consumed** |
-| code_tracer runs here | no | **yes** |
 
-Everything inside runs **hermetically and offline** — no network call at
-verification time — so a regulator can re-run the same inputs and reach the same
-verdict, byte for byte.
+Resolution is the last step that touches a network. Everything after it runs
+**hermetically and offline** — so a regulator can re-run the same inputs and reach
+the same verdict, byte for byte.
 
 ## The evidence chain
 
-Eleven signed records accrue as a candidate moves through its life, `L-1` through
+Eleven signed records accrue as a package moves through its life, `L-1` through
 `L9`: the contract, the identified original, the flaws before, the change itself,
 the build, the tests, proof each flaw is genuinely fixed, the parts list, the
 flaw status after, the independent rebuilds, and finally the bank's own
 acceptance tests.
 
-Two properties do the heavy lifting:
+Three properties do the heavy lifting:
 
 - **Proof of fix must fail on the original and pass on the patch.** A test that
   passes on the unpatched version proves nothing.
-- **Dissent is disqualifying, not outvoted.** Independent verifiers rebuild the
-  artifact; a single disagreement blocks admission even when the numeric
-  threshold is met. Threshold and zero-dissent are two separate conditions.
+- **Dissent is disqualifying, not outvoted.** Verification binds to the parties
+  that signed and funded the contract; all of them must agree, and one
+  disagreement blocks admission however many others concur.
+- **The adopting bank rebuilds it too**, inside its own perimeter, and signs its
+  own record of the result. This is identical whether the work was commissioned
+  collectively or by one member alone, and it is what keeps the second case from
+  needing a weaker tier.
 
-Detail: [`docs/osera-attestation-chain.md`](docs/osera-attestation-chain.md).
+Full chain, the sixteen admission rules, and the reasoning:
+[`artifact-architecture`](.konspekt/instance/artifacts/artifact-architecture.md) §3.
 
 ## The gate
 
 Structural verification asks whether the pipeline is *shaped* correctly — right
 steps, right signers, chain intact. Semantic policy asks what it *means* — are
 the flaws fixed a superset of the agreed scope, does coverage clear the floor,
-did every verifier agree.
+did every verifier agree, is the trust material current, does each flaw record
+still read as it did when the work was commissioned.
 
 Both run inside the bank, in one pass, offline. The load-bearing claim of the
 whole design is that **the bank needs no new verification mechanism**: the
 contract compiles to a layout a stock in-toto/Witness verifier already enforces.
 
-Five components do not exist off the shelf and are the product surface; the rest
-integrates proven open source (in-toto-verify, cosign, Archivista):
+Nine components do not exist off the shelf and are the product surface; the rest
+integrates proven open source (in-toto-verify, cosign, Archivista, TUF):
 
-| | Component | Does |
-|---|---|---|
-| ① | Contract → layout compiler | turns the agreed contract into enforceable policy |
-| ② | Semantic policy | the meaning a structural verifier cannot read |
-| ③ | Attestation resolver | finds and collects the evidence for an artifact |
-| ④ | Acceptance harness | runs the bank's own tests as part of the gate |
-| ⑤ | Exposure + sunset tracker | the ledger — who relies on what, until when |
-| ⑥ | Lifecycle console | a read-only view across the whole cycle |
+| | Component | Does | Side |
+|---|---|---|---|
+| ① | Contract → layout compiler | turns the agreed contract into enforceable policy | both |
+| ② | Semantic policy | the meaning a structural verifier cannot read | bank |
+| ③ | Resolver | finds the evidence, rebuilds the package, seals the bundle | bank |
+| ④ | Acceptance harness | runs the bank's own tests as part of the gate | bank |
+| ⑤ | Exposure + sunset tracker | the ledger — who relies on what, until when | bank |
+| ⑥ | Lifecycle console | a read-only view across the whole cycle | bank |
+| ⑦ | Contract authoring | scope, baseline, corpus, and the release-line judgement | alliance |
+| ⑧ | Issuance & countersignature | signing, delivery, the hand-off freeze | alliance |
+| ⑨ | Verifier registry & trust root | who may sign, and how keys rotate | alliance |
 
-Detail: [`docs/osera-bank-verification.md`](docs/osera-bank-verification.md).
+① is compiled on **both** sides and the digests must match, so a signed policy is
+verified rather than merely authenticated.
 
 ## The bridge, and why it expires
 
@@ -121,7 +137,7 @@ and a stated upgrade target. No fix is commissioned without an exit.
 At sunset, exactly one of two things happens: the application moves to the
 properly-upgraded release, or the fix is **re-issued**.
 
-A re-issue is modelled as a **new candidate that supersedes the old one**, never
+A re-issue is modelled as a **new package that supersedes the old one**, never
 the same record with a changed date. Each re-issue has its own contract, its own
 baseline, and very likely a new set of flaws discovered since. A mutable status
 field could not represent that without silently overwriting the contract the
@@ -131,11 +147,27 @@ matters after the fact: *what was in force in March, and what did it cover?*
 The ledger is append-only and hash-chained. Current state is a projection
 replayed from the event log, not the authority.
 
+## The paper
+
+[**`docs/paper/`**](docs/paper/) — *Contract-Bound Evidence*, a working draft for
+the formation working group, in four parts: the model, commissioning and trust,
+admission and afterlife, and limits. It is the argument for the design rather
+than its specification — written to be read start to finish by someone deciding
+whether the approach is sound.
+
+The parts are authored as markdown and assembled into a single document; built
+outputs live in [`docs/build/`](docs/build/) and are regenerated rather than
+edited.
+
+For the design as a reference instead of an argument, start with
+[`docs/lifecycle.md`](docs/lifecycle.md) — the complete pass over all three state
+machines in bullet form.
+
 ## The operator's view
 
-[**`lifecycle-mockup.html`**](lifecycle-mockup.html) — open it in a browser — walks
-a single fix across the whole lifecycle, from contract to expiry and round the
-renewal, and shows what an operator actually sees at each step.
+[**`docs/mockup.html`**](docs/mockup.html) — open it in a browser — walks a single
+fix across the whole lifecycle, from contract to expiry and round the renewal,
+and shows what an operator actually sees at each step.
 
 It is a **design mockup, not an implementation**: the visual target the lifecycle
 console (⑥) is built against, settled before the console is written rather than
@@ -158,18 +190,26 @@ concrete.
 ## Repository layout
 
 ```
-lifecycle-mockup.html   design mockup of the lifecycle console — open in a
-                        browser
-docs/                   working-group design notes — contract schema,
-                        attestation chain, bank-side verification, standards
+docs/                   publications — anything written for a reader
+  lifecycle.md          the complete pass over all three state machines
+  mockup.html           design mockup of the lifecycle console
+  paper/                Contract-Bound Evidence — sources and build scripts
+  resources/            figures (SVG), authored
+  build/                derived outputs; never edited, each stamped with the
+                        commit it was built from
+  historical/           working-group notes, frozen at reconstruction
 .konspekt/              project state in konspekt format: goals, tasks,
                         decisions, artifacts, and the edges between them
 lib/                    konspekt conformance checker and validator
 .github/                conformance CI and notification workflows
 ```
 
-[`docs/README.md`](docs/README.md) indexes both — the design artifacts and the
-working-group notes — and says which supersedes which.
+The dividing line: if it has an id, a review state and edges it is a **record**
+and lives in `.konspekt/`; if it is written for a reader it is a **publication**
+and lives in `docs/`. [`docs/README.md`](docs/README.md) indexes the second.
+
+*Two explainer HTML files currently sit at the repository root, unfiled, pending
+a decision on which is current.*
 
 ### Design state lives in `.konspekt/`
 
@@ -178,8 +218,9 @@ into tasks, decisions are recorded as first-class records with their rejected
 alternatives, and everything is append-only and hash-anchored.
 
 Start at [`.konspekt/instance/project.md`](.konspekt/instance/project.md); the
-architecture, product lifecycle, data model and reference-implementation scope
-are under `.konspekt/instance/artifacts/`.
+architecture, the three lifecycle machines, the data model, the evidence bundle,
+the deployment topology and the reference-implementation scope are under
+`.konspekt/instance/artifacts/`.
 
 Validate the instance:
 
@@ -195,29 +236,36 @@ are made continuously, but only a human command accepts them.
 
 **Design, with a reference implementation scoped and not yet built.**
 
-The architecture, product lifecycle, data model and contract schema are settled.
-The reference implementation is a deliberate walking skeleton — it implements the
-consumption half only, on a single synthetic backpatch, with the production side
-faked by fixtures. If it starts standing up a patching pipeline, it has lost the
-plot.
+The architecture, the three lifecycle machines, the data model, the evidence
+bundle and the contract schema are settled. The reference implementation is a
+deliberate walking skeleton — it implements the consumption half only, on a
+single synthetic backpatch, with the production side faked by fixtures. If it
+starts standing up a patching pipeline, it has lost the plot.
 
 Its acceptance test is one sentence: one offline command turns the conforming
 fixture into an admission with a signed verdict; flipping any single fixture to a
 known-bad variant yields a refusal naming the rule it failed; and two runs
 produce byte-identical verdicts with no network.
 
-Scope and phases: [`.konspekt/instance/artifacts/artifact-reference-implementation.md`](.konspekt/instance/artifacts/artifact-reference-implementation.md).
+Scope and phases:
+[`artifact-reference-implementation`](.konspekt/instance/artifacts/artifact-reference-implementation.md).
 
 ## Known gaps
 
 Named rather than hidden — each is tracked in `.konspekt/`:
 
-- **Trust-root governance.** Key rotation and revocation via TUF is the one
-  genuine gap in the verification story. The reference implementation uses static
-  throwaway keys: it needs *a* trust root, not the *right* one.
+- **Alliance governance policy.** The trust-root *mechanism* is settled: a
+  threshold of parties co-signs the root, and bilateral work runs under a
+  delegated namespace. What remains is policy — which organisations sit in that
+  threshold, how a verifier is admitted or removed, and the procedure on
+  suspected compromise. Not an engineering question, and the largest item open.
 - **Anchor re-derivation.** Confirming the baseline against its public source at
   verify time conflicts with running hermetically offline; currently satisfied
   against a local snapshot.
+- **Rebuild-input durability.** Source and toolchain are pinned by digest, but a
+  pinned locator can stop resolving years later while every digest still checks
+  out — which makes an old package un-rebuildable without invalidating any
+  evidence.
 - **Class (b) depth.** How far the chain collapses for FINOS-native projects,
   which have no baseline to transform.
 
@@ -225,8 +273,9 @@ Named rather than hidden — each is tracked in `.konspekt/`:
 
 code_tracer composes existing standards rather than inventing formats: in-toto
 attestations and layouts, DSSE envelopes, SLSA provenance, CycloneDX SBOMs, VEX
-for exploitability, Sigstore signing, Package URL coordinates, and Rego for
-policy.
+for exploitability, Sigstore signing, TUF trust roots, Package URL coordinates,
+and Rego for policy.
 
-Full register with maturity assessments:
-[`docs/osera-standards-register.md`](docs/osera-standards-register.md).
+Current register: [`artifact-architecture`](.konspekt/instance/artifacts/artifact-architecture.md)
+§7. The original working-group survey, kept for its framing, is
+[`docs/historical/osera-standards-register.md`](docs/historical/osera-standards-register.md).
