@@ -25,28 +25,32 @@ project, package, product — and the points where they hand over.
   and curates the trust root. Commissions in one of two modes, below.
 - **Provider** — whoever works on the product. Signs L0–L7 against a contract it
   countersigned.
+- **Signatory** — a member that signs and funds a contract, and therefore
+  verifies its delivery.
 - **Bank** — a member of the alliance and a consumer of the product. Runs the
-  gate and the ledger.
+  gate and the ledger, and rebuilds every package it adopts.
 
 ## Zones
 
 - **Public upstream** — package registry, upstream git, OSV/NVD. Controlled by
   nobody in the alliance. Read at commissioning and again at admission.
-- **Outside** — issuer, provider, verifier quorum. Evidence is produced.
-- **Inside** — the bank. Evidence is consumed, hermetically and offline.
+- **Outside** — issuer, provider, signatories. Evidence is produced.
+- **Inside** — the bank. Evidence is consumed; resolution is online, and the gate
+  runs hermetically and offline.
 - The perimeter is crossed by a copy of a self-contained evidence bundle.
 
 ## Modes
 
-- **Team** — members vote collectively on what, when, who and budget.
-  Verification is an enforced duty of membership. Trust path `osera-root`.
-- **Solo** — one member commissions, funds, works and verifies independently.
-  Trust path `delegated:<bank>`.
+- **Team** — members vote collectively on what, when, who and budget. Every
+  signatory verifies; at least two are required. Trust path `osera-root`.
+- **Solo** — one member commissions, funds, works and verifies independently, and
+  is the only outside verifier. Trust path `delegated:<bank>`.
 - In both modes every actor signs its identity cryptographically.
 - Mode is frozen into L-1 at Accepted as `governance.mode`, alongside `sponsor`,
-  `mandateRef` and `trustPath`.
-- Mode sets who is accountable for deciding what to commission. The gate
-  requires the same of both: k-of-n with zero dissent.
+  `signatories`, `mandateRef` and `trustPath`.
+- Mode sets who is accountable for deciding what to commission, and how many
+  independent reproductions exist before the perimeter. It changes nothing the
+  gate requires and nothing the adopting bank does.
 
 ## Team-mode commissioning — steps
 
@@ -56,6 +60,8 @@ project, package, product — and the points where they hand over.
 - A **prioritization ballot** — one member, one vote — ranks the project backlog.
 - A **commissioning ballot**, weighted by contribution, produces the
   `mandateRef` digest that anchors the L-1 contract.
+- A project needs **at least two signatories** to be commissioned, since the
+  signatories are its verifiers. Co-funding is a precondition, not a preference.
 - Solo efforts are excluded from interest declarations and prioritization
   ballots.
 
@@ -68,11 +74,14 @@ project, package, product — and the points where they hand over.
   become immutable.
 - **Delivered** — provider mints L0–L7 and hands off under a frozen delivery
   manifest.
-- **Fulfilled** — quorum publishes k-of-n VSAs asserting `conformance == FULL`.
+- **Fulfilled** — every signatory has published a VSA asserting
+  `conformance == FULL`, with zero dissent.
 - **Withdrawn** — terminal. Issuer retracts before acceptance.
 - **Breached** — terminal. Delivered, non-conforming, not remediable under this
   version.
-- **Lapsed** — terminal. `deliverBy` passed with nothing delivered.
+- **Lapsed** — terminal. `deliverBy` passed with nothing delivered — or with a
+  signatory that never verified, which reaches the same terminal state by a
+  different failure.
 
 ## Project lifecycle — transitions
 
@@ -82,7 +91,7 @@ project, package, product — and the points where they hand over.
 - **Proposed → Accepted** — provider countersignature verifies. The freeze.
 - **Accepted → Delivered** — L0–L7 resolvable; delivery manifest complete
   against `contract.requiredAttestations`, digest logged to the transparency log.
-- **Delivered → Fulfilled** — k-of-n VSAs, zero dissent, conformance `FULL`.
+- **Delivered → Fulfilled** — a conforming VSA from every signatory, zero dissent.
 - **Delivered → Breached** — conformance `BREACH`.
 - **Accepted → Lapsed** — `now > schedule.deliverBy`, nothing delivered.
 - **Accepted → Accepted′** — amendment. New version, fresh countersignature,
@@ -92,11 +101,14 @@ project, package, product — and the points where they hand over.
 
 ## What Accepted freezes
 
-- **Governance** — `mode`, `sponsor`, `mandateRef`, `trustPath`.
+- **Governance** — `mode`, `sponsor`, `signatories`, `mandateRef`, `trustPath`.
 - **Baseline** — the exact upstream artifact digest to start from.
 - **Scope** — `cvesInScope` and `explicitlyOutOfScope`.
 - **Test corpus** — named by digest, so it cannot be substituted.
-- **Quorum size** — `verification.k = max(3, ceil(n/3))` at issuance.
+- **Verifiers** — `verification.k` is the signatory set itself. Every signatory
+  verifies, all must agree, and the set is judged as it stood at acceptance.
+- **Rebuild inputs** — source, transformation and toolchain, each by digest and
+  never by tag, so any signatory and any later adopter can reproduce the build.
 - **Line** — `contract.osera.line`, declared rather than derived.
 - **Schedule** — delivery window, embargo, bridge expiry.
 
@@ -111,9 +123,10 @@ Digest-keyed. Every state is a statement about one `hardened_digest`.
 
 - **Built** — outside. Hardened artifact produced; provider claims minted
   (L0–L7).
-- **Verified** — outside. Independently rebuilt by the quorum, zero dissent (L8).
-- **Resolved** — inside. Evidence bundle collected and sealed, keyed to the
-  digest. Component ③.
+- **Verified** — outside. Independently rebuilt by every signatory, zero dissent
+  (L8).
+- **Resolved** — inside. Evidence bundle collected and sealed, and the bank's own
+  rebuild done. Component ③.
 - **Gate** — inside. Under evaluation. Components ①②④.
 - **Adopted** — inside. Admitted and promoted to the golden repo (L9). The last
   package state.
@@ -123,15 +136,22 @@ Digest-keyed. Every state is a statement about one `hardened_digest`.
 ## Package lifecycle — transitions
 
 - **Accepted → Built** — provider builds; L0–L7 minted.
-- **Built → Verified** — k-of-n verifiers rebuild and publish L8 VSAs; zero
+- **Built → Verified** — every signatory rebuilds and publishes an L8 VSA; zero
   dissent.
 - **Verified → Resolved** — crosses the perimeter. ③ discovers the attestation
-  set, assembles the ingest envelope over the evidence core, seals it.
+  set, **rebuilds the package from the core's pinned references and signs the
+  bank's own L8**, assembles the ingest envelope over the evidence core, and
+  seals it.
 - **Resolved → Gate** — layout compiled ①, Rego loaded ②, harness staged ④.
 - **Gate → Adopted** — structural, semantic and L9 acceptance all pass.
 - **Gate → Rejected** — any admission rule fails.
 - **Adopted → Active** — the handover. L9 is minted over the digest; the
   exposure opens against the lineage.
+
+The bank's rebuild sits in the crossing rather than in the gate, because it needs
+the network and the gate must not. Its output is one signed record, which is what
+the gate reads. A rebuild that fails to reproduce the digest is dissent, and the
+package never reaches Gate.
 
 ## Product lifecycle — states
 
@@ -148,7 +168,7 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
 - **Active → Sunset** — the bridge window lapses.
 - **Sunset → Retired** — the application adopted an upstream-fixed release.
 - **Sunset → Drafted′** — renewal; a new project is drafted against the same
-  line.
+  line, with a signatory set of its own.
 
 ## Class (a) / (b) divergence
 
@@ -156,28 +176,31 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
 - **(a) backpatched OSS** — a baseline and its transformation; vuln-proof against
   the prior artifact.
 - **(b) FINOS-native** — no baseline; project health, origin, provenance.
-- From Resolved inward the machine is class-agnostic.
+- From Resolved inward the machine is class-agnostic — and mode-agnostic.
 
 ## Distribution
 
 - On reaching Fulfilled, team output is distributed via the central nexus under
   `osera-root`. **Blessing** is carried by definition.
 - Solo output reaches the nexus only through a **blessing petition** that meets
-  the quorum threshold.
+  its own threshold.
 - Unblessed solo output stays on its sponsor's `delegated:<bank>` path. A member
   other than the sponsor that consumes it does so on its own judgement: the
-  evidence is identical, and the commissioning judgement was one member's.
+  commissioning judgement was one member's, and one reproduction preceded the
+  crossing rather than several. What the gate requires, and the rebuild the
+  consuming bank performs, are unchanged.
 
 ## The perimeter crossing
 
 - **Delivery manifest** — provider-assembled at Delivered. L-1 + L0–L7. Frozen
   by a transparency-log entry. Does not cross.
 - **Evidence core** — issuer-assembled once at Fulfilled. Delivery manifest, L-1,
-  L0–L8, compiled layout, Rego bundle, pinned advisory snapshots. One digest
-  shared by every bank. No clock. This is what crosses.
+  L0–L8, compiled layout, Rego bundle, pinned advisory snapshots, and
+  digest-pinned rebuild references. One digest shared by every bank. No clock.
+  This is what crosses.
 - **Ingest envelope** — bank-assembled by ③ at Verified → Resolved. Core digest,
-  TUF trust-root snapshot, checkpoint set, Fulcio root, local artifact locator.
-  Trust root ≤ 7 days, checkpoints ≤ 24 hours.
+  the bank's own L8, TUF trust-root snapshot, checkpoint set, Fulcio root, local
+  artifact locator. Trust root ≤ 7 days, checkpoints ≤ 24 hours.
 - Anything the gate needs that is not in the bundle is a live dependency.
 - Advisory snapshots are carried **verbatim**: rule 16 digests them as carried,
   so any reformatting during assembly invalidates them.
@@ -185,13 +208,14 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
 ## Gate — steps
 
 - **Resolve** — ③ discovers attestations for digest `D` via the attestation
-  index, collects them, seals the envelope. The last online step.
+  index, rebuilds the package from the pinned references, signs the bank's own
+  L8, and seals the envelope. The last online step.
 - **Compile and compare** — ① recompiles the layout locally from the signed
   contract; digests must match the layout as distributed (rule 14).
 - **Structural** — `in-toto-verify` against the layout: right steps, right
   signers, thresholds met, DAG intact, not expired.
 - **Semantic** — Rego via Witness: CVEs-fixed ⊇ scope, digest agreement across
-  the quorum, coverage ≥ threshold, `conformance == FULL`, freshness limits, and
+  every L8, coverage ≥ threshold, `conformance == FULL`, freshness limits, and
   advisory-record integrity (rule 16).
 - **Acceptance** — ④ runs the bank's own tests as an in-toto inspection at
   verification time, folded into the same verdict.
@@ -213,7 +237,8 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
 - ⑥ presents the projections; state changes exit through the gate or the ledger
   as signed evidence.
 - A revoked verifier key raises a review trigger; past verdicts stand, pinned to
-  the `trustRootVersion` current at admission.
+  the `trustRootVersion` current at admission. What makes that tolerable is the
+  bank's own rebuild, which holds regardless of how many signatories there were.
 - Advisory drift since commissioning surfaces here as an exposure finding, since
   the gate reads only the frozen snapshot.
 
@@ -231,8 +256,8 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
 
 - A renewal is a new project against the same line; its package carries a
   `supersedes` edge to its predecessor.
-- Each renewal has its own L-1 contract, its own `baseline.digest`, and very
-  likely its own CVE set.
+- Each renewal has its own L-1 contract, its own `baseline.digest`, its own CVE
+  set, and its own signatory set.
 - `commons-x:3.2.1-osera.1` and `…-osera.2` are two immutable package records,
   each with its own frozen evidence chain.
 - `lineKey` — version-less upstream purl plus `contract.osera.line` — stays
