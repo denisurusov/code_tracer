@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-27T00:00:00Z
+  updatedAt: 2026-07-30T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: 37d8d29a487a1e1e02ec3995be23d7d422179fab
   contentHash: 37d8d29a487a1e1e02ec3995be23d7d422179fab
   timestamp: 2026-07-17T17:15:00Z
 createdAt: 2026-07-17T17:15:00Z
-updatedAt: 2026-07-27T00:00:00Z
+updatedAt: 2026-07-30T00:00:00Z
 ```
 # code_tracer — Package and product lifecycles
 
@@ -49,17 +49,30 @@ lapsing, renewing). They are distinct from the **evidence chain** (L-1…L9,
 > and in the entity id `noteworthy-candidate-key`, which keeps its name because
 > renaming a content-addressed id would orphan the citations to it.
 
+> **Amendment 2026-07-30 (`noteworthy-signer-verification`,
+> `noteworthy-adoption-rebuild`).** Verified is reached when **every contract
+> signatory** has published a conforming VSA with zero dissent, replacing the
+> k-of-n threshold. The **Verified → Resolved** transition now also carries the
+> adopting bank's **own rebuild**, which runs while the resolver is still online
+> and produces an L8 the bank signs itself. This is identical in both governance
+> modes, and it is what keeps solo output consumable without a weaker tier.
+
 ## 1. The boundary
 
 Every state sits in one of two zones, split at the bank perimeter:
 
-- **Outside — production.** The provider's and quorum's infrastructure; evidence
-  is *produced* here. The consumer side of code_tracer does not run here.
-- **Inside — bank.** Resolve, gate, adopt, track, sunset; evidence is
-  *consumed* here, hermetic and offline.
+- **Outside — production.** The provider's and the signatories' infrastructure;
+  evidence is *produced* here. The consumer side of code_tracer does not run
+  here.
+- **Inside — bank.** Resolve, rebuild, gate, adopt, track, sunset; evidence is
+  *consumed* here, and the gate itself runs hermetic and offline.
 
 The crossing itself is a copy of a self-contained evidence bundle
 (`artifact-evidence-bundle`), never a protocol.
+
+**Resolution is the last online step**, and the bank's own rebuild happens there
+with it. Everything after the envelope is sealed reads only what the envelope
+contains.
 
 ## 2. Package machine — states
 
@@ -68,8 +81,8 @@ Digest-keyed. Every state below is a statement about one `hardened_digest`.
 | State | Zone | Meaning | Backed by |
 |-------|------|---------|-----------|
 | Built | outside | hardened artifact produced; provider claims minted | L0–L7 |
-| Verified | outside | independently rebuilt by the quorum, zero dissent | L8 (k-of-n VSAs) |
-| Resolved | inside | evidence bundle collected and sealed inside the bank, keyed to the digest | component ③ |
+| Verified | outside | independently rebuilt by every contract signatory, zero dissent | L8 set |
+| Resolved | inside | evidence bundle collected and sealed inside the bank, and the bank's own rebuild done | component ③ |
 | Gate | inside | under evaluation: structural + semantic + acceptance | components ①②④ |
 | Adopted | inside | admitted, promoted to the golden repo | L9 |
 | **Rejected** | inside | terminal — an admission rule failed | (failing rule recorded) |
@@ -85,12 +98,19 @@ in the operational afterlife.
 | From → To | Guard |
 |-----------|-------|
 | Accepted → Built | project frozen (`artifact-contract-lifecycle`); provider builds the hardened artifact; L0–L7 minted |
-| Built → Verified | k-of-n verifiers rebuild and publish L8 VSAs; zero dissent |
-| Verified → Resolved | crosses the bank boundary; resolver (③) assembles the ingest envelope over the evidence core and seals it |
+| Built → Verified | every signatory rebuilds and publishes an L8; zero dissent; conformance FULL |
+| Verified → Resolved | crosses the bank boundary; resolver (③) discovers the attestation set, **rebuilds the package from the core's pinned references and signs the bank's own L8**, then assembles the ingest envelope over the evidence core and seals it |
 | Resolved → Gate | gate invoked — layout compiled and recompiled locally (①), Rego loaded (②), acceptance harness staged (④) |
 | Gate → Adopted | structural + semantic + L9 acceptance all pass **(admit)** |
 | Gate → Rejected | any admission rule fails, dissent present, or L9 fails **(terminal)** |
 | Adopted → Active | **the handover** — L9 minted over the digest; the exposure opens against the lineage |
+
+**The bank's rebuild sits in the transition rather than in the gate**, because it
+needs the network and the gate must not. Its inputs are fetched from digest-pinned
+references the core carries; its output is one signed record, which is all the
+gate reads. A rebuild that fails to reproduce the digest is dissent like any
+other, and the package never reaches Gate
+(`noteworthy-adoption-rebuild`).
 
 ## 4. Product machine — states
 
@@ -130,6 +150,11 @@ load-bearing: it is what lets the gate be a single parameterized tool rather
 than two, and the data model relies on it (one record shape inside the boundary,
 class only tags the production-side evidence).
 
+The same invariant now holds across governance modes: from Resolved inward, a
+team package and a solo package are handled identically, including the bank's own
+rebuild. Mode changes what accompanied the package across the perimeter, never
+what happens to it after.
+
 ## 7. The renewal loop — superseding versions
 
 A backpatch is a **bridge**: a deliberately temporary hardening of an old
@@ -161,6 +186,11 @@ Consequences, which the data model inherits:
 - **Aligned with konspekt's grain** — append-only, superseding, hash-anchored —
   so the same discipline runs end to end.
 
+A renewal also re-enters at the **commissioning ballot** rather than at
+nomination: the lineage was already voted in, and a continuation carries the same
+`osera.line`. What it does need is a signatory set of its own, which may differ
+from the original project's.
+
 ## 8. Terminals
 
 - **Rejected** — the package failed the gate. Terminal, with the failing rule
@@ -175,8 +205,10 @@ Consequences, which the data model inherits:
   is this artifact's entry point (§3).
 - `artifact-architecture` — the integrating narrative. Its §3 (the L-1…L9
   attestation chain) is the *evidence* axis these machines are threaded onto;
-  its §4–§5 describe the gate and ledger that back the inside states.
-- `artifact-evidence-bundle` — what crosses at Verified → Resolved.
+  its §3.6 names who verifies, and §4–§5 describe the gate and ledger that back
+  the inside states.
+- `artifact-evidence-bundle` — what crosses at Verified → Resolved, and the
+  rebuild references the bank's own reproduction runs from.
 - `artifact-data-model` — one record schema per state, keyed by digest on the
   package side and by lineage on the product side, carrying the
   append-only/supersedes semantics fixed in §7.
@@ -186,7 +218,13 @@ Consequences, which the data model inherits:
 
 - **Sunset signaling** — how far ahead of lapse the ledger (⑤) surfaces an
   Active product as approaching Sunset. The computed-view decision is settled
-  (`artifact-data-model` §5); the window value is not.
+  (`artifact-data-model` §5); the window value is not, and it should be derived
+  from the renewal path's own durations rather than picked, since the notice has
+  to cover commissioning, delivery, verification and admission.
 - **Multi-package products** — a product shipping as several packages currently
   yields one lineage per package, so one backpatch touching three modules is
   three lineages for one project.
+- **Rebuild cost at Resolved** — the bank's own reproduction costs roughly what
+  production cost, per package, per adopting institution. Accepted as the price
+  of mode-independent admission; whether an estate can absorb it at scale is a
+  rollout question the topology has to answer.
