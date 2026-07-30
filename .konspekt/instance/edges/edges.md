@@ -160,3 +160,16 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-rel-interop-purl | relates | noteworthy:noteworthy-interop-stance | noteworthy:noteworthy-purl-namespace | 0.9 |
 | e-rel-interop-ecosystem | relates | noteworthy:noteworthy-interop-stance | noteworthy:noteworthy-ecosystem-generalization | 0.85 |
 | e-rel-interop-twosited | relates | noteworthy:noteworthy-interop-stance | noteworthy:noteworthy-two-sited-scope | 0.9 |
+| e-prod-issuer-signerverify | produces | node:goal-issuer-side | noteworthy:noteworthy-signer-verification | |
+| e-notes-signerverify-arch | notes | noteworthy:noteworthy-signer-verification | artifact:artifact-architecture | |
+| e-notes-signerverify-contractlc | notes | noteworthy:noteworthy-signer-verification | artifact:artifact-contract-lifecycle | |
+| e-sup-signerverify-quorum | supersedes | noteworthy:noteworthy-signer-verification | noteworthy:noteworthy-quorum-parameters | |
+| e-rel-signerverify-governance | relates | noteworthy:noteworthy-signer-verification | noteworthy:noteworthy-governance-modes | 0.95 |
+| e-rel-signerverify-revocation | relates | noteworthy:noteworthy-signer-verification | noteworthy:noteworthy-revocation-semantics | 0.85 |
+| e-prod-gate-adoptrebuild | produces | node:goal-admission-gate | noteworthy:noteworthy-adoption-rebuild | |
+| e-notes-adoptrebuild-arch | notes | noteworthy:noteworthy-adoption-rebuild | artifact:artifact-architecture | |
+| e-notes-adoptrebuild-bundle | notes | noteworthy:noteworthy-adoption-rebuild | artifact:artifact-evidence-bundle | |
+| e-notes-adoptrebuild-lifecycle | notes | noteworthy:noteworthy-adoption-rebuild | artifact:artifact-product-lifecycle | |
+| e-notes-adoptrebuild-topology | notes | noteworthy:noteworthy-adoption-rebuild | artifact:artifact-deployment-topology | |
+| e-rel-adoptrebuild-signerverify | relates | noteworthy:noteworthy-adoption-rebuild | noteworthy:noteworthy-signer-verification | 0.95 |
+| e-rel-adoptrebuild-coremanifest | relates | noteworthy:noteworthy-adoption-rebuild | noteworthy:noteworthy-core-manifest | 0.9 |
