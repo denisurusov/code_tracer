@@ -63,14 +63,15 @@ portrait column — that was established by rendering and looking, not assumed. 
 on a landscape page they sit near the limit of print legibility, so the HTML
 remains the better artifact for close reading. Figure 2 is the densest.
 
+If a figure changes, render it and look at the result before circulating. A text
+edit inside an SVG shifts label widths, and an overflowing label is invisible in
+the markup and obvious on the page.
+
 ## Before publication
 
 - CVE identifiers and version numbers in the worked example are deliberately
   absent and must be verified against a live source.
 - Part III's claim that most institutions already run a policy engine is
   load-bearing for the adoption argument and should be checked.
-- `code-tracer-topology.svg` — figure 4 — still names the provider as *maker* and
-  the quarantine subject as *candidate*, and needs the rename pass before the
-  paper is circulated.
 - Where this paper and the records under `.konspekt/instance/` disagree, the
   records are authoritative.
