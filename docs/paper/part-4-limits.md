@@ -2,7 +2,7 @@
 
 ### Admitting externally-patched open source into a regulated estate
 
-**Part IV — Limits** *(draft; ~1,000 words)*
+**Part IV — Limits** *(draft; ~1,050 words)*
 
 > Structure, audience and framing decisions: `artifact-paper-outline`.
 
@@ -89,7 +89,12 @@ moment when nobody yet has a reason to care.
 **Reconciliation of the discovery index.** The central attestation index is
 rebuildable from the transparency log, which is what makes omission detectable
 rather than silent. Detectable, however, only if someone performs the
-reconciliation. Ownership and cadence are unassigned.
+reconciliation. The operating model proposes an owner and a daily cadence, with
+the resulting lag published as a figure so the distance between log and index is
+visible rather than assumed. Neither the owner nor the interval is settled, and
+until they are this is a duty nobody holds — which is the failure mode the whole
+class of standing obligations shares: nothing rejects, nothing alarms, and the
+omission surfaces only when a package cannot be discovered.
 
 **Governance policy.** Who sits in the trust-root threshold, how verifiers are
 admitted and removed, and what happens on suspected compromise are undecided.
