@@ -33,7 +33,7 @@ useful one.
 ## Appendix A — Figures
 
 All four figures, and the sources they are generated from, are in
-`docs/resource/`. Where a figure and the design records disagree, the records are
+`docs/resources/`. Where a figure and the design records disagree, the records are
 authoritative.
 
 | Figure | Answers |
@@ -45,17 +45,26 @@ authoritative.
 
 ## Appendix B — The admission ruleset
 
-The gate evaluates fifteen rules in two passes, structural then semantic. They
-are enumerated in full in `artifact-architecture` §3.7 rather than reproduced
-here, because they are versioned artifacts that will drift from any copy printed
-in prose.
+The gate evaluates the ruleset in two passes, structural then semantic. It is
+enumerated in full in `artifact-architecture` §3.7, which is the only place the
+rules are numbered or counted. A count printed in prose drifts from the artifact
+it summarises, and this appendix drifted once already — it described the ruleset
+as it stood before advisory-record integrity was added.
 
-The rules divide into five groups: **signature and log validity** (1),
-**verifier quorum** (2, 5), **anchor re-derivability** (3), **graph and
-digest-binding integrity** (4, 6, 7, 11, 12), and **contract conformance**
-(8, 9, 10, 13). Two further rules cover **compile agreement** (14) — both sides
-compile the policy and compare digests — and **freshness** (15), since offline
-verification forfeits the trust root's own currency guarantee.
+The rules divide into groups. **Signature and log validity** covers envelopes,
+certificate chains, log inclusion and the witnessed checkpoint set. **Verifier
+quorum** requires k distinct registered verifiers with no dissent. **Anchor
+re-derivability** requires the baseline to resolve publicly, with a supplementary
+log witness in ecosystems that permit deletion. **Graph and digest-binding
+integrity** covers the unbroken chain back to that anchor. **Contract
+conformance** covers scope, corpus, proof completeness, exploitability status and
+the binary conformance verdict. **Compile agreement** has both sides compile the
+policy from the signed contract and compare digests, so a signed layout is
+verified rather than merely authenticated. **Bundle freshness** bounds the age of
+the trust material, since offline verification forfeits the trust root's own
+currency guarantee. And **advisory-record integrity** pins the vulnerability
+record each scope entry cites at commissioning and digests it as carried, so the
+affected range the contract asserts is checkable rather than the author's word.
 
 Every rule must be decidable from the evidence bundle alone. A rule requiring a
 live lookup is either wrong or evidence of a missing bundle element, and that

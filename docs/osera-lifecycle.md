@@ -173,12 +173,14 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
 - **Delivery manifest** — provider-assembled at Delivered. L-1 + L0–L7. Frozen
   by a transparency-log entry. Does not cross.
 - **Evidence core** — issuer-assembled once at Fulfilled. Delivery manifest, L-1,
-  L0–L8, compiled layout, Rego bundle. One digest shared by every bank. No clock.
-  This is what crosses.
+  L0–L8, compiled layout, Rego bundle, pinned advisory snapshots. One digest
+  shared by every bank. No clock. This is what crosses.
 - **Ingest envelope** — bank-assembled by ③ at Verified → Resolved. Core digest,
   TUF trust-root snapshot, checkpoint set, Fulcio root, local artifact locator.
   Trust root ≤ 7 days, checkpoints ≤ 24 hours.
 - Anything the gate needs that is not in the bundle is a live dependency.
+- Advisory snapshots are carried **verbatim**: rule 16 digests them as carried,
+  so any reformatting during assembly invalidates them.
 
 ## Gate — steps
 
@@ -189,13 +191,17 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
 - **Structural** — `in-toto-verify` against the layout: right steps, right
   signers, thresholds met, DAG intact, not expired.
 - **Semantic** — Rego via Witness: CVEs-fixed ⊇ scope, digest agreement across
-  the quorum, coverage ≥ threshold, `conformance == FULL`, freshness limits.
+  the quorum, coverage ≥ threshold, `conformance == FULL`, freshness limits, and
+  advisory-record integrity (rule 16).
 - **Acceptance** — ④ runs the bank's own tests as an in-toto inspection at
   verification time, folded into the same verdict.
 - **Verdict** — immutable record: admit or reject, pinning core digest, envelope
   digest, trust-root version and trust path.
-- Fifteen rules, all must hold. Conformance is binary: `FULL` promotes,
-  `PARTIAL` and `BREACH` never do. Staleness is a named-rule reject.
+- Every admission rule must hold. They are enumerated in `artifact-architecture`
+  §3.7, which is the only place they are numbered — a count restated here drifts,
+  and this line carried a stale one until 2026-07-30.
+- Conformance is binary: `FULL` promotes, `PARTIAL` and `BREACH` never do.
+  Staleness is a named-rule reject.
 
 ## Tracking
 
@@ -208,6 +214,8 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
   as signed evidence.
 - A revoked verifier key raises a review trigger; past verdicts stand, pinned to
   the `trustRootVersion` current at admission.
+- Advisory drift since commissioning surfaces here as an exposure finding, since
+  the gate reads only the frozen snapshot.
 
 ## Sunset
 
@@ -236,3 +244,23 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
   a new one starts with a fresh project.
 - An amendment is a new version of the same commitment; a renewal is a new
   member of the same lineage. Different edges.
+
+## Not yet in the machines
+
+Three steps the operating model proposes that the machines above do not carry.
+Listed so the machines are not read as complete, and marked as proposals rather
+than states:
+
+- **Closure inside the bank** — a project ends at Fulfilled, outside. Nothing
+  records whether the commissioned bridge actually closed the flaws and moved the
+  applications. Proposed as an activity whose record weights the next
+  prioritization ballot.
+- **Provider selection** — the mechanism records which provider was selected, in
+  the mandate and the contract. Who selects, and against what criteria, is
+  alliance policy and unsettled.
+- **Emergency commissioning** — a flaw under active exploitation cannot wait for
+  a scheduled ballot. A standing authority with later ratification is proposed;
+  the cadence and the authority are alliance policy.
+
+Each lands here once it is in an artifact, per the rule that a publication never
+carries a decision the record lacks.
