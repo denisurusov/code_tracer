@@ -1,9 +1,9 @@
 // Build contract-bound-evidence.docx from the assembled markdown.
 //
-//   python3 docs/paper/assemble.py          # writes build/contract-bound-evidence.md
-//   python3 docs/paper/render-figures.py    # writes build/fig{1..4}.png from docs/resource
-//   node docs/paper/mkdocx.js               # writes build/contract-bound-evidence.docx
-//   soffice --headless --convert-to pdf build/contract-bound-evidence.docx
+//   python3 docs/paper/assemble.py          # docs/build/contract-bound-evidence.md
+//   python3 docs/paper/render-figures.py    # docs/build/fig{1..4}.png from docs/resources
+//   node docs/paper/mkdocx.js               # docs/build/contract-bound-evidence.docx
+//   soffice --headless --convert-to pdf --outdir docs/build docs/build/contract-bound-evidence.docx
 //
 // Body is portrait US Letter; each figure gets its OWN LANDSCAPE PAGE, because the
 // diagrams run about 1.5:1 with 9-12px labels and are illegible scaled into a
@@ -20,8 +20,13 @@ const {
   BorderStyle, PageOrientation, Header, Footer, PageNumber, SectionType,
 } = require('docx');
 
-const BUILD = path.resolve(__dirname, '../../build');
+const BUILD = path.resolve(__dirname, '../build');
 const MD = fs.readFileSync(path.join(BUILD, 'contract-bound-evidence.md'), 'utf8');
+
+// assemble.py stamps the source commit into an HTML comment on the first line.
+// It rides into the docx description so a circulated file names the tree it came
+// from; the parser below skips the comment so it never renders as a paragraph.
+const STAMP = (MD.match(/^<!--\s*built from (\S+)\s*-->/m) || [, 'unknown'])[1];
 
 // Pixel dimensions are those of the rendered PNGs (cairosvg, scale 2.2).
 const FIGS = {
@@ -104,6 +109,14 @@ while (i < lines.length) {
   } else { stuck = 0; lastI = i; }
   if (++guard > 50000) { console.error('GUARD tripped at line', i); process.exit(4); }
   const line = lines[i];
+
+  // HTML comments carry build metadata, never content. Skip them, including the
+  // multi-line case, so the stamp does not surface as a paragraph in the docx.
+  if (/^<!--/.test(line)) {
+    while (i < lines.length && !/-->/.test(lines[i])) i++;
+    i++;
+    continue;
+  }
 
   if (isFig(line)) {
     children.push({ FIG: Number(line.match(/^!\[Figure (\d)/)[1]) });
@@ -196,7 +209,7 @@ while (i < lines.length) {
   const buf = [lines[i++]];
   while (
     i < lines.length && lines[i].trim() !== '' &&
-    !/^(#{1,4}\s|>|\||```|---+\s*$)/.test(lines[i]) &&
+    !/^(#{1,4}\s|>|\||```|---+\s*$|<!--)/.test(lines[i]) &&
     !/^\s*[-*]\s+/.test(lines[i]) && !isFig(lines[i])
   ) {
     buf.push(lines[i++]);
@@ -285,12 +298,13 @@ flushBody();
 const doc = new Document({
   creator: 'code_tracer',
   title: 'Contract-Bound Evidence',
-  description: 'Admitting externally-patched open source into a regulated estate',
+  description: `Admitting externally-patched open source into a regulated estate — built from ${STAMP}`,
   styles: { default: { document: { run: { font: 'Georgia', size: 21, color: INK } } } },
   sections,
 });
 
 Packer.toBuffer(doc).then(b => {
   fs.writeFileSync(path.join(BUILD, 'contract-bound-evidence.docx'), b);
-  console.log('docx bytes:', b.length, '| blocks:', children.length, '| sections:', sections.length);
+  console.log('docx bytes:', b.length, '| blocks:', children.length,
+              '| sections:', sections.length, '| stamp:', STAMP);
 });
