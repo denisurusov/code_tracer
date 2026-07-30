@@ -5,7 +5,7 @@
 **Part I — The model** *(draft; ~2,300 words)*
 
 > Structure, audience and framing decisions: `artifact-paper-outline`.
-> Diagrams: `docs/resource/`.
+> Diagrams: `docs/resources/`.
 
 ---
 
