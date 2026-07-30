@@ -2,10 +2,10 @@
 
 ### Admitting externally-patched open source into a regulated estate
 
-**Part III — Admission and afterlife** *(draft; ~2,400 words)*
+**Part III — Admission and afterlife** *(draft; ~2,450 words)*
 
 > Structure, audience and framing decisions: `artifact-paper-outline`.
-> Diagrams: `docs/resource/`.
+> Diagrams: `docs/resources/`.
 
 ---
 
@@ -55,14 +55,26 @@ graph and signature check. It knows nothing about vulnerabilities.
 The **semantic** pass asks whether the evidence *means* what the contract
 requires: that the CVEs proven fixed cover the commissioned scope, that the test
 corpus matched by digest, that coverage cleared its threshold, that conformance
-is `FULL`.
+is `FULL`, and that each vulnerability record the scope cites still reads as it
+did when the work was commissioned.
 
-Keeping them separate has a practical payoff. The structural layer is a mature,
-general-purpose framework that this design consumes unmodified. The semantic
-layer is a policy file — readable, reviewable, diffable, and modifiable by a
-security engineer without touching verification machinery. When a bank's risk
-function asks *what exactly does the gate check?*, the answer is a file they can
-read, not a codebase they have to trust.
+That last check deserves a note, because it closes the final place the contract
+rested on an author's claim. The affected-version range written into the scope is
+written by whoever drafts the contract, and nothing checked it against the
+advisory it cites. So the advisory record is **pinned at commissioning** and
+travels inside the evidence, and the gate confirms the range the contract asserts
+against the copy that was frozen. Verification runs against that copy rather than
+the live feed on purpose: advisory records legitimately move, a range widened six
+months later is enrichment working correctly, and gating on it would refuse a
+conforming artifact over something the provider never controlled. Drift since
+commissioning belongs to the ledger as an exposure finding.
+
+Keeping the two passes separate has a practical payoff. The structural layer is a
+mature, general-purpose framework that this design consumes unmodified. The
+semantic layer is a policy file — readable, reviewable, diffable, and modifiable
+by a security engineer without touching verification machinery. When a bank's
+risk function asks *what exactly does the gate check?*, the answer is a file they
+can read, not a codebase they have to trust.
 
 For the running example: the structural pass confirms that a rebuild step ran and
 was signed by three registered verifiers. The semantic pass confirms that the
@@ -86,17 +98,31 @@ later from stored inputs. Every admission rule must be decidable from bundle
 contents alone; a rule that isn't is either a wrong rule or a missing bundle
 element.
 
-The bundle carries the artifact reference, the provider's attestations, the
-verifiers' summaries, the signed contract, the compiled policy, a snapshot of the
-trust root, and the certificate chain. Two properties matter more than the
-inventory.
+**It arrives in two parts, assembled by two parties.** The alliance seals an
+**evidence core** once per fulfilled contract — the provider's attestations, the
+verifiers' summaries, the signed contract, the compiled policy, and a pinned copy
+of each vulnerability record the scope cites. None of that ages, so the core
+carries no expiry and can be cited years later. The receiving institution then
+wraps it in an **ingest envelope** holding what is needed to judge those
+signatures today: a trust-root snapshot, log checkpoints, certificate roots, and
+where the artifact sits locally.
 
-**The bundle is a container, never a credential.** It carries no signature of its
-own and confers no authority on its contents. Every element inside is
+The split earns its cost in a single property. The core has one digest, identical
+for every institution that receives it, so two of them can establish that they
+admitted the same evidence — a comparison that assembling per-institution would
+make impossible, since it would produce as many identifiers as recipients over
+one set of facts. It also puts each clock where it belongs: the evidence has
+none, and the material used to judge it is refreshed locally on a schedule.
+
+**Sealing confers no authority.** Neither part carries a signature of its own,
+and packaging evidence establishes nothing about it — every element inside is
 independently signed and independently verified. This keeps assembly from
-becoming a trust role — the party that packages the evidence gains no power over
-whether it is believed, which means bundle assembly can happen inside the
-receiving institution without anyone having to vouch for the assembler.
+becoming a trust role: the party that packages the evidence gains no power over
+whether it is believed, which is what allows the envelope to be assembled inside
+the receiving institution without anyone having to vouch for the assembler. One
+engineering consequence follows directly, because the pinned advisory records are
+digested exactly as they are carried: assembly must preserve those bytes
+verbatim, with no reformatting or re-encoding in any transport form.
 
 **Resolution is online; verification is offline.** Discovering which attestations
 belong to an artifact digest requires a lookup, and that lookup happens *before*
@@ -108,12 +134,12 @@ fails immediately against signed, digest-bound attestations.
 
 **Offline verification forfeits freshness**, which has to be handled explicitly.
 A trust-root snapshot pinned into a bundle cannot learn that a verifier key was
-revoked yesterday. So the bundle carries stated maximum ages — a longer clock for
-the trust root, a much shorter one for transparency-log checkpoints — and
+revoked yesterday. So the envelope carries stated maximum ages — a longer clock
+for the trust root, a much shorter one for transparency-log checkpoints — and
 exceeding either is a **named-rule rejection, not a warning**. A warning defers
 the decision to whoever is reading the console, which is not a control.
 Re-resolution is cheap, because only the trust material needs refreshing; the
-artifact and its evidence are unchanged.
+core and the artifact are unchanged.
 
 ### What you actually deploy
 
