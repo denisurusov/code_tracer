@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-27T00:00:00Z
+  updatedAt: 2026-07-30T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-tooling
   sourceRef: 05038f93a541216c0f6713ea13bcff58a40d823d
   contentHash: 05038f93a541216c0f6713ea13bcff58a40d823d
   timestamp: 2026-07-21T15:10:00Z
 createdAt: 2026-07-21T15:10:00Z
-updatedAt: 2026-07-27T00:00:00Z
+updatedAt: 2026-07-30T00:00:00Z
 ```
 # code_tracer — The evidence bundle: core and envelope (perimeter interface)
 
@@ -27,6 +27,12 @@ between the issuer and consumer sides.
 > `19c83a6696b0385da970572660b26d3871318fad`. The **core/envelope split** in §1,
 > §2, §3, §5 and §6 derives from excerpt `7aa6325730d0516102bfe4d0adffadbc846626f1`
 > (`noteworthy-bundle-split`).
+
+> **Amendment 2026-07-30 (`noteworthy-adoption-rebuild`).** The core carries
+> **digest-pinned rebuild references** — source, transformation, toolchain — so
+> that every adopting bank can reproduce the build inside its own zone, in both
+> governance modes. The envelope carries the **bank's own L8** over that rebuild.
+> §4's "never leaves" is corrected to *unpublished, disclosable on demand*.
 
 **Why it exists.** Because the bank verifies **hermetically and offline**
 (`artifact-architecture` §1), the perimeter crossing cannot be a protocol — there
@@ -47,7 +53,7 @@ different clocks, so each gets its own container.
 |---|---|---|---|
 | Assembled by | provider | issuer, once | resolver ③, once per consuming bank |
 | At | Delivered | Fulfilled | Verified → Resolved |
-| Holds | L-1 + L0–L7 | delivery manifest + L-1 + L0–L8 + layout + policy bundle | core digest + trust material + local locator |
+| Holds | L-1 + L0–L7 | delivery manifest + L-1 + L0–L8 + layout + policy bundle + advisory snapshots + rebuild references | core digest + trust material + this bank's L8 + local locator |
 | Identity | logged digest | **one digest, shared by every bank** | bank-local digest |
 | Clock | none | none — frozen at Fulfilled | trust root ≤ 7 days, checkpoints ≤ 24 hours, measured at the gate |
 | Crosses the perimeter | no | yes | sealed at the crossing |
@@ -55,9 +61,9 @@ different clocks, so each gets its own container.
 **The cut is evidence against trust material.** The core is what was claimed and
 what was independently verified: frozen, identical for every consumer, and
 therefore citable. The envelope is what one bank checked that evidence *against*,
-current at its own decision moment. Evidence does not go stale; the material used
-to judge signatures and log inclusion does, which is why one container cannot
-carry both.
+current at its own decision moment, plus what that bank established for itself.
+Evidence does not go stale; the material used to judge signatures and log
+inclusion does, which is why one container cannot carry both.
 
 **Why the core is issuer-assembled.** Its contents are complete at Fulfilled and
 identical for every bank, so assembling it n times produces n manifest digests
@@ -68,9 +74,10 @@ identifier at no cost to independence, because sealing confers no authority (§3
 **Why the envelope is bank-assembled.** Freshness is measured at the gate, so a
 trust-root snapshot and log checkpoints sealed once for the alliance would be
 stale for whoever ingests later. A bank must verify against material current at
-its own admission moment, and must be free to tighten the window. Per-bank
-assembly is cheap: it is discovery and copy, and OCI blob sharing means the core
-is referenced rather than duplicated.
+its own admission moment, and must be free to tighten the window. It is also
+where the bank's **own** rebuild result lands, which is by definition per-bank.
+Per-bank assembly is cheap: it is discovery, one rebuild, and copy — and OCI blob
+sharing means the core is referenced rather than duplicated.
 
 **The delivery manifest freezes the hand-off.** Its job is to stop the provider
 adjusting what it submitted after seeing how verification went — the same
@@ -107,11 +114,12 @@ has to include the evidence.
 |---|---|
 | Artifact digest and purl | the subject |
 | Delivery manifest + its log inclusion proof | the frozen provider hand-off |
-| Attestation set L0–L8, DSSE-wrapped | the provider's claims and the quorum's VSAs, each carrying the tree head its verifier observed |
+| Attestation set L0–L8, DSSE-wrapped | the provider's claims and every signatory's VSA, each carrying the tree head its verifier observed |
 | L-1 contract, signed, with countersignature | the root referent every link is checked against |
 | Compiled layout + `compilerVersion` | structural verification; the bank recompiles and compares (rule 14) |
 | Rego policy bundle + version | semantic verification; the meaning layer |
 | Pinned advisory snapshots, one per `cvesInScope` entry | the frozen records the contract's scope is checked against (rule 16); absent them, the range check becomes a live lookup |
+| **Rebuild references** — source locator + digest, transformation digest, toolchain locator + digest | what lets the adopting bank reproduce the build itself. References, never images: pinning by hash is what makes the fetch safe, since it yields the named bytes or fails loudly. A tag is never acceptable in place of a digest |
 | Core manifest | digest over every element above; the shared identity |
 
 **Ingest envelope** — sealed by ③ at the crossing, one per bank per ingest.
@@ -119,14 +127,15 @@ has to include the evidence.
 | Element | Why it must be inside |
 |---|---|
 | Core digest | what this admission is about |
+| **This bank's L8**, over its own rebuild | the reproduction the adopting bank performed for itself (`noteworthy-adoption-rebuild`). Produced at resolution while still online; the gate reads only the signed result |
 | Trust-root snapshot (TUF metadata, versioned) | verifier registry, keys, delegations — no live TUF refresh at verify time |
-| **Checkpoint set** — a current tree head plus consistency proofs against the heads observed in L8 | inclusion verifiable offline, **and** split-view detection: divergent heads across the quorum are disqualifying (`noteworthy-transparency-log`) |
+| **Checkpoint set** — a current tree head plus consistency proofs against the heads observed in L8 | inclusion verifiable offline, **and** split-view detection: divergent heads across the signatory set are disqualifying (`noteworthy-transparency-log`) |
 | Fulcio root / cert chain | signature validity without a live CA |
 | Local artifact locator | where the bytes sit in this bank's quarantine registry |
 | Envelope manifest | digest over the core digest and the material above |
 
 The checkpoint is a **set rather than a singleton**, precisely because the log is
-FINOS-operated: a single asserted tree head would have to be trusted, whereas k
+FINOS-operated: a single asserted tree head would have to be trusted, whereas
 independently observed ones cannot be split without producing a dissent. The
 observed heads are frozen in the core with their L8 records; what the envelope
 adds is a head current at the bank's own decision moment and the proofs tying the
@@ -145,30 +154,41 @@ two together.
   is **identical across the OCI and tar forms**.
 - **Self-verifying offline.** Every admission rule in §3.7 must be decidable from
   bundle contents alone. A rule that cannot be is a design error in the rule or a
-  missing element here.
+  missing element here. The bank's rebuild does not breach this: its *inputs* are
+  fetched at resolution from pinned references, and what the gate consumes is the
+  signed L8 that results.
 - **Replayable.** A regulator handed the bundle re-runs the gate and reaches the
   same verdict — the §8 control statement, made physically true.
 - **Immutable.** Once sealed, both containers are frozen. An amended contract
-  produces a **new core**; a refreshed trust root produces a **new envelope**
-  over the same core. Neither is ever edited.
+  produces a **new core**; a refreshed trust root, or a fresh rebuild, produces a
+  **new envelope** over the same core. Neither is ever edited.
 - **Fresh, within stated limits.** The clock applies to the envelope: trust-root
   snapshot ≤ 7 days, checkpoint set ≤ 24 hours; tightenable per bank, never
   loosenable; stale is a named-rule reject (`noteworthy-bundle-freshness`). The
-  core has no clock — evidence does not expire, and a core sealed a year ago
-  re-admits under a fresh envelope.
+  core has no clock — a sealed evidence set from last year still proves what it
+  proved then, so it re-admits under a fresh envelope.
 - **Re-admissible.** Because the core is stable and the envelope is cheap, a bank
   re-running an old admission, or a second bank admitting the same package
-  later, works from the same core digest with an envelope of its own.
+  later, works from the same core digest with an envelope of its own. The
+  rebuild is the one part that is not cheap, and a re-admission may reuse the
+  bank's existing L8 where the core digest is unchanged.
 
 ## 4. What is deliberately *not* in it
 
-- **L9 acceptance** — the bank's own control, created inside, never leaves
-  (`artifact-architecture` §3.3). It is produced *against* the bundle, not
-  carried by it.
+- **L9 acceptance** — the bank's own control, created inside, and **unpublished
+  by default rather than undisclosable**: a supervisor may require confirmation
+  that the institution tested and admitted, and producing it on request
+  demonstrates the control (`noteworthy-adoption-rebuild`). It is produced
+  *against* the bundle rather than carried by it. The same disclosure property
+  applies to the bank's own L8, which the envelope does carry.
 - **The verdict** — likewise bank-side output, not input.
 - **The bank's acceptance suite** — inspections are bank-authored only; the
   layout may require that an inspection named `bank-acceptance` exists but must
-  never supply its command (`docs/osera-bank-verification.md` §7 item 4).
+  never supply its command
+  (`docs/historical/osera-bank-verification.md` §7 item 4).
+- **Rebuild images** — the toolchain and source are named by digest and fetched
+  at resolution, never packed into the core. Carrying them would trade a small
+  signed manifest for a container the size of a build environment.
 
 ## 5. Data-model placement
 
@@ -210,6 +230,11 @@ smaller than it first appears: the large, stable half moves once, and only the
 small, fresh half is on the daily tempo. That cadence is something the rollout
 plan absorbs; it is not a schema problem.
 
+**An air gap complicates the rebuild.** The bank's own reproduction needs the
+pinned source and toolchain, which an air-gapped estate cannot fetch at
+resolution. Those references have to be mirrored inside beforehand, which makes
+the mirror a rollout prerequisite rather than an optimisation — see §7.
+
 ## 7. Open
 
 - **External witnessing** — whether the checkpoint set should additionally be
@@ -219,6 +244,13 @@ plan absorbs; it is not a schema problem.
 - **Core availability** — the shared identifier is only useful while the core is
   retrievable. Who hosts it, for how long, and what a member does when a core
   referenced by a live verdict is no longer served.
+- **Rebuild-input durability** — the same question one level down. A pinned
+  source or toolchain locator can stop resolving years later while every digest
+  still checks out, which makes an old package un-rebuildable without
+  invalidating any evidence. Local mirroring is the obvious remedy and its scope
+  and retention are unspecified; an air-gapped estate needs the mirror from day
+  one regardless.
 - **Envelope retention** — whether a bank keeps every envelope it ever sealed, or
   only those named by a standing verdict. Bears on how long the ≤ 24-hour
-  checkpoints stay meaningful as audit material.
+  checkpoints stay meaningful as audit material, and now also on whether an old
+  rebuild result survives to be reused.
