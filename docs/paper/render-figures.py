@@ -3,10 +3,10 @@
 
     python3 docs/paper/render-figures.py
 
-Writes build/fig{1..4}.png. Scale 2.2 puts the widest diagram at ~3200px, which
-is enough that the 9-12px labels survive being placed on a landscape page.
-If you change the scale, update the pixel dimensions in mkdocx.js FIGS to match,
-since the aspect ratio there drives the fit calculation.
+Writes docs/build/fig{1..4}.png from docs/resources. Scale 2.2 puts the widest
+diagram at ~3200px, which is enough that the 9-12px labels survive being placed
+on a landscape page. If you change the scale, update the pixel dimensions in
+mkdocx.js FIGS to match, since the aspect ratio there drives the fit calculation.
 
 Requires: cairosvg
 """
@@ -15,8 +15,8 @@ import pathlib
 import cairosvg
 
 HERE = pathlib.Path(__file__).resolve().parent
-RESOURCE = HERE.parent / "resource"
-BUILD = HERE.parent.parent / "build"
+RESOURCE = HERE.parent / "resources"
+BUILD = HERE.parent / "build"
 
 FIGURES = [
     ("p1-lifecycle.svg", "fig1.png"),

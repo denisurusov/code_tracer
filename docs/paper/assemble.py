@@ -1,28 +1,34 @@
 #!/usr/bin/env python3
 """Assemble the paper parts into one document, and render a self-contained HTML.
 
-    python3 docs/paper/assemble.py            # writes build/contract-bound-evidence.{md,html}
+    python3 docs/paper/assemble.py   # writes docs/build/contract-bound-evidence.{md,html}
 
 The single-file paper is a PROJECTION over the numbered parts in this directory
 (noteworthy-authoritative-form). Edit the parts; never edit the built file.
 Figures are inlined into the HTML so the result is one shareable file with no
 external dependencies.
 
+Both outputs carry a commit stamp naming the tree they were built from, so a
+reader can tell whether a built file matches the sources without diffing it
+(docs/build/README.md). A build from a dirty tree is stamped -dirty, because it
+corresponds to no commit anyone else can retrieve.
+
 Requires: markdown  (pip install markdown)
 """
 import re
 import pathlib
+import subprocess
 
 HERE = pathlib.Path(__file__).resolve().parent
-RESOURCE = HERE.parent / "resource"
-BUILD = HERE.parent.parent / "build"
+RESOURCE = HERE.parent / "resources"
+BUILD = HERE.parent / "build"
 
 PARTS = [
     ("00-front-matter.md", None, False),
-    ("part-1-the-model.md", "Part I — The model", True),
-    ("part-2-commissioning-and-trust.md", "Part II — Commissioning and trust", True),
-    ("part-3-admission-and-afterlife.md", "Part III — Admission and afterlife", True),
-    ("part-4-limits.md", "Part IV — Limits", True),
+    ("part-1-the-model.md", "Part I \u2014 The model", True),
+    ("part-2-commissioning-and-trust.md", "Part II \u2014 Commissioning and trust", True),
+    ("part-3-admission-and-afterlife.md", "Part III \u2014 Admission and afterlife", True),
+    ("part-4-limits.md", "Part IV \u2014 Limits", True),
     ("99-closing-and-appendices.md", None, True),
 ]
 
@@ -32,6 +38,20 @@ FIGURES = {
     3: ("p3-architecture.svg", "Architecture: components and the stores they touch"),
     4: ("code-tracer-topology.svg", "Physical topology: what is written where, read by whom"),
 }
+
+
+def commit_stamp():
+    """The commit this build corresponds to, or 'unknown' outside a git tree."""
+    try:
+        sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=HERE, text=True,
+            stderr=subprocess.DEVNULL).strip()
+        dirty = subprocess.check_output(
+            ["git", "status", "--porcelain"], cwd=HERE, text=True,
+            stderr=subprocess.DEVNULL).strip()
+        return f"{sha}-dirty" if dirty else sha
+    except Exception:
+        return "unknown"
 
 
 def strip_part_header(text):
@@ -84,7 +104,7 @@ def build_markdown():
 
 def to_markdown_figures(doc):
     for n, (src, caption) in FIGURES.items():
-        img = f"![Figure {n} — {caption}](../docs/resource/{src})\n\n*Figure {n} — {caption}.*"
+        img = f"![Figure {n} \u2014 {caption}](../resources/{src})\n\n*Figure {n} \u2014 {caption}.*"
         doc = doc.replace(fig_marker(n), img)
     return doc
 
@@ -121,13 +141,15 @@ li{margin:.3rem 0}
  border-radius:8px;overflow-x:auto}
 .fig svg{display:block;width:100%;height:auto;min-width:900px}
 .fig + p em{display:block;color:var(--muted);font-size:13.5px;margin-top:-.2rem}
+.stamp{margin-top:3rem;padding-top:.8rem;border-top:1px solid var(--rule);
+ font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
 @media print{body{background:#fff}.wrap{max-width:none;padding:0}
  .fig{break-inside:avoid;page-break-inside:avoid}
  h2{break-after:avoid}}
 """
 
 
-def to_html(doc):
+def to_html(doc, stamp):
     import markdown
 
     body = markdown.markdown(doc, extensions=["tables", "fenced_code", "toc"])
@@ -139,25 +161,33 @@ def to_html(doc):
             f"<p>{fig_marker(n)}</p>", f'<div class="fig">{svg}</div>'
         )
     title = (
-        "Contract-Bound Evidence — admitting externally-patched "
+        "Contract-Bound Evidence \u2014 admitting externally-patched "
         "open source into a regulated estate"
     )
     return (
         '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
+        f'<meta name="source-commit" content="{stamp}">\n'
         f"<title>{title}</title>\n<style>{CSS}</style></head><body>"
-        f'<div class="wrap">\n{body}\n</div></body></html>'
+        f'<div class="wrap">\n{body}\n'
+        f'<p class="stamp">Built from {stamp}</p>\n'
+        "</div></body></html>"
     )
 
 
 def main():
     BUILD.mkdir(exist_ok=True)
+    stamp = commit_stamp()
     doc = build_markdown()
-    html = to_html(doc)
-    (BUILD / "contract-bound-evidence.md").write_text(to_markdown_figures(doc))
+    html = to_html(doc, stamp)
+    md = f"<!-- built from {stamp} -->\n\n" + to_markdown_figures(doc)
+    (BUILD / "contract-bound-evidence.md").write_text(md)
     (BUILD / "contract-bound-evidence.html").write_text(html)
-    words = len(re.findall(r"[A-Za-z0-9'’\-]+", doc))
-    print(f"wrote {BUILD}/contract-bound-evidence.md and .html — {words} words")
+    words = len(re.findall(r"[A-Za-z0-9'\u2019\-]+", doc))
+    print(f"wrote {BUILD}/contract-bound-evidence.md and .html \u2014 {words} words")
+    print(f"stamped: {stamp}")
+    if stamp.endswith("-dirty"):
+        print("  NOTE: working tree is dirty; this build matches no commit")
 
 
 if __name__ == "__main__":
