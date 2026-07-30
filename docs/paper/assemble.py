@@ -13,6 +13,11 @@ reader can tell whether a built file matches the sources without diffing it
 (docs/build/README.md). A build from a dirty tree is stamped -dirty, because it
 corresponds to no commit anyone else can retrieve.
 
+EVERY read and write below passes encoding="utf-8" explicitly. Path.read_text()
+otherwise uses the locale encoding, which is cp1252 on Windows, and the sources
+and figures are full of characters it cannot decode. Omitting it works on Linux
+and fails on Windows, which is the worst way for a bug to behave.
+
 Requires: markdown  (pip install markdown)
 """
 import re
@@ -44,10 +49,10 @@ def commit_stamp():
     """The commit this build corresponds to, or 'unknown' outside a git tree."""
     try:
         sha = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=HERE, text=True,
+            ["git", "rev-parse", "HEAD"], cwd=HERE, text=True, encoding="utf-8",
             stderr=subprocess.DEVNULL).strip()
         dirty = subprocess.check_output(
-            ["git", "status", "--porcelain"], cwd=HERE, text=True,
+            ["git", "status", "--porcelain"], cwd=HERE, text=True, encoding="utf-8",
             stderr=subprocess.DEVNULL).strip()
         return f"{sha}-dirty" if dirty else sha
     except Exception:
@@ -74,7 +79,7 @@ def fig_marker(n):
 def build_markdown():
     chunks = []
     for filename, heading, strip in PARTS:
-        raw = (HERE / filename).read_text()
+        raw = (HERE / filename).read_text(encoding="utf-8")
         body = strip_part_header(raw) if strip else raw.strip()
         body = drop_trailing_note(body)
         if filename.startswith("part-1"):
@@ -154,7 +159,7 @@ def to_html(doc, stamp):
 
     body = markdown.markdown(doc, extensions=["tables", "fenced_code", "toc"])
     for n, (src, caption) in FIGURES.items():
-        svg = (RESOURCE / src).read_text()
+        svg = (RESOURCE / src).read_text(encoding="utf-8")
         svg = re.sub(r"^<\?xml[^>]*\?>\s*", "", svg)
         body = body.replace(fig_marker(n), f'<div class="fig">{svg}</div>')
         body = body.replace(
@@ -181,8 +186,8 @@ def main():
     doc = build_markdown()
     html = to_html(doc, stamp)
     md = f"<!-- built from {stamp} -->\n\n" + to_markdown_figures(doc)
-    (BUILD / "contract-bound-evidence.md").write_text(md)
-    (BUILD / "contract-bound-evidence.html").write_text(html)
+    (BUILD / "contract-bound-evidence.md").write_text(md, encoding="utf-8")
+    (BUILD / "contract-bound-evidence.html").write_text(html, encoding="utf-8")
     words = len(re.findall(r"[A-Za-z0-9'\u2019\-]+", doc))
     print(f"wrote {BUILD}/contract-bound-evidence.md and .html \u2014 {words} words")
     print(f"stamped: {stamp}")
