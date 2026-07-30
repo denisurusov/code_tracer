@@ -29,10 +29,16 @@ lifecycle.md     the complete pass over all three state machines   authored
 mockup.html      the lifecycle console's visual target             authored
 paper/           Contract-Bound Evidence — sources and scripts     authored
 resources/       the working-paper figures (SVG)                   authored
-build/           derived outputs; never edited, each stamped with
-                 the commit it was built from                      derived
+build/           derived outputs, stamped with the commit they
+                 were built from and never edited — plus
+                 explainer.html, which is authored and its own
+                 source                                            mixed
 historical/      working-group notes, frozen at reconstruction     archived
 ```
+
+`build/` is the one directory holding both kinds, and
+[`build/README.md`](build/README.md) says which files are which. The distinction
+matters because a rebuild overwrites derived files without asking.
 
 ## Vocabulary
 
@@ -68,6 +74,10 @@ terms, and both should stay that way:
   rename necessarily contain the term being retired. A blanket substitution
   turns "maker → provider" into "provider → provider" and destroys the record of
   what changed.
+
+One file still carries the old terms by oversight rather than by design:
+`resources/code-tracer-topology.svg`, figure 4, which renders straight into the
+paper.
 
 ---
 
@@ -123,6 +133,27 @@ numbered in exactly one place, Architecture §3.7, because a count printed in
 prose drifts from the record it summarises — which is precisely what happened to
 that appendix before 2026-07-30.
 
+## The three visual documents
+
+Each addresses a different reader, and the differences are deliberate.
+
+| | For | Shows |
+|---|---|---|
+| [`build/explainer.html`](build/explainer.html) | someone meeting the design for the first time | the whole model, then one package walked through every state of it, in plain language with the technical term demoted to a chip |
+| [`mockup.html`](mockup.html) | whoever builds the lifecycle console (⑥) | four screens at the moments they carry the most information — the board, the decision, the exposure table, the history |
+| [`resources/`](resources/) | a reader of the paper | four figures: lifecycle and zones, the data model, the architecture, the physical topology |
+
+The explainer and the mockup overlap by design: the explainer sets up the model
+and then uses the mockup's screens as its worked example, so the screens arrive
+with the vocabulary already established. `explainer.pdf` beside it is that
+document as rendered.
+
+The mockup realizes
+[`task-lifecycle-mockup`](../.konspekt/instance/nodes/task/task-lifecycle-mockup.md)
+and feeds [`task-lifecycle-ui`](../.konspekt/instance/nodes/task/task-lifecycle-ui.md).
+Two gaps against its own brief, stated on the page itself: the refusal case is
+not yet drawn, and it still uses `candidateKey`.
+
 ## Figures
 
 [`resources/`](resources/) carries the working-paper figures, indexed in
@@ -134,17 +165,6 @@ that appendix before 2026-07-30.
 | `p2-datamodel.svg` | **current** — `package-version`, `lineKey`, `packageRef` |
 | `p3-architecture.svg` | **current** — nine components, 16 admission rules, roles named |
 | `code-tracer-topology.svg` | pending — the store map is current, but it still names the provider as *maker* and the quarantine subject as *candidate* |
-
-## The mockup
-
-[`mockup.html`](mockup.html) is the visual target for the lifecycle console (⑥) —
-one fix walked across the whole state machine, in labels written for a reader who
-has never heard of OSERA. It realizes
-[`task-lifecycle-mockup`](../.konspekt/instance/nodes/task/task-lifecycle-mockup.md)
-and feeds [`task-lifecycle-ui`](../.konspekt/instance/nodes/task/task-lifecycle-ui.md).
-
-Two gaps against its own brief: the refusal case is not yet drawn, and it still
-uses `candidateKey`.
 
 ## The archive
 
@@ -161,7 +181,8 @@ evidence that it was ever missing.
 ## Reading paths
 
 **"What is this project?"** — the [root README](../README.md), then
-[Architecture](../.konspekt/instance/artifacts/artifact-architecture.md).
+[`build/explainer.html`](build/explainer.html) if you would rather be shown than
+told.
 
 **"How does the whole thing run, start to finish?"** — [`lifecycle.md`](lifecycle.md),
 then `resources/p1-lifecycle.svg`.
