@@ -1,25 +1,44 @@
 # Documentation index
 
-Design material for code_tracer lives in two places, and the difference matters.
+What lives here, what lives in the graph, and which one is current when they
+disagree.
 
-| | `docs/` (this directory) | `.konspekt/instance/artifacts/` |
+## The dividing line
+
+If it has an id, a review state and edges, it is a **record** and lives in
+`.konspekt/instance/`. If it is written for a reader, it is a **publication** and
+lives here.
+
+| | `docs/` (this directory) | `.konspekt/instance/` |
 |---|---|---|
-| Audience | the FINOS OSERA working group | this project |
-| Nature | standalone design notes | the project's own design record |
-| Status | **drafts, partially reconstructed** | current, with an explicit review state |
-| Maintained | frozen unless the group revisits them | continuously, under `.konspekt/OPERATING.md` |
+| Nature | publications — written to be read | the project's design record |
+| Identity | a filename | an id, with provenance and edges |
+| Status | current unless filed under `historical/` | explicit `review:` state on every entity |
+| Maintained | revised in place | append-only, under `.konspekt/OPERATING.md` |
 | Validated in CI | no | yes — `node lib/validate.mjs` |
 
-**The artifacts are canonical.** Where the two disagree, the artifact is current
-and the note is historical. They are deliberately *not* copied here: a second
-copy drifts, and only the instance is checked by the conformance workflow. Follow
-the links.
+**The records are canonical.** Where a publication and a record disagree, the
+record is current. Records are deliberately *not* copied here: a second copy
+drifts, and only the instance is checked by the conformance workflow. Follow the
+links.
+
+## Layout
+
+```
+lifecycle.md     the complete pass over all three state machines   authored
+mockup.html      the lifecycle console's visual target             authored
+paper/           Contract-Bound Evidence — sources and scripts     authored
+resources/       the working-paper figures (SVG)                   authored
+build/           derived outputs; never edited, each stamped with
+                 the commit it was built from                      derived
+historical/      working-group notes, frozen at reconstruction     archived
+```
 
 ## Vocabulary
 
 Fixed by
 [`noteworthy-lifecycle-nouns`](../.konspekt/instance/noteworthy/noteworthy-lifecycle-nouns.md)
-and applied across the artifacts, the notes here, and the figures:
+and applied across the records, the publications here, and the figures:
 
 | Term | Means | Identity |
 |---|---|---|
@@ -30,14 +49,15 @@ and applied across the artifacts, the notes here, and the figures:
 | **Line** | the release line a project works against | `lineKey` = version-less purl + `contract.osera.line` |
 | **Alliance** | a group of OSERA members; acts as issuer | — |
 | **Provider** | whoever works on the product and signs L0–L7 | — |
-| **Bank** | a member and consumer; runs the gate and the ledger | — |
+| **Signatory** | a member that signs and funds a contract, and therefore verifies it | — |
+| **Bank** | a member and consumer; runs the gate, rebuilds what it adopts, keeps the ledger | — |
 
 Retired: *candidate* (it spanned three grains), *maker* (now provider),
 *mutualized* (now team). The identifier renames that followed: `candidateKey` →
 `lineKey`, `candidate-version` → `package-version`, `verdict.candidateRef` →
 `packageRef`.
 
-**The rename pass ran on 2026-07-27** across the artifacts, these notes, the
+**The rename pass ran on 2026-07-27** across the records, the publications, the
 figures and the paper sources. Two things deliberately still carry the old
 terms, and both should stay that way:
 
@@ -51,15 +71,16 @@ terms, and both should stay that way:
 
 ---
 
-## The design artifacts
+## The design records
 
-The design is factored into evidence, project, package/product, and records, plus
-the interface between the two sides and the scope of the implementation that
-realizes them. Read them in this order.
+Nine artifacts, plus twenty-eight decision records carrying their rejected
+alternatives. The design is factored into evidence, project, package/product and
+data, with the perimeter interface and the physical topology alongside. Read them
+in this order.
 
 | Artifact | Covers | Review |
 |---|---|---|
-| [Architecture & Design](../.konspekt/instance/artifacts/artifact-architecture.md) | The integrating overview, and home of the **evidence axis**: the L-1…L9 attestation chain, the anchor problem, the k-of-n quorum, the 16 admission rules, the gate, the ledger, and the component register. Start here. | accepted |
+| [Architecture & Design](../.konspekt/instance/artifacts/artifact-architecture.md) | The integrating overview, and home of the **evidence axis**: the L-1…L9 attestation chain, the anchor problem, who verifies, the 16 admission rules, the gate, the ledger, and the component register. Start here. | accepted |
 | [Project lifecycle](../.konspekt/instance/artifacts/artifact-contract-lifecycle.md) | The **project axis**, issuer-side: Drafted through Fulfilled plus three terminals, what Accepted freezes, and amendment as the only route for a shortfall. | accepted |
 | [Package and product lifecycles](../.konspekt/instance/artifacts/artifact-product-lifecycle.md) | The two machines that run after the freeze: the digest-keyed **package** machine (Accepted → Built → Adopted, or Rejected) and the lineage-keyed **product** machine (Active, Sunset, Retired), plus the renewal loop. | accepted |
 | [Evidence bundle](../.konspekt/instance/artifacts/artifact-evidence-bundle.md) | The **perimeter interface**: the delivery manifest, the issuer-assembled evidence core, and the bank-assembled ingest envelope — what crosses, who seals it, and which clock applies. | accepted |
@@ -69,45 +90,43 @@ realizes them. Read them in this order.
 | [RI fixture spec](../.konspekt/instance/artifacts/artifact-ri-fixtures-spec.md) | The synthetic test corpus: one backpatch with every value fixed, the L0–L9 set, and the known-bad variants each expected to be refused by a named rule. | accepted |
 | [Paper outline](../.konspekt/instance/artifacts/artifact-paper-outline.md) | Structure of the working paper. | accepted |
 
-Decisions with their rejected alternatives are recorded separately under
-`.konspekt/instance/noteworthy/`, and the goals and tasks they attach to under
-`.konspekt/instance/nodes/`. The whole graph starts at
+Decisions live under `.konspekt/instance/noteworthy/`, the goals and tasks they
+attach to under `.konspekt/instance/nodes/`. The whole graph starts at
 [`project.md`](../.konspekt/instance/project.md).
 
 ## The lifecycle note
 
-[Lifecycle](osera-lifecycle.md) is the one note here that is **current rather
-than historical**: a step-by-step synthesis of the three machines with the
-terminology, the commissioning modes, the perimeter crossing, the gate sequence,
-and the renewal rules, written as bullets. It tracks the artifacts rather than
-the working group, and is kept in step with them. Shortest complete pass over
-the whole design.
+[`lifecycle.md`](lifecycle.md) is the shortest complete pass over the whole
+design: the terminology, the commissioning modes, all three machines with their
+states and transitions, the perimeter crossing, the gate sequence, and the
+renewal rules, written as bullets. It tracks the records and is kept in step with
+them.
 
-## The working-group notes
+It closes with **"Not yet in the machines"** — three steps the operating model
+proposes that no state machine carries yet, marked as proposals rather than
+states so the machines are not read as complete.
 
-Written for the OSERA formation working group rather than for this repository.
-Each was **reconstructed on 2026-07-17** from design conversations that were not
-persisted, and each carries a provenance note naming the sections that survived
-intact and those that are partial. Treat the marked sections as incomplete.
+## The paper
 
-| Note | Covers |
-|---|---|
-| [Backpatch contract](osera-backpatch-contract.md) | The **L-1 contract** — the binding artifact that scopes a job before work starts and becomes the root everything else is verified against. Includes the machine-readable schema. Cited by the fixture spec. Superseded on partial fulfilment: its §6 item 2 recommends PARTIAL-promotable, which `noteworthy-conformance-binary` rejected. |
-| [Bank-side fulfilment verification](osera-bank-verification.md) | How a bank verifies a contract was *fulfilled* before ingesting code — and the finding the whole design rests on: the bank needs no new verification mechanism, because the contract compiles to a layout its existing in-toto verifier already enforces. |
-| [Attestation chain](osera-attestation-chain.md) | The L0–L9 chain, core principles, the anchor problem, admission rules, and quorum verification. **Superseded** — now inlined and extended as [Architecture §3](../.konspekt/instance/artifacts/artifact-architecture.md), which carries 16 rules to this note's 13; kept for the working-group framing and its open questions. |
-| [Standards register](osera-standards-register.md) | Standards, formats and protocols across the lifecycle, with the load-bearing ones starred. §6–§9 are partial, and the Maven-specific framing is generalized by `noteworthy-ecosystem-generalization`. |
-| [Bank schematic](osera-bank-schematic.svg) | Diagram of the ingestion path. Predates the split; still draws the single machine. |
+[`paper/`](paper/) holds *Contract-Bound Evidence*, a working draft for the
+formation working group: four parts plus front matter and appendices, assembled
+by `assemble.py` into a single document and converted onward by `mkdocx.js`.
 
-These carried the provider's company name throughout until the rename pass; the
-role placeholder **Provider P** now stands in its place, including in the layout
-functionary keys and the contract schema's party URL. What remains historical
-about them is their *content* — the recovery gaps, the superseded partial-
-fulfilment recommendation, the 13-rule ruleset — not their vocabulary.
+The **sources** are current as of 2026-07-30. The **built outputs** in
+[`build/`](build/) predate both the rename pass and the signatory-verification
+amendments, so they are stale twice over and must be regenerated before anything
+is circulated. They are a projection over the parts — rebuild rather than edit
+(`noteworthy-authoritative-form`).
+
+Appendix B deliberately carries no rule count or enumeration. The ruleset is
+numbered in exactly one place, Architecture §3.7, because a count printed in
+prose drifts from the record it summarises — which is precisely what happened to
+that appendix before 2026-07-30.
 
 ## Figures
 
-`resource/` carries the working-paper figures. Four views, indexed in
-[`resource/README.md`](resource/README.md).
+[`resources/`](resources/) carries the working-paper figures, indexed in
+[`resources/README.md`](resources/README.md).
 
 | Figure | State |
 |---|---|
@@ -116,35 +135,45 @@ fulfilment recommendation, the 13-rule ruleset — not their vocabulary.
 | `p3-architecture.svg` | **current** — nine components, 16 admission rules, roles named |
 | `code-tracer-topology.svg` | pending — the store map is current, but it still names the provider as *maker* and the quarantine subject as *candidate* |
 
-`paper/` holds the working paper: the `part-*.md` sources and the built outputs
-(HTML, DOCX, PDF). The **sources** carry the current vocabulary. The **built
-outputs** predate it and must be regenerated before circulating — they are a
-projection over the parts, so rebuild rather than edit
-(`noteworthy-authoritative-form`).
-
 ## The mockup
 
-[`lifecycle-mockup.html`](../lifecycle-mockup.html) at the repository root is the
-visual target for the lifecycle console (⑥) — one fix walked across the whole
-state machine, in labels written for a reader who has never heard of OSERA. It
-realizes [`task-lifecycle-mockup`](../.konspekt/instance/nodes/task/task-lifecycle-mockup.md)
+[`mockup.html`](mockup.html) is the visual target for the lifecycle console (⑥) —
+one fix walked across the whole state machine, in labels written for a reader who
+has never heard of OSERA. It realizes
+[`task-lifecycle-mockup`](../.konspekt/instance/nodes/task/task-lifecycle-mockup.md)
 and feeds [`task-lifecycle-ui`](../.konspekt/instance/nodes/task/task-lifecycle-ui.md).
 
 Two gaps against its own brief: the refusal case is not yet drawn, and it still
 uses `candidateKey`.
+
+## The archive
+
+[`historical/`](historical/) holds the five working-group documents, frozen at
+the point they were reconstructed on 2026-07-17. Their **content** is historical,
+including its recovery gaps; their **vocabulary** is current. Which record
+supersedes each of them is listed in
+[`historical/README.md`](historical/README.md).
+
+They are kept rather than deleted because the recovery notes are themselves part
+of the record: quietly reconstructing a missing section would destroy the
+evidence that it was ever missing.
 
 ## Reading paths
 
 **"What is this project?"** — the [root README](../README.md), then
 [Architecture](../.konspekt/instance/artifacts/artifact-architecture.md).
 
-**"How does the whole thing run, start to finish?"** —
-[Lifecycle](osera-lifecycle.md), then `resource/p1-lifecycle.svg`.
+**"How does the whole thing run, start to finish?"** — [`lifecycle.md`](lifecycle.md),
+then `resources/p1-lifecycle.svg`.
 
-**"How does admission actually work?"** —
-[Backpatch contract](osera-backpatch-contract.md) for what is agreed, then
-[Bank-side verification](osera-bank-verification.md) for how it is checked, then
-Architecture §4 for the gate.
+**"Why is it built this way?"** — the paper, in order. Part I for the model,
+Part II for who commissions and who verifies, Part III for what a bank deploys,
+Part IV for what it does not do.
+
+**"How does admission actually work?"** — Architecture §3.5 for how the contract
+binds the chain, §3.7 for the sixteen rules, §4 for the gate. Then
+[`historical/osera-bank-verification.md`](historical/osera-bank-verification.md)
+for the original framing of why no new verification mechanism is needed.
 
 **"What are we building, and how far along?"** —
 [RI scope](../.konspekt/instance/artifacts/artifact-reference-implementation.md)
