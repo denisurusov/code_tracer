@@ -7,7 +7,7 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-27T00:00:00Z
+  updatedAt: 2026-07-30T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   inputs:
@@ -15,7 +15,7 @@ provenance:
     - osera-bank-schematic.svg      # artifact #2
     - osera-standards-register.md   # artifact #3
 createdAt: 2026-07-17T00:00:00Z
-updatedAt: 2026-07-27T00:00:00Z
+updatedAt: 2026-07-30T00:00:00Z
 ```
 
 # code_tracer — Architecture & Design
@@ -69,6 +69,15 @@ stores are `artifact-deployment-topology`.
 > `noteworthy-record-digest`, which also splits snapshot *faithfulness* out as a
 > separate, issuer-side question (§9).
 
+> **Amendment 2026-07-30 (who verifies).** §3.2, §3.3, §3.6, §3.7, §3.8, §4, §5
+> and §8 amended per `noteworthy-signer-verification` and
+> `noteworthy-adoption-rebuild`. The contract's signatories are its verifiers;
+> `k` is the signer set rather than a computed threshold and
+> `k = max(3, ceil(n/3))` retires; every adopting bank rebuilds inside its own
+> zone in both governance modes, emitting an L8 it signs itself; and "never
+> leaves the bank" is corrected to *unpublished, disclosable on demand* for both
+> that record and L9.
+
 ---
 
 ## 1. Context & scope
@@ -117,7 +126,7 @@ alliance distributes the result with machine-readable evidence.
   (`goal-the-gate`, components ①–⑥).
 
 **What it is not:** the patching pipeline, the attestation *producers* (L0–L7),
-or the quorum's rebuild infrastructure. Those are upstream and
+or the signatory verifiers' rebuild infrastructure. Those are upstream and
 integrated-against, not built. Alliance *governance policy* — who sits in the
 trust-root threshold, verifier on/offboarding, compromise procedure — is likewise
 out of scope: we build the mechanism, the alliance settles the policy.
@@ -132,18 +141,19 @@ evidence trustworthy rather than circular:
   which is exactly why it is the anchor (§3.4). Integrated-against, never
   annexed.
 - **Outside (alliance + provider)** — commission, build, test, verify. The issuer
-  side runs here, alongside the provider's and quorum's infrastructure; the
-  evidence-**production** half.
-- **Inside (bank)** — resolve, verify, accept, re-test, deploy, adopt, track. The
-  bank's on-prem gate and ledger; the evidence-**consumption** half.
+  side runs here, alongside the provider's and the signatories' infrastructure;
+  the evidence-**production** half.
+- **Inside (bank)** — resolve, rebuild, verify, accept, re-test, deploy, adopt,
+  track. The bank's on-prem gate and ledger; the evidence-**consumption** half.
 
-Everything code_tracer does **inside the bank is hermetic and offline** — no
-callout to the provider, no live trust query — so that a regulator can re-run the
-entire admission decision from stored inputs and reach the same verdict. The
-issuer side existing does not relax this: because the bank verifies offline, the
-perimeter crossing is a **copy of a self-contained evidence bundle**, not a
-protocol (`artifact-evidence-bundle`). Resolution is online; verification is
-offline, and the perimeter is that line.
+Everything code_tracer does **inside the bank at the gate is hermetic and
+offline** — no callout to the provider, no live trust query — so that a regulator
+can re-run the entire admission decision from stored inputs and reach the same
+verdict. The issuer side existing does not relax this: because the bank verifies
+offline, the perimeter crossing is a **copy of a self-contained evidence bundle**,
+not a protocol (`artifact-evidence-bundle`). Resolution is online, and the bank's
+own rebuild (§3.6) runs there with it; verification is offline, and the perimeter
+is that line.
 
 ### Two commissioning modes
 
@@ -151,14 +161,17 @@ The alliance commissions work in either of two modes, which map onto the two
 trust paths rather than onto two sets of rules:
 
 - **Team** — members vote a project in; spend, benefit and responsibility
-  are shared. Trust path `osera-root`.
-- **Solo** — a single bank commissions and funds alone and is solely accountable
-  for that judgement. Trust path `delegated:<bank>`.
+  are shared, and every signatory verifies. At least two signatories are required
+  for a project to be commissioned at all. Trust path `osera-root`.
+- **Solo** — a single bank commissions and funds alone, is solely accountable
+  for that judgement, and is the only outside verifier. Trust path
+  `delegated:<bank>`.
 
-Mode changes **who is accountable for deciding what to commission**, never what
-the gate requires: verification is k-of-n with zero dissent either way, because
-verification is a **duty of membership** rather than a credit against funding
-(`noteworthy-governance-modes`).
+Mode changes **who is accountable for deciding what to commission** and how many
+independent reproductions exist before the perimeter, never what the gate
+requires or what the adopting bank does. Inside-zone activity is identical in
+both modes, because every adopting bank rebuilds for itself (§3.6,
+`noteworthy-adoption-rebuild`).
 
 ---
 
@@ -188,9 +201,9 @@ states and the machine is class-agnostic from Resolved inward
 ## 3. The attestation chain
 
 This is the **input contract** the gate consumes — the evidence format an
-artifact must arrive with to be admissible. code_tracer does not produce L0–L8;
-it commissions the work they attest to, then resolves, verifies, and reads their
-meaning. Reproduced here in full.
+artifact must arrive with to be admissible. code_tracer does not produce L0–L8
+outside the bank; it commissions the work they attest to, then resolves,
+rebuilds, verifies, and reads their meaning. Reproduced here in full.
 
 ### 3.1 Core principles
 
@@ -224,17 +237,23 @@ spec*, not a post-hoc submission — it closes the loophole where a provider pic
 easy test corpus after the fact. The contract is **L-1**: the root the entire
 chain above it is verified *against*. It freezes:
 
-- **Governance** — `mode`, `sponsor`, `mandateRef` and `trustPath`, so "was this
-  properly commissioned?" is checkable rather than assumed.
+- **Governance** — `mode`, `sponsor`, `mandateRef`, `trustPath` and the
+  **signatory set**, so "was this properly commissioned?" and "who owes
+  verification?" are both checkable rather than assumed.
 - **Baseline** — `contract.baseline.digest`, the exact upstream artifact to
   start from.
 - **Scope** — `contract.scope.cvesInScope` (what must be fixed) and
   `contract.scope.explicitlyOutOfScope` (what must not be silently touched).
 - **Test corpus** — `contract.acceptanceCriteria.testCorpus`, named by digest so
   it cannot be substituted.
-- **Quorum size** — `verification.k`, computed as `max(3, ceil(n/3))` at
-  issuance, so the artifact is judged against the quorum in force when it was
-  commissioned.
+- **Quorum** — `verification.k` is **the signatory set itself**, frozen at
+  acceptance. Every signatory verifies and all must agree; a team-mode project
+  requires at least two signatories, and a solo project has exactly one
+  (`noteworthy-signer-verification`).
+- **Rebuild inputs** — source locator and digest, transformation digest, and
+  toolchain locator and digest, so that any party bound to verify — or any bank
+  adopting later — can reproduce the build from pinned references
+  (`noteworthy-adoption-rebuild`).
 - **Line** — `contract.osera.line`, declared not derived, fixing which bridge
   lineage this package continues (`noteworthy-candidate-key`).
 - **Schedule** — delivery window and bridge expiry.
@@ -248,8 +267,8 @@ Accepted, Delivered, Fulfilled, and three terminals — is
 ### 3.3 The chain, L0–L9
 
 Signers are named by **role**. In the OSERA instance the provider is a patching
-vendor and the verifiers are member institutions, but nothing in the chain
-depends on which organisations fill those roles.
+vendor and the verifiers are the institutions that signed the contract, but
+nothing in the chain depends on which organisations fill those roles.
 
 | #  | Attestation | Signer | Asserts | Subject |
 |----|-------------|--------|---------|---------|
@@ -261,12 +280,23 @@ depends on which organisations fill those roles.
 | L5 | **Vulnerability Proof** | Provider | Per CVE: PoC fails on baseline_digest, passes on hardened_digest | both |
 | L6 | **SBOM (out)** + diff | Provider | Composition of the hardened artifact, and delta vs the L0 SBOM | hardened_digest |
 | L7 | **VEX** (OpenVEX/CSAF) | Provider | Per CVE: `fixed`, justified by reference to L5 | hardened_digest |
-| L8 | **VSA** | **Verifier(s)** | Independently rebuilt → digest match; re-ran L4/L5 → result match; policy passed; conforms to contract; **the log checkpoint this verifier observed** | hardened_digest |
+| L8 | **VSA** | **Each contract signatory**, and **the adopting bank** | Independently rebuilt → digest match; re-ran L4/L5 → result match; policy passed; conforms to contract; **the log checkpoint this verifier observed** | hardened_digest |
 | L9 | **Acceptance** | **Bank** | Internal contract/integration tests passed; promoted to golden repo | hardened_digest |
 
 L0–L7 are the **provider's claims**. **L8 is the only attestation that converts
 claims into evidence** — an independent party re-derived the result. L9 is the
-bank's own control and never leaves the bank.
+bank's own control.
+
+**L8 is signed twice over, by different parties at different times.** Outside the
+perimeter, every contract signatory publishes one; inside, the adopting bank
+publishes its own after rebuilding for itself (§3.6). Same predicate, same
+assertion, different signer — which is why this is L8 rather than a new level.
+
+**Disclosure.** The bank's own L8 and its L9 are **unpublished by default and
+disclosable on demand**. "Never leaves the bank" overstates it: a supervisor may
+require confirmation that the institution rebuilt and validated, and being able
+to produce both records on request demonstrates the control rather than merely
+asserting it (`noteworthy-adoption-rebuild`).
 
 The provider's hand-off of L0–L7 is itself frozen: a **delivery manifest**,
 assembled by the provider at the Delivered transition, checked for completeness
@@ -275,7 +305,7 @@ entry rather than a signature — see `artifact-contract-lifecycle` §2 and
 `artifact-evidence-bundle` §1.
 
 **L8 carries the observed checkpoint** because the log is FINOS-operated (§7). A
-single asserted tree head would have to be trusted; k independently observed ones
+single asserted tree head would have to be trusted; independently observed ones
 cannot be split without producing a dissent (`noteworthy-transparency-log`).
 
 ### 3.4 The anchor problem
@@ -365,7 +395,7 @@ tells the truth (`noteworthy-conformance-binary`,
 independently verified?" That is a categorically stronger control statement, and
 it is the sentence that belongs in the DORA/CRA narrative (§8).
 
-### 3.6 The quorum — k-of-n verifiers
+### 3.6 Who verifies — signatories outside, the adopting bank inside
 
 **Why a single checker is not enough.** The problem is blockchain-adjacent —
 minters are testers, evidence is produced by the party doing the work — but the
@@ -384,46 +414,79 @@ single point of trust. Compromise one verifier's keys or build infrastructure
 and the whole model collapses in one move; the provider/checker split hardens
 against *provider* compromise and does nothing about *checker* compromise.
 
-**The fix is a quorum, not a chain.** Reproducible builds are deterministic, so
+**Reproducible builds are what make agreement cheap.** They are deterministic, so
 independent verifiers converge on the same digest **without coordinating** — a
 natural Schelling point. Agreement without a consensus protocol.
 
+**Verification follows the money.** The parties that sign a contract are the
+parties that verify it. Every signatory rebuilds, re-runs the suite, replays the
+vuln proofs and publishes its own L8; all of them must agree. A signatory has
+already accepted the cost and carries the consequence of a bad patch running in
+its own estate, which is a firmer binding than a membership duty and removes the
+assignment problem entirely — there is no sortition to specify, no registrar
+discretion to constrain, and no project stalling at Delivered because nobody
+picked it up (`noteworthy-signer-verification`).
+
 - **The provider mints** L0–L7 (producer, and tester).
-- **N independent verifiers** each rebuild, re-run the suite, and replay the vuln
-  proofs. Because verification is a **duty of membership**, `n` is the active
-  verifier registry rather than a separately negotiated set; the marginal cost is
-  one CI job.
-- **Each publishes its own VSA**, independently signed and logged.
-- **Admission requires k-of-n**, with `k = max(3, ceil(n/3))` — a floor expressed
-  both absolutely and proportionally, so it cannot silently weaken as membership
-  grows (`noteworthy-quorum-parameters`).
+- **Every contract signatory verifies** and publishes an independently signed,
+  logged L8. `verification.k` is that signatory set, frozen at acceptance.
+- **Team mode requires at least two signatories.** A project no second member
+  will co-fund cannot be commissioned as a team project — a filter on the demand
+  pipeline as much as on verification.
+- **Solo mode has exactly one**, and therefore one outside reproduction.
+- **Zero dissent, always.** One disagreement disqualifies regardless of how many
+  agree.
 - **Threshold / aggregate signing** (FROST, BLS) so the bank's gate still
   verifies a single signature against a single quorum key.
 
-**Disagreement is the signal, not the failure.** If five firms rebuild and four
+**Why the floor of three retired.** `noteworthy-quorum-parameters` set
+`k = max(3, ceil(n/3))`, justifying the absolute floor on the grounds that two
+verifiers disagreeing give no way to tell which is wrong without a third. That
+rationale was void on arrival: dissent is disqualifying and **nothing
+arbitrates**. Two agree and it admits; two disagree and it stops, exactly as five
+would. Two arguments for three do survive and were weighed rather than missed —
+compromise resistance is weaker at two, and §5's revocation argument leans on no
+single verifier having been the sole basis for an admission — and both are
+accepted against parties bound by a contract they signed and funded.
+
+**Every adopting bank rebuilds, in both modes.** Inside the perimeter the work is
+identical whatever the governance mode: the bank reproduces the build from the
+pinned references the core carries and signs its own L8. This is what keeps solo
+output consumable without a weaker tier — independence absent outside the
+perimeter is restored at adoption, by the party taking the risk. The rebuild runs
+during **resolution**, while the bank is still online; what the gate consumes is
+the resulting signed record, so the verdict stays hermetic and replayable
+(`noteworthy-adoption-rebuild`).
+
+The cost is real and worth stating: verification does not compress for consumers
+either, so each adopting institution pays roughly production cost per package.
+Sampling would reduce it and would make inside-zone work differ by mode, which is
+the distinction this design refuses to draw.
+
+**Disagreement is the signal, not the failure.** If five parties rebuild and four
 agree while one dissents, that is either a reproducibility defect in the
 toolchain spec or something worse — either way you want to know, loudly, before
-promotion. A dissenting VSA is therefore **disqualifying, not outvoted**:
-`k-of-n` with *zero dissent*, not simple majority. Dissent triggers
-investigation, not arithmetic. No single-checker design can produce this signal
-at all, and it is the strongest argument for the model.
+promotion. A dissenting VSA is therefore **disqualifying, not outvoted**: zero
+dissent, never a majority. Dissent triggers investigation, not arithmetic. No
+single-checker design can produce this signal at all, and it is the strongest
+argument for the model.
 
-This is one of four places the same shape recurs — quorum, layout compilation,
-the TUF root, and log witnessing — generalized as
+This is one of four places the same shape recurs — verification, layout
+compilation, the TUF root, and log witnessing — generalized as
 `noteworthy-threshold-everywhere`: **no single key is load-bearing; threshold not
 majority; dissent disqualifying.**
 
-**Reproducibility is also a feasibility gate on ecosystem support.** Rule 5'
+**Reproducibility is also a feasibility gate on ecosystem support.** Rule 5′
 requires independent rebuilds to converge bit-for-bit. That is workable in
 Java/Maven, good in Go and Rust, and materially harder in npm and Python, where
 builds routinely embed timestamps, paths and platform detail. Without
-reproducibility there is no digest agreement, therefore no quorum, therefore no
-admission — so an ecosystem is supportable when its builds can be made
-reproducible, and not before (`noteworthy-ecosystem-generalization` §2).
+reproducibility there is no digest agreement, therefore no verification,
+therefore no admission — so an ecosystem is supportable when its builds can be
+made reproducible, and not before (`noteworthy-ecosystem-generalization` §2).
 
-*Note for formation:* until three verifiers are active, no artifact can reach
-FULL admission. That is the floor working as intended, but it makes verifier
-recruitment a launch prerequisite rather than a growth activity.
+*Note for formation:* a team project cannot be commissioned until a second member
+will co-fund it. That is the floor working as intended, and it makes co-funding
+rather than verifier recruitment the launch prerequisite.
 
 ### 3.7 Admission policy
 
@@ -483,14 +546,14 @@ Promote only if every rule holds.
      → any rule fails: DO NOT PROMOTE.
 ```
 
-**Quorum amendments (§3.6).** When the verifier quorum replaces the single
-checker, rules 2 and 5 are superseded by:
+**Signatory and self amendments (§3.6).** Rules 2 and 5 are superseded by:
 
 ```
-  2'. ∃ VSA set {V₁..Vₙ} over D, each signed by a distinct verifier in the
-      OSERA verifier registry, each current, none revoked, |set| ≥ C.verification.k.
-  5'. |{Vᵢ : Vᵢ.osera.rebuild.digestMatch == true}| ≥ k
-      AND ∄ Vᵢ with digestMatch == false.            [zero-dissent quorum, §3.6]
+  2'. ∃ an L8 from every signatory in C.governance.signatories, each signed by a
+      distinct registered key, each current, none revoked — plus an L8 signed by
+      this bank over its own rebuild.
+  5'. Every L8 in that set asserts digestMatch == true against D,
+      AND ∄ any L8 with digestMatch == false.       [zero dissent, §3.6]
 ```
 
 **Rule 14.** The layout compiler ① is **dual-sited and deterministic**: the
@@ -536,12 +599,16 @@ tar forms — no reformatting, re-indenting or re-encoding
 **Offline decidability.** Every rule above must be decidable from the evidence
 bundle alone. A rule that requires a live lookup is either wrong or evidence of a
 missing bundle element — the test that keeps hermeticity falsifiable
-(`artifact-evidence-bundle` §3). Note that the **attestation index is not an
-exception**: it is read at resolution time, before the bundle is sealed, and no
-admission rule depends on it (`noteworthy-attestation-index`).
+(`artifact-evidence-bundle` §3). Two things are deliberately outside that test
+because they happen *before* the bundle is sealed: the **attestation index**, read
+at resolution time, on which no admission rule depends
+(`noteworthy-attestation-index`); and the **bank's own rebuild**, whose inputs are
+fetched at resolution from pinned references and whose *result* — a signed L8 — is
+what the gate reads (`noteworthy-adoption-rebuild`).
 
 > **Provenance.** Rules 2', 5', and 13 are recovered verbatim from the source
-> design conversations. Rules 1–12 are a **reconstruction** — derived from the
+> design conversations, with 2' and 5' amended 2026-07-30 for signatory
+> verification. Rules 1–12 are a **reconstruction** — derived from the
 > chain (§3.1–§3.6) and its principles, not recovered from the original
 > enumerated ruleset (which did not persist). Rules 14 and 15 are new
 > (2026-07-21) and rule 16 is new (2026-07-27), as are the checkpoint clause in
@@ -564,9 +631,13 @@ deliberately does not:
   conforming backpatch nonetheless breaks production — which is exactly why the
   bank's own **L9 acceptance testing is non-optional**, not a nicety.
 - **Solo-mode consumption:** where a mode-2 artifact is consumed by a member
-  other than its sponsor, the commissioning judgement was not collective, and
-  that member consumes at its own risk. The evidence is identical; the mandate is
-  not (`noteworthy-governance-modes`).
+  other than its sponsor, the commissioning judgement was not collective and the
+  outside evidence carries a single reproduction rather than several. What the
+  gate requires is unchanged, and the consuming bank rebuilds for itself as it
+  would for any package — so the difference is in how much independent
+  corroboration accompanied the artifact across the perimeter, which the trust
+  path on the verdict records (`noteworthy-governance-modes`,
+  `noteworthy-adoption-rebuild`).
 
 ---
 
@@ -595,17 +666,19 @@ The build components that make this work:
   today. **Dual-sited and deterministic** — run on both sides, with digest
   agreement enforced as rule 14. *(task-layout-compiler)*
 - **② Rego semantic policy.** The meaning layer in-toto cannot read — CVEs-fixed
-  ⊇ scope, k-of-n digest agreement, coverage ≥ threshold, conformance == FULL,
-  freshness limits. Runs at the same gate, immediately after structural
-  verification. *(task-rego-policy)*
-- **③ Attestation resolver / collector.** Discovers the attestations for an
-  artifact digest — via the **central attestation index**, which is a lookup and
-  never evidence — collects them, and **assembles the evidence bundle** bank-side
-  as an OCI image index, with a deterministic tar export for air-gapped transfer.
-  Assembly confers no authority: the bundle is a container, never a credential,
-  so ③ stays a resolver rather than a trusted packager. It must carry pinned
-  advisory snapshots through **verbatim**, since rule 16 digests them as bytes.
-  *(task-attestation-resolver)*
+  ⊇ scope, digest agreement across every L8, coverage ≥ threshold, conformance ==
+  FULL, freshness limits, advisory-record integrity. Runs at the same gate,
+  immediately after structural verification. *(task-rego-policy)*
+- **③ Attestation resolver / collector, and rebuild orchestration.** Discovers
+  the attestations for an artifact digest — via the **central attestation index**,
+  which is a lookup and never evidence — collects them, **runs the bank's own
+  rebuild** from the pinned references the core carries, and **assembles the
+  evidence bundle** bank-side as an OCI image index, with a deterministic tar
+  export for air-gapped transfer. Assembly confers no authority: sealing a
+  container establishes nothing about its contents, so ③ stays a resolver rather
+  than a trusted packager. It must carry pinned advisory snapshots through
+  **verbatim**, since rule 16 digests them as bytes. This is the only component
+  that touches a network. *(task-attestation-resolver)*
 - **④ Bank-acceptance inspection harness.** The **L9** step *inside* the gate:
   runs the bank's own app-team contract/integration tests as an in-toto
   inspection at verification time, folding pass/fail into the promote-or-reject
@@ -646,9 +719,18 @@ pinned `trustRootVersion`, and the artifacts are unchanged. Forcing
 re-verification would let one key invalidate hundreds of packages at once — a
 self-inflicted outage from a trust event rather than an artifact event. Instead
 the console (⑥) raises a review trigger and the risk function judges per
-package. Tolerable precisely because k ≥ 3 with zero dissent means no single
-verifier was ever the sole basis for an admission
-(`noteworthy-revocation-semantics`).
+package.
+
+What makes that tolerable changed on 2026-07-30. The original argument was that
+k ≥ 3 with zero dissent meant no single verifier was ever the sole basis for an
+admission. With verification bound to signatories that no longer holds uniformly:
+a two-signatory project rests on two, and a solo project on one outside. The
+argument that survives is stronger and applies in every mode — **the adopting
+bank rebuilt the package itself and signed its own L8** (§3.6), so a revoked
+signatory key never was the sole basis for *that bank's* admission. Where the
+revoked key belongs to a solo sponsor, the bank's own rebuild is the whole of the
+remaining independent evidence, and the review trigger should be read
+accordingly (`noteworthy-revocation-semantics`, `noteworthy-adoption-rebuild`).
 
 ### 5.1 Three replay-logs, one pattern
 
@@ -659,20 +741,21 @@ each specialized for its side, unified by the pattern:
 
 | Log | Side | Mechanism |
 |---|---|---|
-| Attestation chain | production | Merkle / Rekor-style transparency (FINOS-operated, quorum-witnessed) |
+| Attestation chain | production | Merkle / Rekor-style transparency (FINOS-operated, witnessed) |
 | Ledger | operational | hash-chained `ledger-event`s |
 | Verifier registry | trust | TUF metadata |
 
 **Hash-linking everywhere, consensus nowhere.** Each log is tamper-evident
 (break one hash and the whole tail is invalid) without any distributed-consensus
 machinery — no p2p canonical-chain agreement, no tokens, no mining. That is
-deliberate, on the same reasoning as the quorum (§3.6): a single writer per log,
-no double-spend, a trusted neutral venue, and latency a bank SLA cannot absorb.
-Even the one multi-party moment — the k-of-n VSA set — reaches agreement by
-Schelling point (reproducible builds converge without coordinating), not by a
-consensus protocol. The verifier registry keeps the pattern via TUF specifically
-because TUF additionally handles the one thing a bare event log cannot: trust
-recovery after key compromise (`noteworthy-ledger-substrate`).
+deliberate, on the same reasoning as the verification model (§3.6): a single
+writer per log, no double-spend, a trusted neutral venue, and latency a bank SLA
+cannot absorb. Even the one multi-party moment — the set of independently signed
+L8s — reaches agreement by Schelling point (reproducible builds converge without
+coordinating), not by a consensus protocol. The verifier registry keeps the
+pattern via TUF specifically because TUF additionally handles the one thing a
+bare event log cannot: trust recovery after key compromise
+(`noteworthy-ledger-substrate`).
 
 **And one authority per fact.** Alongside append-only-plus-projection sits its
 companion discipline: every fact has exactly one authoritative representation,
@@ -687,18 +770,17 @@ attestation index, the OCI bundle over its tar export
 
 | Bucket | Items |
 |---|---|
-| **Build — consumer side** (bank) | ① layout compiler (shared, dual-sited) · ② Rego semantic policy · ③ attestation resolver + bundle assembly · ④ acceptance inspection harness · ⑤ exposure/sunset tracker · ⑥ lifecycle console (UI over the mutable projections; `task-lifecycle-ui`) |
+| **Build — consumer side** (bank) | ① layout compiler (shared, dual-sited) · ② Rego semantic policy · ③ attestation resolver + rebuild orchestration + bundle assembly · ④ acceptance inspection harness · ⑤ exposure/sunset tracker · ⑥ lifecycle console (UI over the mutable projections; `task-lifecycle-ui`) |
 | **Build — issuer side** (alliance) | ⑦ contract authoring UI (`task-contract-authoring`) · ⑧ contract issuance & countersignature (`task-contract-issuance`) · ⑨ verifier registry & TUF trust root (`task-verifier-registry`) · ① layout compiler (same deterministic compiler, issuer siting) |
-| **Integrate** (proven OSS, wired in) | `in-toto-verify` (structural) · Witness/OPA (Rego eval) · cosign / Sigstore (resolution + signature) · Rekor (FINOS-operated) · TUF (trust root) · Archivista (attestation index — load-bearing for resolution, optional for transport) · the bank's existing CMDB (app inventory) |
-| **Not ours** (upstream, integrated-against) | the provider's patching pipeline (L0–L7 production) · the verifier quorum's rebuild infra (L8) · public package registries and upstream repos (the anchor) |
+| **Integrate** (proven OSS, wired in) | `in-toto-verify` (structural) · Witness/OPA (Rego eval) · cosign / Sigstore (resolution + signature) · Rekor (FINOS-operated) · TUF (trust root) · Archivista (attestation index — load-bearing for resolution, optional for transport) · the distributable rebuild harness · the bank's existing CMDB (app inventory) |
+| **Not ours** (upstream, integrated-against) | the provider's patching pipeline (L0–L7 production) · the signatories' rebuild infra (outside L8) · public package registries and upstream repos (the anchor) |
 | **The gap** (unresolved) | Alliance **governance policy** — who sits in the trust-root threshold, verifier on/offboarding criteria, and the procedure on suspected compromise. Mechanism is built (⑨); these are formation-stage alliance business |
 
 Trust-root governance has moved from *the gap* to *build* in mechanism:
 `noteworthy-trust-root-ownership` fixes the root as **k-of-m co-signed** across
 the alliance and member institutions (so root re-signing survives any one party
 disappearing), with **TUF delegation** for bilateral bank↔provider namespaces.
-Quorum sizing is likewise settled (`noteworthy-quorum-parameters`). What remains
-is who those parties are and how they are admitted or removed.
+What remains is who those parties are and how they are admitted or removed.
 
 ---
 
@@ -711,12 +793,12 @@ The load-bearing standards, mapped to the level or component that consumes each.
 |---|---|---|
 | ★ **purl** | all subjects | Attestation subject identity + digest, and the ecosystem selector: the purl type determines the anchor registry, the anchor class, and the hardened-coordinate encoding. Backpatched artifacts carry a distinct suffixed coordinate that MUST sort **above** its baseline in that ecosystem's own ordering — `-osera.N` for Maven, `+osera.N` for PEP 440, unresolved for semver (`noteworthy-purl-namespace`) |
 | ★ **OCI Image/Artifact + Referrers API** | ③ resolver, L6/L7, the bundle | Digest-binding and the **canonical evidence-bundle format** — blob sharing is what removes per-bundle duplication of trust material. Note that ecosystem-native repositories are *not* OCI registries, which is why discovery runs through the attestation index rather than referrers alone (`noteworthy-attestation-index`) |
-| ★ **in-toto** + Attestation Framework | ① compiler, gate | The framework the whole chain compiles to: layout + links + `in-toto-verify`; thresholds = the k-of-n quorum; inspections = ④ acceptance |
+| ★ **in-toto** + Attestation Framework | ① compiler, gate | The framework the whole chain compiles to: layout + links + `in-toto-verify`; thresholds = the signatory set; inspections = ④ acceptance |
 | ★ **SLSA** | L3 | Build-provenance predicate + levels; the vocabulary the risk function already knows |
-| ★ **VSA** | L8 | The verifier's attestation — result of checking someone else's artifact, now also carrying the observed log checkpoint |
+| ★ **VSA** | L8 | The verifier's attestation — result of checking someone else's artifact, now also carrying the observed log checkpoint. Signed outside by every contract signatory, and inside by the adopting bank over its own rebuild |
 | ★ **DSSE** | all | The signing envelope in-toto / Sigstore attestations ride in. Signs **payload bytes as transmitted** rather than a canonical form — the precedent rule 16's digest follows (`noteworthy-record-digest`) |
-| ★ **Sigstore** (Cosign/Fulcio/Rekor) | ③ resolver, ⑧ issuance | Keyless signing, cert authority, transparency log. Rekor is a **shared FINOS-operated instance, witnessed by the quorum** — each VSA carries the checkpoint it observed, so split views surface as dissent. The log also fixes the delivery manifest in time |
-| ★ **Reproducible Builds** | L8, §3.6 | Bit-for-bit rebuild → digest equality; the Schelling point behind the quorum, and the feasibility gate on which ecosystems can be supported at all |
+| ★ **Sigstore** (Cosign/Fulcio/Rekor) | ③ resolver, ⑧ issuance | Keyless signing, cert authority, transparency log. Rekor is a **shared FINOS-operated instance, witnessed by the signatories** — each L8 carries the checkpoint it observed, so split views surface as dissent. The log also fixes the delivery manifest in time |
+| ★ **Reproducible Builds** | L8, §3.6 | Bit-for-bit rebuild → digest equality; the Schelling point behind independent agreement, and the feasibility gate on which ecosystems can be supported at all |
 | ★ **TUF** | ⑨ registry, gate | Trust root, key rotation, compromise recovery — **built, not a gap**: k-of-m co-signed root, delegated targets for bilateral namespaces, snapshot pinned into the evidence bundle with a 7-day freshness limit. Also the registry's replay-log mechanism (§5.1) |
 | ★ **CycloneDX** (authoritative) / **SPDX** (projection) | L6 | CycloneDX is the source of truth — security/backpatch-native, purl-first, its `pedigree` models the is-hardening-of link directly; SPDX license IDs are embedded inside it, and an SPDX view is emitted on demand. VEX is **not** carried inline — it stays OpenVEX at L7 |
 | ★ **OpenVEX** / **CSAF 2.0** | L7 | "fixed, not exploitable, here's the evidence" — must reference L5 to be evidence, not a claim; CSAF is the regulator-facing variant |
@@ -737,16 +819,23 @@ EU CRA, DORA, NIS2, NIST SSDF, SR 23-4.
 The sentence code_tracer lets the bank make to a regulator is the §3.5 net
 effect: *not* "we trust the vendor's testing," but "every admitted artifact
 provably conforms to a scope the provider committed to before starting,
-independently re-verified by a k-of-n quorum with zero dissent, and separately
-acceptance-tested inside our own environment — and we can re-run that decision
-offline on demand." That is a DORA/CRA-grade control statement, and it is the
-reason the provider/checker split, the L-1 contract, and the quorum all exist.
+independently re-verified with zero dissent by every institution that
+commissioned it, rebuilt again by us inside our own perimeter, and separately
+acceptance-tested here — and we can re-run that decision offline on demand."
+That is a DORA/CRA-grade control statement, and it is the reason the
+provider/checker split, the L-1 contract, and signatory verification all exist.
 
-It holds **without qualification across trust paths and governance modes**: an
+**The admission rules are identical across trust paths and governance modes.** An
 artifact arriving over a delegated bilateral namespace, or commissioned by a
-single bank in solo mode, faces the identical admission policy. The path and mode
-are recorded on the verdict for attribution, never treated as a weaker tier
-(`noteworthy-trust-root-ownership`, `noteworthy-governance-modes`).
+single bank in solo mode, faces the same policy and the same bank-side rebuild;
+the path and mode are recorded on the verdict for attribution and never treated
+as a weaker tier (`noteworthy-trust-root-ownership`,
+`noteworthy-governance-modes`). What does vary with mode is **how much
+independent corroboration accompanied the artifact across the perimeter** —
+several outside reproductions in team mode, one in solo — and a bank citing the
+sentence above for a solo-path artifact should say so plainly rather than let
+"independently re-verified" carry a plurality it did not have
+(`noteworthy-adoption-rebuild`).
 
 ---
 
@@ -770,18 +859,24 @@ Cross-cutting; several are now load-bearing elsewhere — the data model
   paths; no weaker tier. `noteworthy-trust-root-ownership`.
 - **Conformance** — binary at the gate; amendment is the route for shortfall.
   `noteworthy-conformance-binary`.
-- **Governance modes** — team and solo; verification is a duty, not a
-  credit. `noteworthy-governance-modes`.
-- **Transparency log** — shared FINOS Rekor, witnessed by the quorum.
+- **Governance modes** — team and solo; mode sets who is accountable for
+  commissioning and how many outside reproductions exist.
+  `noteworthy-governance-modes`.
+- **Who verifies** — the contract's signatories, all of them, zero dissent,
+  minimum two in team mode; `k = max(3, ceil(n/3))` retired.
+  `noteworthy-signer-verification`.
+- **Adoption rebuild** — every adopting bank rebuilds inside its own zone in both
+  modes and signs its own L8; the core carries digest-pinned rebuild references.
+  `noteworthy-adoption-rebuild`.
+- **Transparency log** — shared FINOS Rekor, witnessed by the signatories.
   `noteworthy-transparency-log`.
 - **Evidence-bundle format** — OCI canonical, deterministic tar projection.
   `noteworthy-bundle-format`.
 - **Bundle freshness** — trust root ≤ 7 days, checkpoints ≤ 24 hours; rule 15.
   `noteworthy-bundle-freshness`.
-- **Revocation semantics** — exposure with review trigger; verdicts stand.
+- **Revocation semantics** — exposure with review trigger; verdicts stand, now
+  resting on the adopting bank's own rebuild rather than on quorum size.
   `noteworthy-revocation-semantics`.
-- **Quorum parameters** — `k = max(3, ceil(n/3))`, zero dissent, frozen at
-  issuance. `noteworthy-quorum-parameters`.
 - **Ecosystem generalization** — agnostic by purl type; anchor strength and
   reproducibility gate which ecosystems are supportable.
   `noteworthy-ecosystem-generalization`.
@@ -797,15 +892,23 @@ Cross-cutting; several are now load-bearing elsewhere — the data model
 - **Alliance governance policy** — trust-root threshold membership, verifier
   on/offboarding criteria, procedure on suspected compromise. Not an engineering
   question; the largest remaining item.
+- **Blessing-petition threshold.** The petition that moves solo output onto the
+  shared distribution path borrowed "the quorum threshold", which no longer names
+  a number now that `k` is the signatory set. It needs a threshold of its own.
+- **Rebuild-input durability.** The core pins source and toolchain by digest, but
+  a pinned locator can stop resolving years later while every digest still
+  checks out. Same shape as the anchor-durability problem, and it wants the same
+  remedy — local mirroring of anything an institution intends to re-run — which
+  is unspecified.
 - **Contract-schema compatibility policy** — signed contracts are frozen forever,
   so the gate must evaluate every schema version ever issued. Schemas live in the
   alliance master repo and ship pinned inside the bundle; the versioning and
   compatibility rules are unspecified.
 - **Snapshot faithfulness** — whether ⑦ records anything at commissioning that
   lets a third party confirm the pinned advisory matches what OSV actually
-  served, and whether the quorum checks it. Comparing two independently fetched
-  byte sequences *does* need a canonical form, so JCS may return here — scoped to
-  the issuer side, where a live fetch is legitimate, never to the gate.
+  served, and whether the signatories check it. Comparing two independently
+  fetched byte sequences *does* need a canonical form, so JCS may return here —
+  scoped to the issuer side, where a live fetch is legitimate, never to the gate.
 - **Conformance test vectors** — the failure mode for both of the above is two
   conforming implementations disagreeing, which prose cannot catch. The alliance
   master repo carries `schemas/`; it should carry a frozen vector corpus beside
