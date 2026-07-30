@@ -75,9 +75,10 @@ terms, and both should stay that way:
   turns "maker → provider" into "provider → provider" and destroys the record of
   what changed.
 
-One file still carries the old terms by oversight rather than by design:
-`resources/code-tracer-topology.svg`, figure 4, which renders straight into the
-paper.
+Nothing else carries them. This index previously claimed figure 4 was an
+outstanding exception; it was not, and the claim was repeated into two other
+documents before anyone opened the file. A currency claim about a file is worth
+no more than the last time somebody looked.
 
 ---
 
@@ -157,14 +158,15 @@ not yet drawn, and it still uses `candidateKey`.
 ## Figures
 
 [`resources/`](resources/) carries the working-paper figures, indexed in
-[`resources/README.md`](resources/README.md).
+[`resources/README.md`](resources/README.md). All four are current as of
+2026-07-30.
 
 | Figure | State |
 |---|---|
 | `p1-lifecycle.svg` | **current** — three machines, three bands with their identities, hinge and handover labelled, 16 rules |
 | `p2-datamodel.svg` | **current** — `package-version`, `lineKey`, `packageRef` |
 | `p3-architecture.svg` | **current** — nine components, 16 admission rules, roles named |
-| `code-tracer-topology.svg` | pending — the store map is current, but it still names the provider as *maker* and the quarantine subject as *candidate* |
+| `code-tracer-topology.svg` | **current** — redrawn 2026-07-30: the evidence core added, two containers at the perimeter, signatory verification, and the adopting bank's own rebuild |
 
 ## The archive
 
