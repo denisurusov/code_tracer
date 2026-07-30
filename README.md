@@ -16,6 +16,11 @@ signed and machine-readable before any work starts.
 It is **not** the supply chain. It is the two ends of one: what is promised, and
 what is admitted.
 
+**New here?** [`docs/build/explainer.html`](docs/build/explainer.html) is the
+whole thing shown rather than described — the model, then one package carried
+through every state of it, in language written for someone who has never heard of
+OSERA. Twenty minutes, no prerequisites.
+
 ---
 
 ## Context: OSERA
@@ -147,39 +152,39 @@ matters after the fact: *what was in force in March, and what did it cover?*
 The ledger is append-only and hash-chained. Current state is a projection
 replayed from the event log, not the authority.
 
-## The paper
+## Reading it
 
-[**`docs/paper/`**](docs/paper/) — *Contract-Bound Evidence*, a working draft for
+Three documents, for three different readers.
+
+**[`docs/build/explainer.html`](docs/build/explainer.html)** — the design shown.
+The governance problem, the three machines, what crosses the perimeter, then one
+package walked from contract to expiry. Plain language throughout, with the
+technical term demoted to a chip beside it and the underlying values one hover
+away. `explainer.pdf` beside it is the same document as rendered.
+
+**[`docs/paper/`](docs/paper/)** — *Contract-Bound Evidence*, a working draft for
 the formation working group, in four parts: the model, commissioning and trust,
-admission and afterlife, and limits. It is the argument for the design rather
-than its specification — written to be read start to finish by someone deciding
-whether the approach is sound.
+admission and afterlife, and limits. The argument for the design rather than its
+specification — written to be read start to finish by someone deciding whether
+the approach is sound. Parts are authored as markdown and assembled; built
+outputs live in [`docs/build/`](docs/build/).
 
-The parts are authored as markdown and assembled into a single document; built
-outputs live in [`docs/build/`](docs/build/) and are regenerated rather than
-edited.
-
-For the design as a reference instead of an argument, start with
-[`docs/lifecycle.md`](docs/lifecycle.md) — the complete pass over all three state
-machines in bullet form.
+**[`docs/lifecycle.md`](docs/lifecycle.md)** — the design as a reference. The
+complete pass over all three state machines in bullet form, shortest route to a
+specific rule.
 
 ## The operator's view
 
 [**`docs/mockup.html`**](docs/mockup.html) — open it in a browser — walks a single
-fix across the whole lifecycle, from contract to expiry and round the renewal,
-and shows what an operator actually sees at each step.
+fix across the whole lifecycle and shows what an operator actually sees at each
+step.
 
 It is a **design mockup, not an implementation**: the visual target the lifecycle
 console (⑥) is built against, settled before the console is written rather than
 discovered during it. Four screens — the board, the decision, the exposure table,
 the history — each shown at the moment it carries the most information, with the
-contract's terms set beside what was actually delivered.
-
-Every label is written for someone who has never heard of OSERA, with the
-technical term demoted to a small chip beside it; the underlying values —
-fingerprints, test counts, thresholds, timestamps — are one hover away. A closing
-section maps every standard the design uses back to where it appeared on the
-screens above.
+contract's terms set beside what was actually delivered. The explainer above uses
+these same screens as its worked example.
 
 Two caveats, also stated on the page itself: the **refusal case is not yet drawn**
 — every screen shows a fix being accepted, which is half of what the gate does —
@@ -195,8 +200,9 @@ docs/                   publications — anything written for a reader
   mockup.html           design mockup of the lifecycle console
   paper/                Contract-Bound Evidence — sources and build scripts
   resources/            figures (SVG), authored
-  build/                derived outputs; never edited, each stamped with the
-                        commit it was built from
+  build/                derived outputs, stamped with the commit they were
+                        built from and never edited — plus explainer.html,
+                        which is authored and its own source
   historical/           working-group notes, frozen at reconstruction
 .konspekt/              project state in konspekt format: goals, tasks,
                         decisions, artifacts, and the edges between them
@@ -206,10 +212,10 @@ lib/                    konspekt conformance checker and validator
 
 The dividing line: if it has an id, a review state and edges it is a **record**
 and lives in `.konspekt/`; if it is written for a reader it is a **publication**
-and lives in `docs/`. [`docs/README.md`](docs/README.md) indexes the second.
-
-*Two explainer HTML files currently sit at the repository root, unfiled, pending
-a decision on which is current.*
+and lives in `docs/`. [`docs/README.md`](docs/README.md) indexes the second, and
+[`docs/build/README.md`](docs/build/README.md) says which files in that one
+directory are derived and which are authored — a rebuild overwrites the first kind
+without asking.
 
 ### Design state lives in `.konspekt/`
 
