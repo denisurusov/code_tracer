@@ -3,7 +3,7 @@ id: artifact-operating-model
 type: artifact
 title: code_tracer — Operating model (who runs it, on what clock)
 status: active
-review: proposed
+review: accepted
 summary:
   origin: machine
   pinned: true
@@ -16,13 +16,21 @@ updatedAt: 2026-07-30T00:00:00Z
 ```
 # code_tracer — Operating model
 
-**Status: `review: proposed`.** The operating layer above the design axes. The
-four axes say what the system means, `artifact-evidence-bundle` says what crosses
-the perimeter, and `artifact-deployment-topology` says where the bytes live. None
-of them says **who is on the hook, by when, and what each activity leaves
-behind.**
+**Status:** accepted (`review: accepted`). The operating layer above the design
+axes. The four axes say what the system means, `artifact-evidence-bundle` says
+what crosses the perimeter, and `artifact-deployment-topology` says where the
+bytes live. None of them says **who is on the hook, by when, and what each
+activity leaves behind.**
 
-Reader-facing companion: `docs/operating-model.html`.
+Reader-facing companion: `docs/operating-model.html`, which carries the
+field-by-field register this artifact indexes.
+
+**What acceptance covers.** The activities, the roles, the two kinds of clock,
+the exception paths and the principle in §1 are accepted as the shape of the
+operating layer. The eight values in §7 are **not** accepted by this: each is
+marked with the party that ratifies it, and three of them are not ours to settle
+at all. Accepting the model is accepting where the questions sit, not answers to
+them.
 
 ## 1. The organising principle
 
@@ -175,7 +183,8 @@ nobody serves cannot be replayed — the retention question).
 
 Three owners, and the distinction is authority rather than difficulty.
 **Alliance policy** binds every member. **Bank policy** is internal. **Engineering**
-is ours and lands in an artifact.
+is ours and lands in an artifact. **None of these eight is settled by this
+artifact's acceptance.**
 
 | # | Value | Owner | Proposed |
 |---|---|---|---|
