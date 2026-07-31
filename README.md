@@ -133,6 +133,19 @@ integrates proven open source (in-toto-verify, cosign, Archivista, TUF):
 ① is compiled on **both** sides and the digests must match, so a signed policy is
 verified rather than merely authenticated.
 
+## Two ways to commission
+
+**Team** — members vote a project in and share the cost; every signatory verifies,
+and at least two are required. **Solo** — one member commissions and funds alone,
+and is the only outside verifier.
+
+A bank goes solo to use the standards on work only it wants done, rather than to
+obtain the alliance's endorsement. So solo output is published on the same terms
+as team output, under its own trust path, with no gate in between: the path
+records who commissioned it and never changes. What differs is how much
+corroboration preceded the crossing, not what the gate requires or what an
+adopting bank does.
+
 ## The bridge, and why it expires
 
 A backpatch is deliberately temporary. A privately-maintained fork of an old
@@ -167,7 +180,8 @@ the formation working group, in four parts: the model, commissioning and trust,
 admission and afterlife, and limits. The argument for the design rather than its
 specification — written to be read start to finish by someone deciding whether
 the approach is sound. Parts are authored as markdown and assembled; built
-outputs live in [`docs/build/`](docs/build/).
+outputs live in [`docs/build/`](docs/build/), each stamped with the commit it was
+built from.
 
 **[`docs/lifecycle.md`](docs/lifecycle.md)** — the design as a reference. The
 complete pass over all three state machines in bullet form, shortest route to a
@@ -272,10 +286,11 @@ Named rather than hidden — each is tracked in `.konspekt/`:
   delegated namespace. What remains is policy — which organisations sit in that
   threshold, how a verifier is admitted or removed, and the procedure on
   suspected compromise. Not an engineering question, and the largest item open.
-- **Operating values.** Ballot cadence, seconding threshold, service levels and
-  the blessing-petition threshold are named, owned and unset — see the operating
-  model's section eight. Two of them deliberately propose nothing, because they
-  encode how much influence a contribution buys.
+- **Operating values.** Seven, each named with the party that settles it — see
+  the operating model's section eight. Ballot cadence, seconding threshold and
+  the verification service level are the ones that bite first; two of the seven
+  deliberately propose nothing, because they encode how much influence a
+  contribution buys.
 - **Anchor re-derivation.** Confirming the baseline against its public source at
   verify time conflicts with running hermetically offline; currently satisfied
   against a local snapshot.
