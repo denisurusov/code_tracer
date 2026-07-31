@@ -28,9 +28,12 @@ const MD = fs.readFileSync(path.join(BUILD, 'contract-bound-evidence.md'), 'utf8
 // from; the parser below skips the comment so it never renders as a paragraph.
 const STAMP = (MD.match(/^<!--\s*built from (\S+)\s*-->/m) || [, 'unknown'])[1];
 
-// Pixel dimensions are those of the rendered PNGs (cairosvg, scale 2.2).
+// Pixel dimensions of the rendered PNGs (cairosvg, scale 2.2). These MUST equal
+// the SVG viewBox times SCALE — the ratio drives the landscape fit calculation,
+// so a resized figure with a stale constant is scaled slightly wrong and nothing
+// reports it. fig1 carried 3124x1936 against an actual 3168x1980 until 2026-07-30.
 const FIGS = {
-  1: { file: 'fig1.png', cap: 'Lifecycle and zones', w: 3124, h: 1936 },
+  1: { file: 'fig1.png', cap: 'Lifecycle and zones', w: 3168, h: 1980 },
   2: { file: 'fig2.png', cap: 'Data model: which attribute binds to which', w: 3212, h: 2068 },
   3: { file: 'fig3.png', cap: 'Architecture: components and the stores they touch', w: 3124, h: 1760 },
   4: { file: 'fig4.png', cap: 'Physical topology: what is written where, read by whom', w: 3168, h: 2222 },
