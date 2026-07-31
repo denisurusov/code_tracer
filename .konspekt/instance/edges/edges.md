@@ -193,3 +193,19 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-rel-solodist-governance | relates | noteworthy:noteworthy-solo-distribution | noteworthy:noteworthy-governance-modes | 0.95 |
 | e-rel-solodist-trustroot | relates | noteworthy:noteworthy-solo-distribution | noteworthy:noteworthy-trust-root-ownership | 0.95 |
 | e-rel-solodist-signerverify | relates | noteworthy:noteworthy-solo-distribution | noteworthy:noteworthy-signer-verification | 0.85 |
+| e-prod-gate-successor | produces | node:goal-admission-gate | noteworthy:noteworthy-successor-project | |
+| e-notes-successor-lifecycle | notes | noteworthy:noteworthy-successor-project | artifact:artifact-product-lifecycle | |
+| e-notes-successor-contractlc | notes | noteworthy:noteworthy-successor-project | artifact:artifact-contract-lifecycle | |
+| e-notes-successor-opmodel | notes | noteworthy:noteworthy-successor-project | artifact:artifact-operating-model | |
+| e-rel-successor-nouns | relates | noteworthy:noteworthy-successor-project | noteworthy:noteworthy-lifecycle-nouns | 0.9 |
+| e-rel-successor-candkey | relates | noteworthy:noteworthy-successor-project | noteworthy:noteworthy-candidate-key | 0.85 |
+| e-prod-issuer-slparams | produces | node:goal-issuer-side | noteworthy:noteworthy-service-level-parameters | |
+| e-notes-slparams-opmodel | notes | noteworthy:noteworthy-service-level-parameters | artifact:artifact-operating-model | |
+| e-notes-slparams-lifecycle | notes | noteworthy:noteworthy-service-level-parameters | artifact:artifact-product-lifecycle | |
+| e-rel-slparams-successor | relates | noteworthy:noteworthy-service-level-parameters | noteworthy:noteworthy-successor-project | 0.95 |
+| e-rel-slparams-freshness | relates | noteworthy:noteworthy-service-level-parameters | noteworthy:noteworthy-bundle-freshness | 0.8 |
+| e-prod-issuer-failvote | produces | node:goal-issuer-side | noteworthy:noteworthy-failure-vote | |
+| e-notes-failvote-opmodel | notes | noteworthy:noteworthy-failure-vote | artifact:artifact-operating-model | |
+| e-notes-failvote-contractlc | notes | noteworthy:noteworthy-failure-vote | artifact:artifact-contract-lifecycle | |
+| e-rel-failvote-signerverify | relates | noteworthy:noteworthy-failure-vote | noteworthy:noteworthy-signer-verification | 0.9 |
+| e-rel-failvote-conformance | relates | noteworthy:noteworthy-failure-vote | noteworthy:noteworthy-conformance-binary | 0.85 |
