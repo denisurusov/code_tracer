@@ -11,9 +11,9 @@ summary:
 provenance:
   conversationId: konspekt-architecture-draft
   inputs:
-    - osera-attestation-chain.md   # artifact #1 (historical, now inlined here)
-    - osera-bank-schematic.svg      # artifact #2
-    - osera-standards-register.md   # artifact #3
+    - docs/historical/osera-attestation-chain.md   # artifact #1 (now inlined here)
+    - docs/historical/osera-bank-schematic.svg     # artifact #2
+    - docs/historical/osera-standards-register.md  # artifact #3
 createdAt: 2026-07-17T00:00:00Z
 updatedAt: 2026-07-30T00:00:00Z
 ```
@@ -35,12 +35,14 @@ evidence-chain axis:
 §4–§8 are the cross-cutting concerns that bind them: the gate, the ledger, the
 component register, the standards binding, and the regulatory narrative. The
 interface between the two sides is `artifact-evidence-bundle`; the physical
-stores are `artifact-deployment-topology`.
+stores are `artifact-deployment-topology`; who runs each activity, on what clock,
+is `artifact-operating-model`.
 
 > Historical note: this document supersedes and inlines three earlier
 > per-conversation artifacts (attestation chain, solution schematic, standards
 > register) that did not persist. The attestation chain is reproduced here in
-> full in §3 and is the single source of truth for the chain.
+> full in §3 and is the single source of truth for the chain. Those three now
+> live under `docs/historical/`, each carrying a supersession note.
 
 > **Amendment 2026-07-21 (issuer side).** §1, §3, §4, §6, §7 and §9 amended per
 > `noteworthy-two-sited-scope`, `noteworthy-compiler-siting`,
@@ -77,6 +79,13 @@ stores are `artifact-deployment-topology`.
 > zone in both governance modes, emitting an L8 it signs itself; and "never
 > leaves the bank" is corrected to *unpublished, disclosable on demand* for both
 > that record and L9.
+
+> **Amendment 2026-07-30 (operating layer).** `artifact-operating-model` is
+> accepted, and §9's index/log reconciliation item moves to *decided* — it now has
+> a named owner, a daily cadence and a published lag figure. The operating model
+> sits above the four axes rather than beside them: this document builds the
+> mechanism and defers policy, and that boundary deliberately does not hold one
+> layer up, where values have to be named to be runnable.
 
 ---
 
@@ -129,7 +138,9 @@ alliance distributes the result with machine-readable evidence.
 or the signatory verifiers' rebuild infrastructure. Those are upstream and
 integrated-against, not built. Alliance *governance policy* — who sits in the
 trust-root threshold, verifier on/offboarding, compromise procedure — is likewise
-out of scope: we build the mechanism, the alliance settles the policy.
+out of scope: we build the mechanism, the alliance settles the policy. That
+boundary is deliberate and it is specific to this layer;
+`artifact-operating-model` §2 records why it does not survive one layer up.
 
 ### Three zones
 
@@ -782,6 +793,10 @@ the alliance and member institutions (so root re-signing survives any one party
 disappearing), with **TUF delegation** for bilateral bank↔provider namespaces.
 What remains is who those parties are and how they are admitted or removed.
 
+Who *operates* each of these — which function inside which party, on what clock,
+leaving what record — is `artifact-operating-model` §3–§4. This register names
+the components; that one names the staffing.
+
 ---
 
 ## 7. Standards & formats binding
@@ -844,8 +859,10 @@ sentence above for a solo-path artifact should say so plainly rather than let
 Cross-cutting; several are now load-bearing elsewhere — the data model
 (`artifact-data-model` §6), the package and product lifecycles
 (`artifact-product-lifecycle` §8), the contract lifecycle
-(`artifact-contract-lifecycle` §8) and the physical topology
-(`artifact-deployment-topology` §7).
+(`artifact-contract-lifecycle` §8), the physical topology
+(`artifact-deployment-topology` §7) and the operating model
+(`artifact-operating-model` §7, where unsettled values carry the party that
+ratifies each).
 
 **Decided:**
 
@@ -886,6 +903,11 @@ Cross-cutting; several are now load-bearing elsewhere — the data model
 - **`recordDigest`** — `sha256` over the pinned snapshot as carried in the
   bundle; no canonicalization at the gate, following DSSE. Bundle assembly must
   preserve the snapshot verbatim. `noteworthy-record-digest`.
+- **Index/log reconciliation** — the index operator replays Rekor **daily** and
+  publishes the resulting lag as a figure, so the distance between log and index
+  is visible rather than assumed. Activity S4 in `artifact-operating-model` §4;
+  the cadence is a service level there rather than an admission rule here,
+  because a stale index delays discovery and cannot admit anything wrong.
 
 **Open:**
 
@@ -918,8 +940,6 @@ Cross-cutting; several are now load-bearing elsewhere — the data model
   valid encoding yet. May constrain which ecosystems are viable.
 - **Ingest class (b) depth** — how far the gate collapses L0–L7 for FINOS-native
   projects (§2) is sketched, not specified. A sub-design rather than a decision.
-- **Index/log reconciliation** — something must periodically replay Rekor and
-  confirm the attestation index is complete. Whose job, and how often.
 - **External witnessing** — whether the checkpoint set should also be
   cross-checked against a public log or witness network, for consumers outside
   the membership.
