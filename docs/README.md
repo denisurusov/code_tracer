@@ -25,15 +25,16 @@ links.
 ## Layout
 
 ```
-lifecycle.md     the complete pass over all three state machines   authored
-mockup.html      the lifecycle console's visual target             authored
-paper/           Contract-Bound Evidence — sources and scripts     authored
-resources/       the working-paper figures (SVG)                   authored
-build/           derived outputs, stamped with the commit they
-                 were built from and never edited — plus
-                 explainer.html, which is authored and its own
-                 source                                            mixed
-historical/      working-group notes, frozen at reconstruction     archived
+lifecycle.md          the complete pass over all three state machines   authored
+operating-model.html  who runs it, on what clock, and what it leaves    authored
+mockup.html           the lifecycle console's visual target             authored
+paper/                Contract-Bound Evidence — sources and scripts     authored
+resources/            the working-paper figures (SVG)                   authored
+build/                derived outputs, stamped with the commit they
+                      were built from and never edited — plus
+                      explainer.html, which is authored and its own
+                      source                                            mixed
+historical/           working-group notes, frozen at reconstruction     archived
 ```
 
 `build/` is the one directory holding both kinds, and
@@ -84,10 +85,10 @@ no more than the last time somebody looked.
 
 ## The design records
 
-Nine artifacts, plus twenty-eight decision records carrying their rejected
+Ten artifacts, plus twenty-eight decision records carrying their rejected
 alternatives. The design is factored into evidence, project, package/product and
-data, with the perimeter interface and the physical topology alongside. Read them
-in this order.
+data, with the perimeter interface and the physical topology alongside, and the
+operating layer above them all. Read them in this order.
 
 | Artifact | Covers | Review |
 |---|---|---|
@@ -97,6 +98,7 @@ in this order.
 | [Evidence bundle](../.konspekt/instance/artifacts/artifact-evidence-bundle.md) | The **perimeter interface**: the delivery manifest, the issuer-assembled evidence core, and the bank-assembled ingest envelope — what crosses, who seals it, and which clock applies. | accepted |
 | [Data model](../.konspekt/instance/artifacts/artifact-data-model.md) | The **records axis**: one schema per state, organized by facets. Immutable content-addressed records versus the append-only operational log and the projections replayed from it. | accepted |
 | [Deployment topology](../.konspekt/instance/artifacts/artifact-deployment-topology.md) | The physical stores behind the logical model, and the air-gap cadence. | accepted |
+| [Operating model](../.konspekt/instance/artifacts/artifact-operating-model.md) | The **operating layer**: twenty-nine activities with their actors and traces, the roles inside each party, validity windows against service levels, and the eight exception paths. Its §7 values carry owners and are *not* settled by its acceptance. | accepted |
 | [Reference implementation scope](../.konspekt/instance/artifacts/artifact-reference-implementation.md) | What the walking skeleton must prove, the in/out boundary, the six build phases, and the acceptance criteria. | accepted |
 | [RI fixture spec](../.konspekt/instance/artifacts/artifact-ri-fixtures-spec.md) | The synthetic test corpus: one backpatch with every value fixed, the L0–L9 set, and the known-bad variants each expected to be refused by a named rule. | accepted |
 | [Paper outline](../.konspekt/instance/artifacts/artifact-paper-outline.md) | Structure of the working paper. | accepted |
@@ -116,6 +118,24 @@ them.
 It closes with **"Not yet in the machines"** — three steps the operating model
 proposes that no state machine carries yet, marked as proposals rather than
 states so the machines are not read as complete.
+
+## The operating model
+
+[`operating-model.html`](operating-model.html) is the reader-facing form of
+`artifact-operating-model`, and the only place the **field-by-field register**
+lives: twenty-nine activities, each with its trigger, actor, inputs, action,
+trace, state effect, service level and failure exit.
+
+Where `lifecycle.md` answers *what states exist*, this answers **who is on the
+hook, by when, and what the activity leaves behind**. The two are complementary
+and deliberately not merged: a state machine and a duty register age differently,
+and the duty register carries values that are somebody else's to ratify.
+
+Its section eight marks every unsettled value with the party that settles it —
+alliance policy, bank policy, or engineering. **One of them is live**: the
+blessing-petition threshold, which `lifecycle.md` currently refers to without a
+value, because it borrowed a number that stopped existing when the quorum became
+the signatory set.
 
 ## The paper
 
@@ -163,10 +183,10 @@ not yet drawn, and it still uses `candidateKey`.
 
 | Figure | State |
 |---|---|
-| `p1-lifecycle.svg` | **current** — three machines, three bands with their identities, hinge and handover labelled, 16 rules |
-| `p2-datamodel.svg` | **current** — `package-version`, `lineKey`, `packageRef` |
-| `p3-architecture.svg` | **current** — nine components, 16 admission rules, roles named |
-| `code-tracer-topology.svg` | **current** — redrawn 2026-07-30: the evidence core added, two containers at the perimeter, signatory verification, and the adopting bank's own rebuild |
+| `p1-lifecycle.svg` | **current** — redrawn 2026-07-30: every signatory's L8, the bank's rebuild at Resolved, the core crossing |
+| `p2-datamodel.svg` | **current** — redrawn 2026-07-30: `signatories[]`, rebuild references, L8 on both sides |
+| `p3-architecture.svg` | **current** — redrawn 2026-07-30: co-funding as the launch prerequisite, core + envelope, ③ rebuilds |
+| `code-tracer-topology.svg` | **current** — redrawn 2026-07-30: the evidence core added, two containers at the perimeter |
 
 ## The archive
 
@@ -174,7 +194,9 @@ not yet drawn, and it still uses `candidateKey`.
 the point they were reconstructed on 2026-07-17. Their **content** is historical,
 including its recovery gaps; their **vocabulary** is current. Which record
 supersedes each of them is listed in
-[`historical/README.md`](historical/README.md).
+[`historical/README.md`](historical/README.md), and the two whose
+*recommendations* were overturned carry a supersession note at the top of the
+file itself — a stale recommendation is more misleading than a stale fact.
 
 They are kept rather than deleted because the recovery notes are themselves part
 of the record: quietly reconstructing a missing section would destroy the
@@ -188,6 +210,10 @@ told.
 
 **"How does the whole thing run, start to finish?"** — [`lifecycle.md`](lifecycle.md),
 then `resources/p1-lifecycle.svg`.
+
+**"Who actually does this, and on what clock?"** —
+[`operating-model.html`](operating-model.html), then its section eight for what
+is still somebody's to decide.
 
 **"Why is it built this way?"** — the paper, in order. Part I for the model,
 Part II for who commissions and who verifies, Part III for what a bank deploys,
@@ -204,5 +230,6 @@ for the phases and acceptance criteria, then
 [the fixture spec](../.konspekt/instance/artifacts/artifact-ri-fixtures-spec.md)
 for what Phase 0 emits.
 
-**"What is still unresolved?"** — Architecture §9, plus the open-items section
-that closes each artifact.
+**"What is still unresolved?"** — Architecture §9, the operating model's section
+eight for values with owners, plus the open-items section that closes each
+artifact.
