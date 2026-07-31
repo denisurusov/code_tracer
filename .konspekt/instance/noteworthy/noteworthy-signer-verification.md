@@ -7,12 +7,12 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-30T00:00:00Z
+  updatedAt: 2026-07-31T00:00:00Z
 provenance:
   conversationId: konspekt-operating-model
   timestamp: 2026-07-30T00:00:00Z
 createdAt: 2026-07-30T00:00:00Z
-updatedAt: 2026-07-30T00:00:00Z
+updatedAt: 2026-07-31T00:00:00Z
 ```
 # Decision: signers verify; zero dissent; minimum two
 
@@ -65,8 +65,13 @@ same funder carries the operational consequence of admitting a bad patch.
   filter on the demand pipeline that the commissioning ballot did not previously
   have.
 - **Solo carries a different rule** (`noteworthy-adoption-rebuild`).
-- **The blessing petition needs its own threshold.** It borrowed "the quorum
-  threshold", which no longer names a number.
+- **One consequence has since been resolved by deletion.** This decision left the
+  blessing petition without a number, since it had borrowed "the quorum
+  threshold" and that phrase stopped naming one. Rather than choosing a value,
+  `noteworthy-solo-distribution` removed the petition: solo output publishes on
+  the same terms as team output under its own trust path. Recorded because the
+  shape recurs — a value that becomes unnameable is sometimes evidence that the
+  thing needing it should not exist.
 
 **Binds:** `verification.k` in the L-1 contract and what Accepted freezes
 (`artifact-contract-lifecycle`); rules 2′ and 5′ and §3.6 in
