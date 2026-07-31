@@ -154,7 +154,7 @@ replayed from the event log, not the authority.
 
 ## Reading it
 
-Three documents, for three different readers.
+Four documents, for four different readers.
 
 **[`docs/build/explainer.html`](docs/build/explainer.html)** — the design shown.
 The governance problem, the three machines, what crosses the perimeter, then one
@@ -172,6 +172,12 @@ outputs live in [`docs/build/`](docs/build/).
 **[`docs/lifecycle.md`](docs/lifecycle.md)** — the design as a reference. The
 complete pass over all three state machines in bullet form, shortest route to a
 specific rule.
+
+**[`docs/operating-model.html`](docs/operating-model.html)** — who runs it. The
+previous three describe the machine; this one describes the organisation around
+it: twenty-nine activities, each with an actor, a clock and a record it leaves
+behind. It also marks the values that are still somebody's to decide, and says
+whose — the alliance's, a bank's, or ours.
 
 ## The operator's view
 
@@ -197,6 +203,7 @@ concrete.
 ```
 docs/                   publications — anything written for a reader
   lifecycle.md          the complete pass over all three state machines
+  operating-model.html  who runs it, on what clock, and what it leaves behind
   mockup.html           design mockup of the lifecycle console
   paper/                Contract-Bound Evidence — sources and build scripts
   resources/            figures (SVG), authored
@@ -225,8 +232,8 @@ alternatives, and everything is append-only and hash-anchored.
 
 Start at [`.konspekt/instance/project.md`](.konspekt/instance/project.md); the
 architecture, the three lifecycle machines, the data model, the evidence bundle,
-the deployment topology and the reference-implementation scope are under
-`.konspekt/instance/artifacts/`.
+the deployment topology, the operating model and the reference-implementation
+scope are under `.konspekt/instance/artifacts/`.
 
 Validate the instance:
 
@@ -243,10 +250,10 @@ are made continuously, but only a human command accepts them.
 **Design, with a reference implementation scoped and not yet built.**
 
 The architecture, the three lifecycle machines, the data model, the evidence
-bundle and the contract schema are settled. The reference implementation is a
-deliberate walking skeleton — it implements the consumption half only, on a
-single synthetic backpatch, with the production side faked by fixtures. If it
-starts standing up a patching pipeline, it has lost the plot.
+bundle, the contract schema and the operating model are settled. The reference
+implementation is a deliberate walking skeleton — it implements the consumption
+half only, on a single synthetic backpatch, with the production side faked by
+fixtures. If it starts standing up a patching pipeline, it has lost the plot.
 
 Its acceptance test is one sentence: one offline command turns the conforming
 fixture into an admission with a signed verdict; flipping any single fixture to a
@@ -265,6 +272,10 @@ Named rather than hidden — each is tracked in `.konspekt/`:
   delegated namespace. What remains is policy — which organisations sit in that
   threshold, how a verifier is admitted or removed, and the procedure on
   suspected compromise. Not an engineering question, and the largest item open.
+- **Operating values.** Ballot cadence, seconding threshold, service levels and
+  the blessing-petition threshold are named, owned and unset — see the operating
+  model's section eight. Two of them deliberately propose nothing, because they
+  encode how much influence a contribution buys.
 - **Anchor re-derivation.** Confirming the baseline against its public source at
   verify time conflicts with running hermetically offline; currently satisfied
   against a local snapshot.
