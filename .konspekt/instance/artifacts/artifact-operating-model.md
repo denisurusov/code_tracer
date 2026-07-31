@@ -7,12 +7,12 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-30T00:00:00Z
+  updatedAt: 2026-07-31T00:00:00Z
 provenance:
   conversationId: konspekt-operating-model
   timestamp: 2026-07-30T00:00:00Z
 createdAt: 2026-07-30T00:00:00Z
-updatedAt: 2026-07-30T00:00:00Z
+updatedAt: 2026-07-31T00:00:00Z
 ```
 # code_tracer — Operating model
 
@@ -27,10 +27,15 @@ field-by-field register this artifact indexes.
 
 **What acceptance covers.** The activities, the roles, the two kinds of clock,
 the exception paths and the principle in §1 are accepted as the shape of the
-operating layer. The eight values in §7 are **not** accepted by this: each is
-marked with the party that ratifies it, and three of them are not ours to settle
-at all. Accepting the model is accepting where the questions sit, not answers to
-them.
+operating layer. The values in §7 are **not** accepted by this: each is marked
+with the party that ratifies it, and three of them are not ours to settle at all.
+Accepting the model is accepting where the questions sit, not answers to them.
+
+> **Amendment 2026-07-31 (`noteworthy-solo-distribution`).** The
+> blessing-petition threshold is closed by removing the thing that needed one.
+> Solo output distributes on the same terms as team output under its own trust
+> path; there is no blessing, no petition and no re-attribution. Activity A4
+> loses its petition branch, and §7 drops from eight values to seven.
 
 ## 1. The organising principle
 
@@ -105,7 +110,7 @@ actor, inputs, action, trace, state effect, service level, failure exit — is i
 | C2 | re-run tests | #3 each signatory | result set |
 | C3 | attest | #3 each signatory | signed L8 + observed checkpoint |
 | A3 | seal core | #1 core assembler | `coreDigest`, logged |
-| A4 | publish | #1 registrar / secretariat | nexus publication; petition where solo |
+| A4 | publish | #1 registrar | nexus publication under the contract's trust path |
 | D1 | resolve | #4 gate operator (③) | **this bank's L8**, then the sealed envelope |
 | D2 | verify | #4 gate operator (①②) | rule-by-rule evaluation |
 | D3 | admit | #4 gate operator (④) + app team | signed L9 and verdict; promotion |
@@ -122,6 +127,12 @@ actor, inputs, action, trace, state effect, service level, failure exit — is i
 | S4 | index reconciliation | #1 index operator | reconciliation record carrying the lag |
 | S5 | trust material refresh | #4 gate operator | refreshed directory at a recorded version |
 | S6 | ledger reconciliation | #4 exposure owner | discrepancy record |
+
+**A4 has no branch.** Publication is the same act in both modes — the package
+goes to the nexus under whichever trust path its contract froze, and the path
+never changes afterwards (`noteworthy-solo-distribution`). This was the one
+activity whose behaviour differed by governance mode; it no longer does, which
+means **no activity in this register branches on mode**.
 
 **Two loops, different meanings.** E2's renewal re-enters at N4, because the
 lineage was already voted in and a continuation carries the same `osera.line`.
@@ -183,7 +194,7 @@ nobody serves cannot be replayed — the retention question).
 
 Three owners, and the distinction is authority rather than difficulty.
 **Alliance policy** binds every member. **Bank policy** is internal. **Engineering**
-is ours and lands in an artifact. **None of these eight is settled by this
+is ours and lands in an artifact. **None of these seven is settled by this
 artifact's acceptance.**
 
 | # | Value | Owner | Proposed |
@@ -195,7 +206,12 @@ artifact's acceptance.**
 | 5 | What a benefits record asserts | bank, with an alliance floor | floor: flaws closed and applications migrated, since those weight the next ballot |
 | 6 | Core hosting and retention; rebuild-input mirroring | engineering (hosting), alliance (retention) | the replay claim holds only while both core and envelope are held |
 | 7 | Verification and admission separately keyed | alliance (membership term) | §3. Engineering hook exists either way |
-| 8 | Blessing-petition threshold | alliance | **unset and live** — it borrowed "the quorum threshold", which stopped naming a number when `k` became the signatory set. `docs/lifecycle.md` currently refers to a threshold with no value |
+
+**Closed 2026-07-31:** the blessing-petition threshold, by removing the petition
+(`noteworthy-solo-distribution`). Worth recording how it closed — not by choosing
+a number but by noticing that the thing needing one should not exist. It had been
+unanswerable because it quietly depended on item 3, the one place this artifact
+deliberately proposes nothing.
 
 Ours alone, and open: whether A2 splits into separate drafting and issuance
 activities, given the release-line judgement has its own screen; how demand
@@ -219,3 +235,4 @@ behalf.
 - `artifact-deployment-topology` — the stores every activity writes to.
 - `noteworthy-signer-verification`, `noteworthy-adoption-rebuild` — why C1–C3
   bind to signatories and why D1 rebuilds.
+- `noteworthy-solo-distribution` — why A4 has no branch.
