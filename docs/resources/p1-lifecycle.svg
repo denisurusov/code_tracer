@@ -13,16 +13,16 @@
 <text x="36" y="62" font-size="12.5" fill="#64748b">Three machines, three grains, one boundary. A project is a commitment; a package is an artifact; a product is a bridge. Read this page first.</text>
 
 <rect x="24" y="86" width="734" height="744" rx="10" fill="#fef6ec" stroke="#f3ddc0"/>
-<text x="52" y="110" font-size="12.5" font-weight="700" fill="#a1651a">OUTSIDE — issuer · provider · verifier quorum</text>
+<text x="52" y="110" font-size="12.5" font-weight="700" fill="#a1651a">OUTSIDE — issuer · provider · the contract's signatories</text>
 <text x="52" y="127" font-size="10.5" fill="#a1651a">evidence is PRODUCED here</text>
 
 <rect x="782" y="86" width="634" height="744" rx="10" fill="#f2f0fb" stroke="#ddd6f3"/>
 <text x="806" y="110" font-size="12.5" font-weight="700" fill="#5b3fa8">INSIDE THE BANK</text>
-<text x="806" y="127" font-size="10.5" fill="#5b3fa8">evidence is CONSUMED here — hermetic and offline</text>
+<text x="806" y="127" font-size="10.5" fill="#5b3fa8">evidence is CONSUMED here — the gate runs offline</text>
 
 <line x1="770" y1="86" x2="770" y2="830" stroke="#1a2332" stroke-width="3" stroke-dasharray="9 5"/>
 <text x="770" y="852" font-size="11.5" font-weight="700" fill="#1a2332" text-anchor="middle">THE PERIMETER</text>
-<text x="770" y="868" font-size="10.5" fill="#64748b" text-anchor="middle">one evidence bundle crosses — a copy, not a protocol</text>
+<text x="770" y="868" font-size="10.5" fill="#64748b" text-anchor="middle">the evidence core crosses — a copy, not a protocol</text>
 
 <!-- ROW 1 — PROJECT -->
 <text x="52" y="156" font-size="12.5" font-weight="700" fill="#334155">PROJECT — a commitment · identity = contract digest</text>
@@ -42,8 +42,9 @@
 <text x="394" y="216" font-size="9" fill="#c2691a" text-anchor="middle">provider countersigns</text>
 <text x="534" y="192" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Delivered</text>
 <text x="534" y="209" font-size="9.5" fill="#64748b" text-anchor="middle">manifest logged</text>
-<text x="674" y="192" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Fulfilled</text>
-<text x="674" y="209" font-size="9.5" fill="#64748b" text-anchor="middle">k-of-n VSAs · FULL</text>
+<text x="674" y="190" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Fulfilled</text>
+<text x="674" y="205" font-size="9.5" fill="#64748b" text-anchor="middle">every signatory's L8</text>
+<text x="674" y="217" font-size="9" font-weight="700" fill="#b91c1c" text-anchor="middle">zero dissent · FULL</text>
 <g stroke="#475569" stroke-width="1.4" fill="none" marker-end="url(#a)">
 <line x1="176" y1="196" x2="190" y2="196"/><line x1="316" y1="196" x2="330" y2="196"/>
 <line x1="456" y1="196" x2="470" y2="196"/><line x1="596" y1="196" x2="610" y2="196"/>
@@ -64,8 +65,8 @@
 <text x="360" y="279" font-size="8.5" fill="#7f1d1d" text-anchor="middle">deliverBy passed</text>
 <text x="510" y="268" font-size="11" font-weight="700" fill="#b91c1c" text-anchor="middle">Breached</text>
 <text x="510" y="279" font-size="8.5" fill="#7f1d1d" text-anchor="middle">conformance BREACH</text>
-<text x="612" y="266" font-size="9.5" fill="#64748b">amendment = new version +</text>
-<text x="612" y="279" font-size="9.5" fill="#64748b">supersession pointer</text>
+<text x="590" y="266" font-size="9.5" fill="#64748b">a signatory that never verifies</text>
+<text x="590" y="279" font-size="9.5" fill="#64748b">also ends at Lapsed</text>
 
 <!-- ROW 2 — PACKAGE -->
 <text x="52" y="336" font-size="12.5" font-weight="700" fill="#334155">PACKAGE — an artifact · identity = hardened_digest</text>
@@ -78,11 +79,12 @@
 </g>
 <text x="402" y="374" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Built</text>
 <text x="402" y="391" font-size="9.5" fill="#64748b" text-anchor="middle">provider mints L0–L7</text>
-<text x="582" y="374" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Verified</text>
-<text x="582" y="391" font-size="9.5" fill="#64748b" text-anchor="middle">quorum rebuilds → L8</text>
-<text x="582" y="404" font-size="9" font-weight="700" fill="#b91c1c" text-anchor="middle">zero dissent</text>
-<text x="876" y="374" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Resolved</text>
-<text x="876" y="391" font-size="9.5" fill="#64748b" text-anchor="middle">bundle sealed by ③</text>
+<text x="582" y="372" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Verified</text>
+<text x="582" y="388" font-size="9.5" fill="#64748b" text-anchor="middle">signatories rebuild → L8</text>
+<text x="582" y="402" font-size="9" font-weight="700" fill="#b91c1c" text-anchor="middle">all agree · minimum two</text>
+<text x="876" y="372" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Resolved</text>
+<text x="876" y="388" font-size="9.5" fill="#64748b" text-anchor="middle">③ rebuilds it again here</text>
+<text x="876" y="402" font-size="9.5" fill="#64748b" text-anchor="middle">envelope sealed</text>
 <text x="1056" y="374" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Gate</text>
 <text x="1056" y="390" font-size="9.5" fill="#64748b" text-anchor="middle">structural → semantic → L9</text>
 <text x="1056" y="403" font-size="9.5" fill="#64748b" text-anchor="middle">16 rules · ①②④</text>
@@ -96,9 +98,10 @@
 <g stroke="#2f8f4e" stroke-width="1.8" fill="none" marker-end="url(#ag)"><line x1="1126" y1="380" x2="1164" y2="380"/></g>
 <text x="1145" y="371" font-size="9.5" font-weight="700" fill="#2f8f4e" text-anchor="middle">admit</text>
 
-<!-- bundle crossing -->
+<!-- core crossing -->
 <g stroke="#1a2332" stroke-width="2.4" fill="none" marker-end="url(#a)"><line x1="652" y1="380" x2="804" y2="380"/></g>
-<text x="728" y="368" font-size="10.5" font-weight="700" fill="#1a2332" text-anchor="middle">evidence bundle</text>
+<text x="728" y="366" font-size="10.5" font-weight="700" fill="#1a2332" text-anchor="middle">evidence core</text>
+<text x="728" y="398" font-size="9" fill="#64748b" text-anchor="middle">one digest, every bank</text>
 
 <!-- hinge -->
 <g stroke="#c2691a" stroke-width="2.2" fill="none" marker-end="url(#ao)"><path d="M420 224 L420 348"/></g>
@@ -142,7 +145,7 @@
 <!-- renewal loop -->
 <g stroke="#c2691a" stroke-width="2" fill="none" stroke-dasharray="7 4" marker-end="url(#ao)"><path d="M1056 628 L1056 800 L38 800 L38 196 L50 196"/></g>
 <text x="1040" y="662" font-size="11.5" font-weight="700" fill="#c2691a" text-anchor="end">RENEWAL — a new project against the same line</text>
-<text x="1040" y="677" font-size="9.5" fill="#a1651a" text-anchor="end">its own contract, its own baseline, its own CVE set · same lineKey</text>
+<text x="1040" y="677" font-size="9.5" fill="#a1651a" text-anchor="end">its own contract, its own baseline, its own CVE set, its own signatories</text>
 <text x="1040" y="691" font-size="9.5" fill="#a1651a" text-anchor="end">osera.1 → osera.2 linked by a supersedes edge on the package</text>
 <text x="1040" y="705" font-size="9.5" fill="#a1651a" text-anchor="end">a renewal that jumps lines is a NEW lineage, not a supersede</text>
 
@@ -151,6 +154,6 @@
 <text x="120" y="722" font-size="11.5" font-weight="700" fill="#a1651a">THE INVARIANT THIS PAGE EXISTS TO SHOW</text>
 <text x="120" y="742" font-size="10.5" fill="#7c5314">Each state belongs to exactly one grain. Facts about a build attach to a digest;</text>
 <text x="120" y="757" font-size="10.5" fill="#7c5314">facts about exposure attach to a lineage that outlives every digest in it.</text>
-<text x="120" y="777" font-size="10.5" fill="#7c5314">Class (a) and (b) diverge only at Built and Verified — from Resolved inward the</text>
-<text x="120" y="792" font-size="10.5" fill="#7c5314">machine is class-agnostic, which is what lets the gate be one tool instead of two.</text>
+<text x="120" y="777" font-size="10.5" fill="#7c5314">Class (a) and (b) diverge only at Built and Verified, and so do the two governance</text>
+<text x="120" y="792" font-size="10.5" fill="#7c5314">modes — from Resolved inward the machine is agnostic to both. One tool, not four.</text>
 </svg>
