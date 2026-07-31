@@ -51,6 +51,9 @@ project, package, product — and the points where they hand over.
 - Mode sets who is accountable for deciding what to commission, and how many
   independent reproductions exist before the perimeter. It changes nothing the
   gate requires and nothing the adopting bank does.
+- **A bank commissions solo to use the standards** — the evidence format, the
+  gate, the trust root — on work only it wants done. Not to obtain the alliance's
+  endorsement.
 
 ## Team-mode commissioning — steps
 
@@ -180,15 +183,19 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
 
 ## Distribution
 
-- On reaching Fulfilled, team output is distributed via the central nexus under
-  `osera-root`. **Blessing** is carried by definition.
-- Solo output reaches the nexus only through a **blessing petition** that meets
-  its own threshold.
-- Unblessed solo output stays on its sponsor's `delegated:<bank>` path. A member
-  other than the sponsor that consumes it does so on its own judgement: the
-  commissioning judgement was one member's, and one reproduction preceded the
-  crossing rather than several. What the gate requires, and the rebuild the
-  consuming bank performs, are unchanged.
+- On reaching Fulfilled, output is published to the central nexus **under its own
+  trust path**: `osera-root` for team, `delegated:<bank>` for solo. Same terms,
+  same discoverability, no gate in between.
+- **The trust path never changes.** It is fixed at issuance and pinned by every
+  verdict. There is no blessing, no petition and no re-attribution
+  (`noteworthy-solo-distribution`).
+- A member other than the sponsor that consumes solo output does so on its own
+  judgement: the commissioning judgement was one member's, and one reproduction
+  preceded the crossing rather than several. What the gate requires, and the
+  rebuild the consuming bank performs, are unchanged.
+- Withholding distribution pending a vote was considered and rejected. The trust
+  path is attribution rather than leniency, so gating discoverability would make
+  nothing safer — only harder to find.
 
 ## The perimeter crossing
 
