@@ -24,8 +24,9 @@ const BUILD = path.resolve(__dirname, '../build');
 const MD = fs.readFileSync(path.join(BUILD, 'contract-bound-evidence.md'), 'utf8');
 
 // assemble.py stamps the source commit into an HTML comment on the first line.
-// It rides into the docx description so a circulated file names the tree it came
-// from; the parser below skips the comment so it never renders as a paragraph.
+// It rides into the docx metadata and the page footer so a circulated file names
+// the tree it came from; the parser below skips the comment so it never renders
+// as a paragraph.
 const STAMP = (MD.match(/^<!--\s*built from (\S+)\s*-->/m) || [, 'unknown'])[1];
 
 // Pixel dimensions of the rendered PNGs (cairosvg, scale 2.2). These MUST equal
@@ -234,10 +235,20 @@ const chrome = () => ({
   },
   footers: {
     default: new Footer({
-      children: [new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [new TextRun({ children: [PageNumber.CURRENT], size: 16, color: MUTED })],
-      })],
+      children: [
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [new TextRun({ children: [PageNumber.CURRENT], size: 16, color: MUTED })],
+        }),
+        // Belt to the metadata's braces. LibreOffice drops dc:description when it
+        // exports to PDF, so a properties-only stamp does not survive conversion.
+        // A footer line cannot be dropped by a converter, and a reader can check
+        // it without opening a properties dialog.
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [new TextRun({ text: `built from ${STAMP.slice(0, 12)}`, size: 12, color: MUTED })],
+        }),
+      ],
     }),
   },
 });
@@ -302,6 +313,10 @@ const doc = new Document({
   creator: 'code_tracer',
   title: 'Contract-Bound Evidence',
   description: `Admitting externally-patched open source into a regulated estate — built from ${STAMP}`,
+  // dc:description is Word's Comments field, and LibreOffice does NOT export it
+  // to PDF — verified 2026-07-30, the PDF came out with an empty /Subject.
+  // dc:subject does survive as /Subject, so the stamp rides in both.
+  subject: `built from ${STAMP}`,
   styles: { default: { document: { run: { font: 'Georgia', size: 21, color: INK } } } },
   sections,
 });
