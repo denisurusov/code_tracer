@@ -65,8 +65,9 @@
 <text x="360" y="279" font-size="8.5" fill="#7f1d1d" text-anchor="middle">deliverBy passed</text>
 <text x="510" y="268" font-size="11" font-weight="700" fill="#b91c1c" text-anchor="middle">Breached</text>
 <text x="510" y="279" font-size="8.5" fill="#7f1d1d" text-anchor="middle">conformance BREACH</text>
-<text x="590" y="266" font-size="9.5" fill="#64748b">a signatory that never verifies</text>
-<text x="590" y="279" font-size="9.5" fill="#64748b">also ends at Lapsed</text>
+<text x="590" y="262" font-size="9.5" fill="#64748b">a signatory that never verifies</text>
+<text x="590" y="274" font-size="9.5" fill="#64748b">also ends at Lapsed · the</text>
+<text x="590" y="286" font-size="9.5" fill="#64748b">signatories vote on what next</text>
 
 <!-- ROW 2 — PACKAGE -->
 <text x="52" y="336" font-size="12.5" font-weight="700" fill="#334155">PACKAGE — an artifact · identity = hardened_digest</text>
@@ -142,12 +143,13 @@
 <line x1="1126" y1="598" x2="1164" y2="598"/>
 </g>
 
-<!-- renewal loop -->
+<!-- succession -->
 <g stroke="#c2691a" stroke-width="2" fill="none" stroke-dasharray="7 4" marker-end="url(#ao)"><path d="M1056 628 L1056 800 L38 800 L38 196 L50 196"/></g>
-<text x="1040" y="662" font-size="11.5" font-weight="700" fill="#c2691a" text-anchor="end">RENEWAL — a new project against the same line</text>
-<text x="1040" y="677" font-size="9.5" fill="#a1651a" text-anchor="end">its own contract, its own baseline, its own CVE set, its own signatories</text>
-<text x="1040" y="691" font-size="9.5" fill="#a1651a" text-anchor="end">osera.1 → osera.2 linked by a supersedes edge on the package</text>
-<text x="1040" y="705" font-size="9.5" fill="#a1651a" text-anchor="end">a renewal that jumps lines is a NEW lineage, not a supersede</text>
+<text x="1040" y="662" font-size="11.5" font-weight="700" fill="#c2691a" text-anchor="end">SUCCESSION — a NEW project against the same line</text>
+<text x="1040" y="677" font-size="9.5" fill="#a1651a" text-anchor="end">its own contract, baseline, CVE set, signatories and funding</text>
+<text x="1040" y="691" font-size="9.5" fill="#a1651a" text-anchor="end">nothing is renewed — it runs the whole demand pipeline from nomination</text>
+<text x="1040" y="705" font-size="9.5" fill="#a1651a" text-anchor="end">osera.1 → osera.2 linked by a supersedes edge; only osera.line carries over</text>
+<text x="1040" y="719" font-size="9.5" fill="#a1651a" text-anchor="end">a successor that jumps lines is a NEW lineage, not a supersede</text>
 
 <!-- invariant panel -->
 <rect x="100" y="700" width="600" height="108" rx="8" fill="#fff7ed" stroke="#e6c9a0"/>
