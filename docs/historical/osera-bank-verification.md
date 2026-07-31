@@ -14,11 +14,42 @@ single most important de-risking fact in the whole design: adoption does not
 require the bank to trust a new mechanism, only to point an existing one at a
 new layout.
 
+**Status: historical.** The key finding above **still holds and is still the
+adoption argument** — this note is kept because it makes that case better than
+anything that replaced it. What has moved is the detail; see the supersession
+note.
+
 > **Provenance / recovery note.** Reconstructed on 2026-07-17 from the *FINOS
 > OSERA project lookup* conversation (2026-07-15). The original was a
 > per-conversation output file, which does not persist. Sections §1–§6 are
 > recovered substantially intact; §7 (open questions) is partial — only items
 > 4–5 were preserved. Re-paste the original for a byte-complete copy.
+
+> **Superseded in detail, 2026-07-30. Nothing here recommends something that was
+> later rejected — unlike the other two archived notes — so this is drift rather
+> than reversal.**
+>
+> - **`threshold: 3` on the `quorum-verify` step** (§2) is no longer a number.
+>   Verification binds to the contract's **signatory set**: every signatory
+>   verifies, all must agree, minimum two in team mode
+>   (`noteworthy-signer-verification`). The layout still expresses this as an
+>   in-toto threshold — the mechanism was always right — but the threshold equals
+>   the signatory count rather than `max(3, ceil(n/3))`.
+> - **The bank is now a verifier as well as an inspector.** §2's `inspections`
+>   entry describes the bank running its own acceptance suite at verify time,
+>   which is still exactly right for L9. What the note predates is the bank also
+>   **rebuilding the package and signing its own L8** at resolution
+>   (`noteworthy-adoption-rebuild`) — a second, earlier check that is what lets a
+>   solo-commissioned artifact be consumed without a weaker tier.
+> - **§5's "rules 1–13"** is sixteen now. §6's structure-versus-meaning split is
+>   unchanged and still the cleanest statement of it in the repository.
+> - The compiled layout also now carries — and the gate checks — layout-compile
+>   agreement (both sides compile and compare digests), bundle freshness, and
+>   advisory-record integrity.
+>
+> Current: `artifact-architecture` §4 for the gate, §3.7 for the ruleset;
+> `noteworthy-compiler-siting` for why the bank recompiles the layout rather than
+> trusting the signed one.
 
 ---
 
@@ -238,3 +269,13 @@ Partially recovered — the following items were preserved:
    adoption-tracking domain rather than standing up a separate store.
 
 > **[Recovery note — items 1–3 were not preserved in the transcript.]**
+>
+> **Outcomes, 2026-07-30.** Item 4 adopted as recommended, and it is now stated
+> as a rule in `artifact-evidence-bundle` §4: the layout may require that an
+> inspection by that name exists and must never supply its command. Item 5
+> settled in the middle — Archivista is adopted as the **attestation index** for
+> discovery (`noteworthy-attestation-index`), deliberately untrusted, but the
+> exposure graph is the bank's own hash-chained ledger rather than a query over
+> the attestation store (`noteworthy-ledger-substrate`). The two questions the
+> store would have answered turn out to belong to different sides of the
+> perimeter.
