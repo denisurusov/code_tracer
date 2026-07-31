@@ -11,22 +11,25 @@ project, package, product — and the points where they hand over.
   product is the software it names.
 - **Project** — work on a product within a particular scope, against one release
   line. One project, one contract. A product carries many projects over time —
-  across lines, and across successive renewals within a line.
+  across lines, and across successive bridges within a line.
 - **Contract** — the L-1 instrument that scopes a project: baseline, CVE set,
   test corpus, schedule, governance, line. One per project, and the root every
   attestation is verified against.
 - **Line** — the release line a project works against, declared in the contract
   as `contract.osera.line`. A product's 3.x bridge and its 4.x bridge are
   separate lines. `lineKey` (version-less purl + line) is the handle that stays
-  constant as a line renews.
+  constant across a line's successive bridges.
+- **Successor project** — the project commissioned when a bridge sunsets and the
+  line is still needed. A fresh commissioning decision in every respect; only
+  `osera.line` carries over. **Nothing is renewed.**
 - **Project backlog** — the ranked set of seconded interest declarations
   awaiting a commissioning ballot.
 - **Alliance** — a group of OSERA members. Acts as issuer: commissions the work
   and curates the trust root. Commissions in one of two modes, below.
 - **Provider** — whoever works on the product. Signs L0–L7 against a contract it
   countersigned.
-- **Signatory** — a member that signs and funds a contract, and therefore
-  verifies its delivery.
+- **Signatory** — a member that signs and funds a contract. Verifies its
+  delivery, and votes on any failure of it.
 - **Bank** — a member of the alliance and a consumer of the product. Runs the
   gate and the ledger, and rebuilds every package it adopts.
 
@@ -65,6 +68,9 @@ project, package, product — and the points where they hand over.
   `mandateRef` digest that anchors the L-1 contract.
 - A project needs **at least two signatories** to be commissioned, since the
   signatories are its verifiers. Co-funding is a precondition, not a preference.
+- **Successor projects run all of this too.** A bridge reaching sunset earns its
+  line no shortcut: the successor is nominated, seconded, prioritised and
+  commissioned like any other project.
 - Solo efforts are excluded from interest declarations and prioritization
   ballots.
 
@@ -86,6 +92,12 @@ project, package, product — and the points where they hand over.
   signatory that never verified, which reaches the same terminal state by a
   different failure.
 
+**Terminal is not the end of the matter.** Breached and Lapsed are terminal for
+this contract version, and the **signatories vote** on what happens next — amend
+and re-countersign, commission a successor, abandon the line, or record the
+shortfall as a finding. They funded it and they carry the consequence. Withdrawn
+needs no vote: nothing has been funded yet.
+
 ## Project lifecycle — transitions
 
 - **Drafted → Proposed** — issuer signs; contract digest minted.
@@ -105,6 +117,7 @@ project, package, product — and the points where they hand over.
 ## What Accepted freezes
 
 - **Governance** — `mode`, `sponsor`, `signatories`, `mandateRef`, `trustPath`.
+  The trust path is fixed here and never changes.
 - **Baseline** — the exact upstream artifact digest to start from.
 - **Scope** — `cvesInScope` and `explicitlyOutOfScope`.
 - **Test corpus** — named by digest, so it cannot be substituted.
@@ -170,8 +183,9 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
   tracking.
 - **Active → Sunset** — the bridge window lapses.
 - **Sunset → Retired** — the application adopted an upstream-fixed release.
-- **Sunset → Drafted′** — renewal; a new project is drafted against the same
-  line, with a signatory set of its own.
+- **Sunset → Drafted′** — a **successor project** against the same line reached
+  Accepted. Not a loop: `Drafted′` belongs to a different project that entered
+  the demand pipeline at nomination and ran the whole of it.
 
 ## Class (a) / (b) divergence
 
@@ -240,7 +254,10 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
 - Durable facts are append-only hash-chained `ledger-event`s: `issued`,
   `renewed`, `expired`, `retired`, `verifier-revoked`.
 - `ledger-row` and `state-pointer` are projections replayed from that chain.
-- `Expiring` is computed at read time from the row.
+- `Expiring` is computed at read time from the row, against a **notice window
+  that is itself derived** rather than chosen — the sum of the service levels on
+  the successor path plus buffer (`artifact-operating-model` §5). Because a
+  successor runs the whole pipeline, the ballot cadence is the dominant term.
 - ⑥ presents the projections; state changes exit through the gate or the ledger
   as signed evidence.
 - A revoked verifier key raises a review trigger; past verdicts stand, pinned to
@@ -256,26 +273,32 @@ Lineage-keyed. Lapse and exposure attach to the bridge rather than to a digest.
 - At lapse, exactly one of two things happens.
 - **Retire** — the application moved upstream. ⑤ writes `retired` and closes the
   exposure.
-- **Renew** — a replacement bridge is commissioned and runs the whole lifecycle
-  again from Drafted.
+- **Succeed** — a replacement bridge is commissioned as a new project and runs
+  the whole lifecycle again from nomination.
 
-## Renewal
+## Successor projects — nothing is renewed
 
-- A renewal is a new project against the same line; its package carries a
+- A successor is a **new project** against the same line; its package carries a
   `supersedes` edge to its predecessor.
-- Each renewal has its own L-1 contract, its own `baseline.digest`, its own CVE
-  set, and its own signatory set.
+- Each successor has its own L-1 contract, its own `baseline.digest`, its own CVE
+  set, its own signatories and its own funding. Only `osera.line` carries over,
+  and a line is a label rather than a funding decision.
+- It therefore **runs the full demand pipeline** — nomination, seconding,
+  prioritisation, commissioning ballot. The alliance decided the *previous*
+  bridge was worth funding, against different inputs and possibly with different
+  members paying (`noteworthy-successor-project`).
 - `commons-x:3.2.1-osera.1` and `…-osera.2` are two immutable package records,
   each with its own frozen evidence chain.
 - `lineKey` — version-less upstream purl plus `contract.osera.line` — stays
-  constant across the chain, so the pointer and ledger follow the lineage
-  through renewals.
-- A continuing renewal carries the same `osera.line`; the `supersedes` edge and
+  constant across the chain, so the pointer and ledger follow the lineage through
+  successors.
+- A continuing successor carries the same `osera.line`; the `supersedes` edge and
   the line must agree.
-- A renewal that jumps lines (3.x → 4.x) is a new lineage: the old line Retires,
-  a new one starts with a fresh project.
-- An amendment is a new version of the same commitment; a renewal is a new
-  member of the same lineage. Different edges.
+- A successor that jumps lines (3.x → 4.x) is a new lineage: the old line
+  Retires, a new one starts with a fresh project.
+- An amendment is a new version of the same commitment, agreed between parties
+  already bound to it; a successor is a new commitment in the same lineage,
+  commissioned from scratch. Different edges, different authority.
 
 ## Not yet in the machines
 
@@ -285,8 +308,7 @@ than states:
 
 - **Closure inside the bank** — a project ends at Fulfilled, outside. Nothing
   records whether the commissioned bridge actually closed the flaws and moved the
-  applications. Proposed as an activity whose record weights the next
-  prioritization ballot.
+  applications. Proposed as an activity whose record weights the next nomination.
 - **Provider selection** — the mechanism records which provider was selected, in
   the mandate and the contract. Who selects, and against what criteria, is
   alliance policy and unsettled.
