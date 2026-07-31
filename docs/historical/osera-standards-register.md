@@ -9,6 +9,10 @@ distribution → evidence).
 the contract-to-layout compiler, and the bank verification gate actually stand
 on). Everything else is context you integrate with or map against.
 
+**Status: historical.** This is a **survey**, not a decision record — it lists
+options and marks which are load-bearing, and every choice it left open has since
+been made elsewhere. See the supersession note.
+
 > **Provenance / recovery note.** Reconstructed on 2026-07-17 from the *Relevant
 > standards, formats and protocols* conversation (2026-07-16). The original was
 > a per-conversation output file, which does not persist. Categories §1–§5 and
@@ -16,6 +20,39 @@ on). Everything else is context you integrate with or map against.
 > not fully preserved — their headers and the standards *referenced elsewhere in
 > the source conversations* are listed, but treat those four as partial. Re-paste
 > the original for the complete tables.
+
+> **Superseded, 2026-07-30 — by decisions rather than by corrections.** The
+> survey is still an accurate survey; what it does not tell you is which way each
+> choice went.
+>
+> - **§4 lists CycloneDX and SPDX side by side, both starred.** They are not
+>   equals: **CycloneDX is authoritative** and an SPDX projection is emitted on
+>   demand, with SPDX licence identifiers embedded inside the CycloneDX document
+>   (`noteworthy-sbom-format`).
+> - **§5 lists CycloneDX VEX as an option.** Not adopted — VEX stays **OpenVEX at
+>   L7**, separate from the SBOM, so there is no format-family clash.
+> - **§3 files TUF under "answers the question".** It is now built: a **k-of-m
+>   co-signed root** with delegated namespaces for bilateral work
+>   (`noteworthy-trust-root-ownership`). What remains is which organisations sit
+>   in the threshold, which is policy.
+> - **§1 and §10 are Maven-specific throughout.** The design is
+>   ecosystem-agnostic by purl type; anchor strength and coordinate encoding vary
+>   by ecosystem, and semver has no valid hardened-coordinate encoding yet
+>   (`noteworthy-ecosystem-generalization`).
+> - **§2's "thresholds = your k-of-n quorum"** — the in-toto mechanism is exactly
+>   right and unchanged, but the threshold is now the contract's **signatory
+>   set** rather than a computed number (`noteworthy-signer-verification`).
+> - **OSV appears in §4 and §6 as a vuln-record source.** It is now load-bearing:
+>   each in-scope CVE carries a **pinned OSV snapshot** in the evidence core, and
+>   rule 16 digests it as carried (`noteworthy-record-digest`).
+>
+> One thing the survey missed entirely, and it is the largest single gap:
+> **nothing here covers the reference implementation's own stack** — what the RI
+> is written in, or how it is tested. That lives in `noteworthy-ri-stack`.
+>
+> Current register: `artifact-architecture` §7, which maps each standard to the
+> level or component that consumes it. The stance on adjacent and competing
+> tooling is `noteworthy-interop-stance`.
 
 ---
 
@@ -117,3 +154,9 @@ If you strip to what the chain **cannot** exist without:
 **Sigstore + referrers** (resolution) → **CycloneDX/SPDX + OpenVEX** (SBOM/VEX) →
 **Rego/Witness** (semantic gate). Everything else in this register is either an
 integration point or a regulatory target you map onto that spine.
+
+> **Still accurate as a spine, with two refinements.** CycloneDX is
+> authoritative and SPDX is a projection over it rather than an alternative; and
+> **TUF belongs in the minimum stack**, not outside it — without a trust root the
+> gate has no way to decide which signatures count, which is why the design now
+> pins a TUF snapshot inside every ingest envelope.
