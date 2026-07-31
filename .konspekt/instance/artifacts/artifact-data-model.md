@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-26T18:30:00Z
+  updatedAt: 2026-07-30T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: 259d3019f66d621539c97fbba96ac8d3ad138e53
   contentHash: 259d3019f66d621539c97fbba96ac8d3ad138e53
   timestamp: 2026-07-17T17:45:00Z
 createdAt: 2026-07-17T17:45:00Z
-updatedAt: 2026-07-26T18:30:00Z
+updatedAt: 2026-07-30T00:00:00Z
 ```
 # code_tracer — Data model
 
@@ -45,6 +45,14 @@ carry several of at once, each contributing a reusable schema mixin.
 > `mutualized` → `team`. Lifecycle-phase names follow the split: the immutable
 > span now opens at **Accepted** rather than Commissioned, which was a duplicate
 > of it. Record shapes and semantics are unchanged.
+>
+> **Amendment 2026-07-30 (`noteworthy-signer-verification`,
+> `noteworthy-adoption-rebuild`).** `governance` gains **`signatories[]`** and
+> `verification.k` becomes that set rather than a computed threshold; L-1 gains
+> **`rebuild`** references and the evidence core carries them; **L8 is written
+> twice** — once per signatory outside, once by the adopting bank inside — so
+> the attestation row is no longer wholly outside-zone; and §5's revocation
+> argument is replaced, since it rested on the retired floor of three.
 
 ## 1. Facets
 
@@ -76,7 +84,7 @@ facet.
 
 | Element | ev | std | imm | sig | zone | lifecycle phase | grain |
 |---|:---:|:---:|:---:|:---:|:---:|---|---|
-| Attestations L-1…L9 | ✓ | ✓ | ✓ | ✓ | out (L9 in) | Accepted→Adopted (accrue) | immutable |
+| Attestations L-1…L9 | ✓ | ✓ | ✓ | ✓ | out (L8-by-bank and L9 in) | Accepted→Adopted (accrue) | immutable |
 | Delivery manifest | ✓ | ✓ | ✓ | — | out | Delivered | immutable |
 | Evidence core | ✓ | ✓ | ✓ | — | out | Fulfilled | immutable |
 | Ingest envelope | — | ✓ | ✓ | — | in | Verified→Resolved | immutable |
@@ -99,6 +107,12 @@ draft, which is deliberately mutable *before* Accepted and frozen from it. The
 one element spanning the operational split — the current-state pointer — is a
 projection replayed from the ledger events: its job is to present current motion,
 not to store it.
+
+The attestation row is the one element whose **zone is mixed rather than
+singular**: L-1–L8 are produced outside, and two records at the same levels are
+produced inside — the adopting bank's own L8 over its rebuild, and its L9. Same
+shapes, same immutability, different side of the perimeter and different
+disclosure (§4).
 
 ## 3. Two storage grains
 
@@ -149,7 +163,7 @@ mixins); only `asserts` differs per level:
 
 | Level | subject | `asserts` (distinctive fields) |
 |---|---|---|
-| L-1 contract | contract digest | contractId, version, governance{mode, sponsor, mandateRef.digest, trustPath}, baseline.digest, osera.line, scope.cvesInScope[], explicitlyOutOfScope[], acceptanceCriteria.testCorpus.digest, verification.k, schedule |
+| L-1 contract | contract digest | contractId, version, governance{mode, sponsor, mandateRef.digest, trustPath, **signatories[]**}, baseline.digest, osera.line, scope.cvesInScope[] (each with recordDigest), explicitlyOutOfScope[], acceptanceCriteria.testCorpus.digest, **rebuild{source, transformation, toolchain}**, verification.k, schedule |
 | L0 baseline | baseline_digest | source_ref (commit SHA), coordinates — anchor, publicly re-derivable |
 | L1 vuln assessment | baseline_digest | baselineSbomRef, cves[]:{id, component} |
 | L2 transformation | baseline→hardened | recipeSet.digest \| patch.digest |
@@ -158,8 +172,20 @@ mixins); only `asserts` differs per level:
 | L5 vuln proof | both | per cve: pocRef, failsOnBaseline, passesOnHardened |
 | L6 SBOM + diff | hardened_digest | sbom.digest, diffVsL0 |
 | L7 VEX | hardened_digest | per cve: status=fixed, justifiedBy→L5 id |
-| L8 VSA | hardened_digest | verifier, rebuild.digestMatch, l4/l5 recheck, policyPassed, **log.checkpoint** (observed Rekor tree head + inclusion proofs), osera{contract{…,conformance}} — one record per verifier; the quorum is the *set* |
+| L8 VSA | hardened_digest | verifier, rebuild.digestMatch, l4/l5 recheck, policyPassed, **log.checkpoint** (observed Rekor tree head + inclusion proofs), osera{contract{…,conformance}} — **one record per signatory, plus one signed by the adopting bank** over its own rebuild |
 | L9 acceptance | hardened_digest | bankTests.pass, harnessRunRef, promotedTo |
+
+**L8 is written on both sides of the perimeter.** Outside, every signatory
+publishes one and all must agree. Inside, the adopting bank rebuilds from the
+pinned references and signs its own, which seals into the ingest envelope rather
+than the core — it is that bank's record, not shared evidence. Same predicate and
+same assertion, which is why it is L8 rather than a new level
+(`noteworthy-adoption-rebuild`).
+
+**Disclosure.** The bank's own L8 and its L9 are **unpublished by default and
+disclosable on demand**. A supervisor may require confirmation that the
+institution rebuilt and tested, so "never leaves the bank" overstates the
+property; being able to produce both on request demonstrates the control.
 
 The **evidence core** is the one immutable record that is a plain file rather
 than a signed envelope — a list of digests, identified by the digest of the list
@@ -174,6 +200,7 @@ evidence-core
   supersedes:  <prior coreDigest> | null          # a later VSA arriving re-seals
   elements[]:  { role, sha256, locator }          # role: delivery-manifest | L0…L8
                                                   #     | layout | policy-bundle
+                                                  #     | advisory-snapshot | rebuild-ref
   sealedAt:    <timestamp>
   logEntry:    <rekor index over id>              # the freeze
 ```
@@ -185,32 +212,44 @@ of the bytes is the identity. Published at
 `cores/{contractId}/v{N}/{seq}.json`; the git blob SHA of that path is a locator
 and no admission rule keys on it.
 
+**`rebuild-ref` elements are locators plus digests, never bytes.** Source,
+transformation and toolchain are pinned by digest so a fetch either yields the
+named bytes or fails loudly; a tag is never acceptable in place of a digest.
+Packing the images themselves would trade a small signed manifest for a container
+the size of a build environment (`noteworthy-adoption-rebuild`).
+
 **The L-1 `governance` block** makes the commissioning mandate checkable rather
 than assumed — the same move L-1 already made for scope and corpus:
 
 ```
 governance
-  mode:        team | solo
-  sponsor:     <alliance URI | sponsoring bank id>
-  mandateRef:  { sha256: <vote record | bank authorization digest> }
-  trustPath:   osera-root | delegated:<bank>
+  mode:         team | solo
+  sponsor:      <alliance URI | sponsoring bank id>
+  signatories:  [ <member id> … ]    # the parties that sign, fund and verify
+  mandateRef:   { sha256: <vote record | bank authorization digest> }
+  trustPath:    osera-root | delegated:<bank>
 ```
 
 `governance.trustPath` MUST agree with the namespace the artifact is actually
 signed under — a checkable admission invariant, in the same family as the
 supersedes-agrees-with-line rule below. Mode changes *who is accountable for the
-commissioning judgement*, never what the gate requires
-(`noteworthy-governance-modes`). `verification.k` is likewise frozen at
-issuance — `max(3, ceil(n/3))` at that moment — so an artifact is judged against
-the quorum in force when it was commissioned
-(`noteworthy-quorum-parameters`).
+commissioning judgement* and how many reproductions precede the perimeter, never
+what the gate requires (`noteworthy-governance-modes`).
+
+**`verification.k` is the signatory set itself**, frozen at issuance rather than
+computed. Every signatory verifies, all must agree, and a team-mode project needs
+at least two; solo has exactly one. An artifact is judged against the parties who
+committed to it rather than a membership that drifted during the work. Rules 2′
+and 5′ evaluate against `governance.signatories`
+(`noteworthy-signer-verification`, superseding the sizing rule in
+`noteworthy-quorum-parameters`).
 
 **L8 `log.checkpoint`** is the Rekor tree head each verifier *observed*, not one
 the log asserted. Because the log is FINOS-operated, a single checkpoint would
-have to be trusted; k independently observed ones cannot be split without
-producing a dissent, which is already disqualifying. Quorum agreement over
-checkpoints is therefore split-view detection built from machinery that already
-exists (`noteworthy-transparency-log`).
+have to be trusted; independently observed ones cannot be split without producing
+a dissent, which is already disqualifying. Agreement over checkpoints is
+therefore split-view detection built from machinery that already exists
+(`noteworthy-transparency-log`).
 
 ```
 verdict                                        policy-object
@@ -234,8 +273,8 @@ Four fields make the verdict **self-contained for replay**:
   members can compare directly, which is what makes "we admitted the same thing"
   a checkable statement rather than an assertion.
 - **`bundleDigest`** — the ingest envelope this bank actually verified: the core
-  digest plus the trust material current at its own gate. Bank-local by
-  construction, and identical whether the envelope travelled as OCI or as its
+  digest, the trust material current at its own gate, and its own L8. Bank-local
+  by construction, and identical whether the envelope travelled as OCI or as its
   tar projection.
 - **`trustRootVersion`** — the TUF snapshot verified against. Without it,
   "re-run offline and reach the same verdict" becomes false the moment the
@@ -243,7 +282,7 @@ Four fields make the verdict **self-contained for replay**:
   verifier is later revoked (§5).
 - **`trustPath`** — OSERA root or delegated bilateral namespace, and therefore
   which governance mode commissioned it. **Attribution, not leniency:** the
-  admission policy is identical across paths.
+  admission policy is identical across paths, as is the bank's own rebuild.
 
 `policy-object` gains **`compilerVersion`** for `kind: layout`, because the
 layout compiler is dual-sited and byte-deterministic: the bank recompiles from
@@ -292,9 +331,18 @@ key invalidate hundreds of packages at once, a self-inflicted outage triggered
 by a trust event rather than an artifact event. Instead the event is appended per
 affected `lineKey`, the ledger answers "which admitted packages rest on
 this signer," and the console (⑥) raises a **review trigger** for the risk
-function to judge per package. Tolerable precisely because k ≥ 3 with zero
-dissent means no single verifier was ever the sole basis for an admission
-(`noteworthy-revocation-semantics`).
+function to judge per package.
+
+What makes that tolerable no longer depends on quorum size. The original argument
+was that `k ≥ 3` with zero dissent meant no single verifier was ever the sole
+basis for an admission, and that floor retired with
+`noteworthy-signer-verification`. The bound that replaces it holds in every mode:
+**the adopting bank rebuilt the package itself and signed its own L8**, so a
+revoked signatory key was never the sole basis for that bank's admission. The
+converse case — a revoked key belonging to the adopting bank — is the one where
+the outside signatories carry the argument instead, and it is why a member's
+verification and admission functions should be separately keyed
+(`noteworthy-revocation-semantics`, `noteworthy-adoption-rebuild`).
 
 Two rules fixed inside the model:
 
@@ -339,19 +387,24 @@ Decided:
   them; consensus nowhere. `noteworthy-ledger-substrate`.
 - **`lineKey`** — version-less upstream purl + `contract.osera.line`.
   `noteworthy-candidate-key`.
-- **Governance modes** — L-1 carries `governance`; mode selects accountability
-  and trust path, never admission strictness. `noteworthy-governance-modes`.
+- **Governance modes** — L-1 carries `governance`, including `signatories[]`;
+  mode selects accountability, trust path and how many outside reproductions
+  exist, never admission strictness. `noteworthy-governance-modes`.
 - **Verdict replay fields** — `coreDigest`, `bundleDigest`, `trustRootVersion`,
   `trustPath`.
 - **Bundle split** — issuer-sealed evidence core with one shared digest, per-bank
-  ingest envelope carrying the trust material and its freshness clock.
-  `noteworthy-bundle-split`.
+  ingest envelope carrying the trust material, its freshness clock and this
+  bank's own L8. `noteworthy-bundle-split`.
 - **Core form** — one canonical JSON file in the master repo, `sha256` over its
-  bytes as identity, Rekor entry as the freeze. `noteworthy-core-manifest`.
-- **Revocation semantics** — exposure with review trigger, verdict stands.
-  `noteworthy-revocation-semantics`.
-- **Quorum parameters** — `k = max(3, ceil(n/3))`, zero dissent, frozen at
-  issuance. `noteworthy-quorum-parameters`.
+  bytes as identity, Rekor entry as the freeze, now including advisory snapshots
+  and rebuild references among its elements. `noteworthy-core-manifest`.
+- **Revocation semantics** — exposure with review trigger, verdict stands, and
+  the bank's own rebuild is what makes that safe. `noteworthy-revocation-semantics`.
+- **Who verifies** — `verification.k` is the signatory set, zero dissent, minimum
+  two in team mode; `k = max(3, ceil(n/3))` retired.
+  `noteworthy-signer-verification`.
+- **Adoption rebuild** — L8 is written on both sides of the perimeter; the core
+  carries digest-pinned rebuild references. `noteworthy-adoption-rebuild`.
 - **Record names** — `package-version` (digest-grain), `lineKey` (lineage-grain);
   the noun *candidate* is retired. `noteworthy-lifecycle-nouns`.
 
