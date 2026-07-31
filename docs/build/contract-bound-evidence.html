@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="source-commit" content="cd3d78363f13b195366257a7506c870932262cb3">
 <title>Contract-Bound Evidence — admitting externally-patched open source into a regulated estate</title>
 <style>
 :root{--ink:#1a2332;--muted:#5b6676;--rule:#e3e8ee;--accent:#b91c1c;--bg:#fdfdfc}
@@ -34,6 +35,8 @@ li{margin:.3rem 0}
  border-radius:8px;overflow-x:auto}
 .fig svg{display:block;width:100%;height:auto;min-width:900px}
 .fig + p em{display:block;color:var(--muted);font-size:13.5px;margin-top:-.2rem}
+.stamp{margin-top:3rem;padding-top:.8rem;border-top:1px solid var(--rule);
+ font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
 @media print{body{background:#fff}.wrap{max-width:none;padding:0}
  .fig{break-inside:avoid;page-break-inside:avoid}
  h2{break-after:avoid}}
@@ -100,16 +103,16 @@ worth reading before Part I; the rest appear where they are relevant.</p>
 <text x="36" y="62" font-size="12.5" fill="#64748b">Three machines, three grains, one boundary. A project is a commitment; a package is an artifact; a product is a bridge. Read this page first.</text>
 
 <rect x="24" y="86" width="734" height="744" rx="10" fill="#fef6ec" stroke="#f3ddc0"/>
-<text x="52" y="110" font-size="12.5" font-weight="700" fill="#a1651a">OUTSIDE — issuer · provider · verifier quorum</text>
+<text x="52" y="110" font-size="12.5" font-weight="700" fill="#a1651a">OUTSIDE — issuer · provider · the contract's signatories</text>
 <text x="52" y="127" font-size="10.5" fill="#a1651a">evidence is PRODUCED here</text>
 
 <rect x="782" y="86" width="634" height="744" rx="10" fill="#f2f0fb" stroke="#ddd6f3"/>
 <text x="806" y="110" font-size="12.5" font-weight="700" fill="#5b3fa8">INSIDE THE BANK</text>
-<text x="806" y="127" font-size="10.5" fill="#5b3fa8">evidence is CONSUMED here — hermetic and offline</text>
+<text x="806" y="127" font-size="10.5" fill="#5b3fa8">evidence is CONSUMED here — the gate runs offline</text>
 
 <line x1="770" y1="86" x2="770" y2="830" stroke="#1a2332" stroke-width="3" stroke-dasharray="9 5"/>
 <text x="770" y="852" font-size="11.5" font-weight="700" fill="#1a2332" text-anchor="middle">THE PERIMETER</text>
-<text x="770" y="868" font-size="10.5" fill="#64748b" text-anchor="middle">one evidence bundle crosses — a copy, not a protocol</text>
+<text x="770" y="868" font-size="10.5" fill="#64748b" text-anchor="middle">the evidence core crosses — a copy, not a protocol</text>
 
 <!-- ROW 1 — PROJECT -->
 <text x="52" y="156" font-size="12.5" font-weight="700" fill="#334155">PROJECT — a commitment · identity = contract digest</text>
@@ -129,8 +132,9 @@ worth reading before Part I; the rest appear where they are relevant.</p>
 <text x="394" y="216" font-size="9" fill="#c2691a" text-anchor="middle">provider countersigns</text>
 <text x="534" y="192" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Delivered</text>
 <text x="534" y="209" font-size="9.5" fill="#64748b" text-anchor="middle">manifest logged</text>
-<text x="674" y="192" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Fulfilled</text>
-<text x="674" y="209" font-size="9.5" fill="#64748b" text-anchor="middle">k-of-n VSAs · FULL</text>
+<text x="674" y="190" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Fulfilled</text>
+<text x="674" y="205" font-size="9.5" fill="#64748b" text-anchor="middle">every signatory's L8</text>
+<text x="674" y="217" font-size="9" font-weight="700" fill="#b91c1c" text-anchor="middle">zero dissent · FULL</text>
 <g stroke="#475569" stroke-width="1.4" fill="none" marker-end="url(#a)">
 <line x1="176" y1="196" x2="190" y2="196"/><line x1="316" y1="196" x2="330" y2="196"/>
 <line x1="456" y1="196" x2="470" y2="196"/><line x1="596" y1="196" x2="610" y2="196"/>
@@ -151,8 +155,8 @@ worth reading before Part I; the rest appear where they are relevant.</p>
 <text x="360" y="279" font-size="8.5" fill="#7f1d1d" text-anchor="middle">deliverBy passed</text>
 <text x="510" y="268" font-size="11" font-weight="700" fill="#b91c1c" text-anchor="middle">Breached</text>
 <text x="510" y="279" font-size="8.5" fill="#7f1d1d" text-anchor="middle">conformance BREACH</text>
-<text x="612" y="266" font-size="9.5" fill="#64748b">amendment = new version +</text>
-<text x="612" y="279" font-size="9.5" fill="#64748b">supersession pointer</text>
+<text x="590" y="266" font-size="9.5" fill="#64748b">a signatory that never verifies</text>
+<text x="590" y="279" font-size="9.5" fill="#64748b">also ends at Lapsed</text>
 
 <!-- ROW 2 — PACKAGE -->
 <text x="52" y="336" font-size="12.5" font-weight="700" fill="#334155">PACKAGE — an artifact · identity = hardened_digest</text>
@@ -165,11 +169,12 @@ worth reading before Part I; the rest appear where they are relevant.</p>
 </g>
 <text x="402" y="374" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Built</text>
 <text x="402" y="391" font-size="9.5" fill="#64748b" text-anchor="middle">provider mints L0–L7</text>
-<text x="582" y="374" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Verified</text>
-<text x="582" y="391" font-size="9.5" fill="#64748b" text-anchor="middle">quorum rebuilds → L8</text>
-<text x="582" y="404" font-size="9" font-weight="700" fill="#b91c1c" text-anchor="middle">zero dissent</text>
-<text x="876" y="374" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Resolved</text>
-<text x="876" y="391" font-size="9.5" fill="#64748b" text-anchor="middle">bundle sealed by ③</text>
+<text x="582" y="372" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Verified</text>
+<text x="582" y="388" font-size="9.5" fill="#64748b" text-anchor="middle">signatories rebuild → L8</text>
+<text x="582" y="402" font-size="9" font-weight="700" fill="#b91c1c" text-anchor="middle">all agree · minimum two</text>
+<text x="876" y="372" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Resolved</text>
+<text x="876" y="388" font-size="9.5" fill="#64748b" text-anchor="middle">③ rebuilds it again here</text>
+<text x="876" y="402" font-size="9.5" fill="#64748b" text-anchor="middle">envelope sealed</text>
 <text x="1056" y="374" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Gate</text>
 <text x="1056" y="390" font-size="9.5" fill="#64748b" text-anchor="middle">structural → semantic → L9</text>
 <text x="1056" y="403" font-size="9.5" fill="#64748b" text-anchor="middle">16 rules · ①②④</text>
@@ -183,9 +188,10 @@ worth reading before Part I; the rest appear where they are relevant.</p>
 <g stroke="#2f8f4e" stroke-width="1.8" fill="none" marker-end="url(#ag)"><line x1="1126" y1="380" x2="1164" y2="380"/></g>
 <text x="1145" y="371" font-size="9.5" font-weight="700" fill="#2f8f4e" text-anchor="middle">admit</text>
 
-<!-- bundle crossing -->
+<!-- core crossing -->
 <g stroke="#1a2332" stroke-width="2.4" fill="none" marker-end="url(#a)"><line x1="652" y1="380" x2="804" y2="380"/></g>
-<text x="728" y="368" font-size="10.5" font-weight="700" fill="#1a2332" text-anchor="middle">evidence bundle</text>
+<text x="728" y="366" font-size="10.5" font-weight="700" fill="#1a2332" text-anchor="middle">evidence core</text>
+<text x="728" y="398" font-size="9" fill="#64748b" text-anchor="middle">one digest, every bank</text>
 
 <!-- hinge -->
 <g stroke="#c2691a" stroke-width="2.2" fill="none" marker-end="url(#ao)"><path d="M420 224 L420 348"/></g>
@@ -229,7 +235,7 @@ worth reading before Part I; the rest appear where they are relevant.</p>
 <!-- renewal loop -->
 <g stroke="#c2691a" stroke-width="2" fill="none" stroke-dasharray="7 4" marker-end="url(#ao)"><path d="M1056 628 L1056 800 L38 800 L38 196 L50 196"/></g>
 <text x="1040" y="662" font-size="11.5" font-weight="700" fill="#c2691a" text-anchor="end">RENEWAL — a new project against the same line</text>
-<text x="1040" y="677" font-size="9.5" fill="#a1651a" text-anchor="end">its own contract, its own baseline, its own CVE set · same lineKey</text>
+<text x="1040" y="677" font-size="9.5" fill="#a1651a" text-anchor="end">its own contract, its own baseline, its own CVE set, its own signatories</text>
 <text x="1040" y="691" font-size="9.5" fill="#a1651a" text-anchor="end">osera.1 → osera.2 linked by a supersedes edge on the package</text>
 <text x="1040" y="705" font-size="9.5" fill="#a1651a" text-anchor="end">a renewal that jumps lines is a NEW lineage, not a supersede</text>
 
@@ -238,8 +244,8 @@ worth reading before Part I; the rest appear where they are relevant.</p>
 <text x="120" y="722" font-size="11.5" font-weight="700" fill="#a1651a">THE INVARIANT THIS PAGE EXISTS TO SHOW</text>
 <text x="120" y="742" font-size="10.5" fill="#7c5314">Each state belongs to exactly one grain. Facts about a build attach to a digest;</text>
 <text x="120" y="757" font-size="10.5" fill="#7c5314">facts about exposure attach to a lineage that outlives every digest in it.</text>
-<text x="120" y="777" font-size="10.5" fill="#7c5314">Class (a) and (b) diverge only at Built and Verified — from Resolved inward the</text>
-<text x="120" y="792" font-size="10.5" fill="#7c5314">machine is class-agnostic, which is what lets the gate be one tool instead of two.</text>
+<text x="120" y="777" font-size="10.5" fill="#7c5314">Class (a) and (b) diverge only at Built and Verified, and so do the two governance</text>
+<text x="120" y="792" font-size="10.5" fill="#7c5314">modes — from Resolved inward the machine is agnostic to both. One tool, not four.</text>
 </svg>
 </div></p>
 <hr />
@@ -393,28 +399,30 @@ model can support at all.</p>
 <text x="36" y="40" font-size="22" font-weight="700" fill="#1a2332">2 — Data model: which attribute binds to which</text>
 <text x="36" y="61" font-size="12.5" fill="#64748b">The contract is the referent every link points back to. Orange = a binding the gate checks; grey = a field carried forward. Assumes page 1.</text>
 
-<rect x="24" y="78" width="440" height="322" rx="10" fill="#fff7ed" stroke="#e6c9a0"/>
+<rect x="24" y="78" width="440" height="342" rx="10" fill="#fff7ed" stroke="#e6c9a0"/>
 <text x="44" y="100" font-size="13" font-weight="700" fill="#a1651a">L-1 CONTRACT — the root referent (frozen at Accepted)</text>
-<text x="44" y="126" font-size="11" font-family="monospace" fill="#7c5314">contractId · version</text>
-<text x="44" y="146" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">governance{ mode, sponsor, mandateRef, trustPath }</text>
-<text x="44" y="166" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">baseline.digest</text>
-<text x="44" y="186" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">osera.line</text>
-<text x="44" y="206" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">scope.cvesInScope[ ]</text>
-<text x="44" y="226" font-size="11" font-family="monospace" fill="#7c5314">scope.explicitlyOutOfScope[ ]</text>
-<text x="44" y="246" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">acceptanceCriteria.testCorpus.digest</text>
-<text x="44" y="266" font-size="11" font-family="monospace" fill="#7c5314">acceptanceCriteria.thresholds{ coverage, apiAbi }</text>
-<text x="44" y="286" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">verification.k</text>
-<text x="44" y="306" font-size="11" font-family="monospace" fill="#7c5314">schedule{ deliverBy, bridgeExpiry }</text>
-<text x="44" y="334" font-size="10" font-style="italic" fill="#a1651a">Bold fields are checked by an admission rule. The rest are carried for audit.</text>
-<text x="44" y="352" font-size="10" font-style="italic" fill="#a1651a">Identity is the contract digest — the version string is metadata, never identity.</text>
-<text x="44" y="378" font-size="10.5" font-weight="700" fill="#b91c1c">A contract that names only one artifact is unverifiable and MUST be rejected.</text>
+<text x="44" y="124" font-size="11" font-family="monospace" fill="#7c5314">contractId · version</text>
+<text x="44" y="143" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">governance{ mode, sponsor, trustPath, mandateRef,</text>
+<text x="44" y="159" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">            signatories[ ] }</text>
+<text x="44" y="178" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">baseline.digest</text>
+<text x="44" y="197" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">osera.line</text>
+<text x="44" y="216" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">scope.cvesInScope[ ] · each with a pinned record</text>
+<text x="44" y="235" font-size="11" font-family="monospace" fill="#7c5314">scope.explicitlyOutOfScope[ ]</text>
+<text x="44" y="254" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">acceptanceCriteria.testCorpus.digest</text>
+<text x="44" y="273" font-size="11" font-family="monospace" fill="#7c5314">acceptanceCriteria.thresholds{ coverage, apiAbi }</text>
+<text x="44" y="292" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">verification.k = the signatory set itself</text>
+<text x="44" y="311" font-size="11" font-family="monospace" font-weight="700" fill="#7c5314">rebuild{ source, transformation, toolchain } by digest</text>
+<text x="44" y="330" font-size="11" font-family="monospace" fill="#7c5314">schedule{ deliverBy, bridgeExpiry }</text>
+<text x="44" y="356" font-size="10" font-style="italic" fill="#a1651a">Bold fields are checked by an admission rule. The rest are carried for audit.</text>
+<text x="44" y="373" font-size="10" font-style="italic" fill="#a1651a">Identity is the contract digest — the version string is metadata, never identity.</text>
+<text x="44" y="398" font-size="10.5" font-weight="700" fill="#b91c1c">A contract that names only one artifact is unverifiable and MUST be rejected.</text>
 
 <g filter="url(#s)">
 <rect x="524" y="96" width="380" height="62" rx="7" fill="#fff" stroke="#cbd5e1"/>
 <rect x="524" y="176" width="380" height="62" rx="7" fill="#fff" stroke="#cbd5e1"/>
 <rect x="524" y="256" width="380" height="62" rx="7" fill="#fff" stroke="#cbd5e1"/>
 <rect x="524" y="336" width="380" height="62" rx="7" fill="#fff" stroke="#cbd5e1"/>
-<rect x="524" y="416" width="380" height="96" rx="7" fill="#fff" stroke="#9fd8ce" stroke-width="1.8"/>
+<rect x="524" y="416" width="380" height="112" rx="7" fill="#fff" stroke="#9fd8ce" stroke-width="1.8"/>
 </g>
 <text x="540" y="118" font-size="12" font-weight="700" fill="#334155">L0 baseline</text>
 <text x="540" y="137" font-size="10.5" font-family="monospace" fill="#64748b">baseline_digest · source_ref · coordinates</text>
@@ -428,24 +436,25 @@ model can support at all.</p>
 <text x="540" y="358" font-size="12" font-weight="700" fill="#334155">L7 VEX</text>
 <text x="540" y="377" font-size="10.5" font-family="monospace" fill="#64748b">per cve: status=fixed · justifiedBy → L5 id</text>
 <text x="540" y="391" font-size="9.5" font-style="italic" fill="#94a3b8">no unjustified suppression</text>
-<text x="540" y="440" font-size="12" font-weight="700" fill="#0f8a7a">L8 VSA — one per verifier, the quorum is the SET</text>
-<text x="540" y="459" font-size="10.5" font-family="monospace" fill="#0f6f63">rebuild.digestMatch · l4/l5 recheck · policyPassed</text>
-<text x="540" y="475" font-size="10.5" font-family="monospace" font-weight="700" fill="#0f6f63">log.checkpoint · osera.contract.conformance</text>
-<text x="540" y="493" font-size="9.5" font-style="italic" fill="#0f8a7a">|set| ≥ k, ZERO dissent — divergent digests OR checkpoints disqualify</text>
-<text x="540" y="506" font-size="9.5" font-weight="700" fill="#b91c1c">L8 is the only link that converts claims into evidence</text>
+<text x="540" y="438" font-size="12" font-weight="700" fill="#0f8a7a">L8 VSA — one per signatory, plus one from the adopting bank</text>
+<text x="540" y="457" font-size="10.5" font-family="monospace" fill="#0f6f63">rebuild.digestMatch · l4/l5 recheck · policyPassed</text>
+<text x="540" y="473" font-size="10.5" font-family="monospace" font-weight="700" fill="#0f6f63">log.checkpoint · osera.contract.conformance</text>
+<text x="540" y="491" font-size="9.5" font-style="italic" fill="#0f8a7a">one per signatory · ZERO dissent · divergent digests or checkpoints disqualify</text>
+<text x="540" y="505" font-size="9.5" font-style="italic" fill="#0f8a7a">the bank then rebuilds inside its own perimeter and signs its own</text>
+<text x="540" y="521" font-size="9.5" font-weight="700" fill="#b91c1c">L8 is the only link that converts claims into evidence</text>
 
 <g stroke="#b45309" stroke-width="1.6" fill="none" marker-end="url(#a)">
-<line x1="464" y1="166" x2="522" y2="122"/>
-<line x1="464" y1="246" x2="522" y2="202"/>
-<line x1="464" y1="210" x2="522" y2="282"/>
-<line x1="464" y1="214" x2="522" y2="362"/>
-<line x1="464" y1="290" x2="522" y2="448"/>
+<line x1="464" y1="178" x2="522" y2="122"/>
+<line x1="464" y1="254" x2="522" y2="202"/>
+<line x1="464" y1="220" x2="522" y2="282"/>
+<line x1="464" y1="224" x2="522" y2="362"/>
+<line x1="464" y1="296" x2="522" y2="448"/>
 </g>
-<text x="470" y="140" font-size="9.5" font-weight="700" fill="#b45309">==</text>
-<text x="470" y="228" font-size="9.5" font-weight="700" fill="#b45309">==</text>
-<text x="478" y="262" font-size="9.5" font-weight="700" fill="#b45309">one per</text>
-<text x="478" y="316" font-size="9.5" font-weight="700" fill="#b45309">⊆ fixed</text>
-<text x="478" y="380" font-size="9.5" font-weight="700" fill="#b45309">k</text>
+<text x="470" y="142" font-size="9.5" font-weight="700" fill="#b45309">==</text>
+<text x="470" y="236" font-size="9.5" font-weight="700" fill="#b45309">==</text>
+<text x="478" y="268" font-size="9.5" font-weight="700" fill="#b45309">one per</text>
+<text x="478" y="322" font-size="9.5" font-weight="700" fill="#b45309">⊆ fixed</text>
+<text x="478" y="386" font-size="9.5" font-weight="700" fill="#b45309">who</text>
 
 <g filter="url(#s)">
 <rect x="964" y="96" width="472" height="104" rx="7" fill="#fff" stroke="#cbd5e1"/>
@@ -460,11 +469,11 @@ model can support at all.</p>
 <text x="980" y="191" font-size="9.5" font-style="italic" fill="#94a3b8">supersedes and osera.line must agree — a checkable invariant</text>
 <text x="980" y="242" font-size="12" font-weight="700" fill="#334155">verdict — immutable, self-contained for replay</text>
 <text x="980" y="262" font-size="10.5" font-family="monospace" fill="#64748b">packageRef · inputs{layoutRef, policyRef}</text>
-<text x="980" y="280" font-size="10.5" font-family="monospace" font-weight="700" fill="#b91c1c">bundleDigest</text>
+<text x="980" y="280" font-size="10.5" font-family="monospace" font-weight="700" fill="#b91c1c">coreDigest · bundleDigest</text>
 <text x="980" y="297" font-size="10.5" font-family="monospace" font-weight="700" fill="#b91c1c">trustRootVersion</text>
 <text x="980" y="314" font-size="10.5" font-family="monospace" font-weight="700" fill="#b91c1c">trustPath = osera-root | delegated:&lt;bank&gt;</text>
 <text x="980" y="333" font-size="10.5" font-family="monospace" fill="#64748b">decision = admit | reject · failingRule?</text>
-<text x="980" y="354" font-size="9.5" font-style="italic" fill="#94a3b8">these three are why a regulator re-running this reaches the same answer</text>
+<text x="980" y="354" font-size="9.5" font-style="italic" fill="#94a3b8">same coreDigest at two banks, different bundleDigest — the comparison that permits</text>
 <text x="980" y="412" font-size="12" font-weight="700" fill="#5b3fa8">ledger-event — append-only, hash-chained</text>
 <text x="980" y="432" font-size="10.5" font-family="monospace" fill="#6b5aa5">id = sha256 · prev = prior event for lineKey</text>
 <text x="980" y="449" font-size="10.5" font-family="monospace" font-weight="700" fill="#6b5aa5">lineKey = version-less purl + osera.line</text>
@@ -478,26 +487,26 @@ model can support at all.</p>
 
 <g stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#b)">
 <line x1="904" y1="130" x2="962" y2="130"/>
-<line x1="904" y1="464" x2="962" y2="290"/>
+<line x1="904" y1="470" x2="962" y2="290"/>
 <line x1="1200" y1="200" x2="1200" y2="218"/>
 <line x1="1200" y1="370" x2="1200" y2="388"/>
 <line x1="1200" y1="512" x2="1200" y2="530"/>
 </g>
 <text x="908" y="122" font-size="9.5" font-weight="700" fill="#475569">hardened_digest</text>
-<text x="890" y="392" font-size="9.5" font-weight="700" fill="#475569">quorum → decision</text>
+<text x="884" y="396" font-size="9.5" font-weight="700" fill="#475569">the L8 set → decision</text>
 
 <g stroke="#b45309" stroke-width="1.6" fill="none" marker-end="url(#a)" stroke-dasharray="5 3">
-<path d="M212 316 C 300 690, 900 700, 1100 512"/>
-<path d="M120 196 C 200 640, 880 640, 1090 460"/>
+<path d="M212 336 C 300 700, 900 710, 1100 512"/>
+<path d="M120 207 C 200 650, 880 650, 1090 460"/>
 </g>
-<text x="330" y="716" font-size="10.5" font-weight="700" fill="#b45309">schedule.bridgeExpiry → ledger-row.expiresAt</text>
-<text x="330" y="662" font-size="10.5" font-weight="700" fill="#b45309">osera.line → lineKey (declared, never derived)</text>
+<text x="330" y="726" font-size="10.5" font-weight="700" fill="#b45309">schedule.bridgeExpiry → ledger-row.expiresAt</text>
+<text x="330" y="672" font-size="10.5" font-weight="700" fill="#b45309">osera.line → lineKey (declared, never derived)</text>
 
 <rect x="24" y="748" width="1412" height="164" rx="10" fill="#fff5f5" stroke="#f3c7c7"/>
 <text x="44" y="772" font-size="12.5" font-weight="700" fill="#b91c1c">WHAT THIS PAGE IS FOR</text>
 <text x="44" y="794" font-size="11" fill="#7f1d1d">Every orange arrow is an admission rule in disguise. The gate does not ask "did the provider do good work?" — it asks whether each of these bindings holds:</text>
 <text x="44" y="815" font-size="11" fill="#7f1d1d">the baseline they started from IS the one commissioned · the corpus they ran IS the one named by digest · every CVE in scope has a proof that fails on the</text>
-<text x="44" y="836" font-size="11" fill="#7f1d1d">baseline and passes on the hardened build · every "fixed" in the VEX points at that proof · and k independent parties re-derived the same digest with no dissent.</text>
+<text x="44" y="836" font-size="11" fill="#7f1d1d">baseline and passes on the hardened build · every "fixed" in the VEX points at that proof · and every party that signed the contract re-derived the same digest.</text>
 <text x="44" y="864" font-size="11" fill="#7f1d1d">Two grains, one rule: <tspan font-weight="700">the immutable store never references the mutable store.</tspan> Every pointer runs mutable → immutable, so a content hash can never</text>
 <text x="44" y="885" font-size="11" fill="#7f1d1d">depend on moving state. The digest is both the join key across the immutable side and the handle the operational side holds.</text>
 </svg>
@@ -544,8 +553,8 @@ deterministic, independent verifiers converge on the same digest <strong>without
 coordinating</strong>. There is no protocol between them, no messages, no leader. The
 correct answer is a natural focal point — the one result every honest party
 independently arrives at — and agreement is an artifact of determinism rather than
-of negotiation. Each verifier publishes its own signed verification summary.
-Admission requires <em>k</em> of them.</p>
+of negotiation. Each verifier publishes its own signed verification summary, and
+admission requires the whole set to agree.</p>
 <p>The most important design decision in this paper is what happens when they
 disagree.</p>
 <p><strong>Dissent is disqualifying, not outvoted.</strong> If five institutions rebuild and four
@@ -553,20 +562,26 @@ agree while one produces a different digest, the honest reading is <em>not</em> 
 against one. It is that something is wrong — either the toolchain specification is
 underdetermined and the build is not as reproducible as claimed, or something
 considerably worse — and either way the receiving institutions need to know
-loudly, before promotion. So the rule is <em>k</em>-of-<em>n</em> <strong>with zero dissent</strong>, never a
-simple majority. A dissenting verification summary triggers investigation, not
-arithmetic.</p>
+loudly, before promotion. So the rule is <strong>unanimity across the verifier set</strong>,
+never a simple majority. A dissenting verification summary triggers investigation,
+not arithmetic.</p>
 <p>This inverts the usual instinct. Majority voting is designed to <em>tolerate</em>
 disagreement and produce an answer anyway. Here, disagreement is the most valuable
 signal the system can generate, and a design that averages it away has discarded
 its own best alarm. It is also a signal <strong>no single-checker design can produce at
 all</strong> — with one verifier there is nothing to disagree with — and that, more than
 throughput or redundancy, is the strongest argument for the quorum.</p>
-<p>Two practical notes. The threshold should be expressed both absolutely and
-proportionally — a floor of three, rising with membership — so it cannot silently
-weaken as the alliance grows. And <em>k</em> must be <strong>frozen into the contract at
-issuance</strong>, so an artifact is judged against the quorum that applied when it was
-commissioned rather than one that drifted afterwards.</p>
+<p>Two practical notes. Who sits in that set, and how large it needs to be, is
+settled in Part II: the short version is that verification binds to the parties
+that sign and fund the contract, so the set is <strong>named rather than sized</strong>. And
+that set is <strong>frozen into the contract at issuance</strong>, so an artifact is judged
+against the parties who committed to it rather than against a membership that
+drifted afterwards.</p>
+<p>One further reproduction happens later and matters more than its position
+suggests: the institution that adopts the package rebuilds it again, inside its
+own perimeter, before admitting it. Part III describes where that sits and why it
+is what makes the whole arrangement work for a package only one institution
+commissioned.</p>
 <hr />
 <p>Part I establishes the model: commission the specification before the work,
 anchor it in publicly observable fact, and require independent reproduction with
@@ -576,17 +591,17 @@ actually deploys.</p>
 <hr />
 <h1 id="part-ii-commissioning-and-trust">Part II — Commissioning and trust</h1>
 <p>Part I described the model. This part is about the institutional machinery
-underneath it: who decides what gets commissioned, what happens when a
-commitment is not met, and how the trust root survives the organisations that
-hold it. These are governance questions, and they are the ones an alliance has to
-settle before any of the engineering matters.</p>
+underneath it: who decides what gets commissioned, who checks the result, what
+happens when a commitment is not met, and how the trust root survives the
+organisations that hold it. These are governance questions, and they are the ones
+an alliance has to settle before any of the engineering matters.</p>
 <hr />
 <h2 id="6-issuance-and-what-happens-when-delivery-falls-short">6. Issuance, and what happens when delivery falls short</h2>
 <p>The contract has its own lifecycle, separate from the artifact's. It is drafted,
 proposed to the provider, accepted when the provider countersigns, delivered, and
-finally fulfilled when the quorum confirms conformance. It can also be withdrawn
-before acceptance, breached on delivery, or lapse if the delivery window passes
-with nothing produced.</p>
+finally fulfilled when the verifiers confirm conformance. It can also be
+withdrawn before acceptance, breached on delivery, or lapse if the delivery
+window passes with nothing produced.</p>
 <p><strong>Acceptance is the hinge.</strong> Before it, the draft is mutable and internal to the
 issuer. From it, scope, baseline, corpus and thresholds are frozen and signed,
 and the artifact lifecycle begins. Everything Part I claims about commissioned
@@ -641,8 +656,8 @@ than a hypothetical one.</p>
 <p><strong>So the root is co-signed by a threshold of parties spanning the alliance and
 its member institutions.</strong> Re-signing requires k of m, so it survives any single
 party disappearing, and no single compromised key can rotate the root. This is
-the same shape as the verification quorum, applied to trust material — the design
-uses thresholds wherever a single key would otherwise be load-bearing.</p>
+the same shape as verification, applied to trust material — the design uses
+thresholds wherever a single key would otherwise be load-bearing.</p>
 <h3 id="bilateral-work-needs-a-delegated-namespace">Bilateral work needs a delegated namespace</h3>
 <p>Not all work is commissioned collectively. An institution may contract a provider
 directly, for a library only it cares about. That work should not be signed under
@@ -665,54 +680,84 @@ mattered — and relaxing it would mean the strict version was never necessary.<
 <p>The trust path is recorded on the verdict for <strong>attribution</strong>. It tells you who
 stood behind the commissioning judgement, which is genuinely useful when
 something goes wrong. It does not alter what the gate requires.</p>
+<p>One honest qualification, developed in §8: the <em>rules</em> are identical across
+paths, and so is the work the receiving institution does. What varies is how many
+independent reproductions accompanied the artifact before it arrived.</p>
 <p>The related decision concerns the transparency log. A shared log operated by the
 alliance is convenient, but a log operator can in principle present different
 views to different parties. Rather than adding a separate witness network, each
 verifier records the log state it observed at the time of verification, and those
-observations travel with the evidence. Agreement across the quorum makes a split
-view detectable, using machinery already present for other reasons.</p>
+observations travel with the evidence. Agreement across the verifiers makes a
+split view detectable, using machinery already present for other reasons.</p>
 <hr />
-<h2 id="8-verification-as-a-duty-and-how-large-the-quorum-should-be">8. Verification as a duty, and how large the quorum should be</h2>
+<h2 id="8-who-verifies-and-how-many">8. Who verifies, and how many</h2>
 <p>The unresolved question in early drafts was what motivates an institution to
-verify someone else's artifact. The natural answer was to make verification a
+verify someone else's artifact. The first answer was to make verification a
 credit — count it against membership dues, so institutions that verify pay less.</p>
 <p>That answer collapses on contact with bilateral commissioning. If verification
 earns credit and an institution can commission alone, the rational strategy is to
-commission solo and never verify, which starves the quorum precisely when it is
-needed. Worse, the institutions most able to verify are the ones most able to go
-it alone.</p>
-<p><strong>So verification is an obligation of membership.</strong> Members verify what the
-alliance commissions; the cost is a CI job. This has a useful secondary effect:
-the pool of verifiers is the membership, so quorum size scales with the alliance
-rather than being separately negotiated.</p>
-<p>It also clarifies what the two commissioning modes actually change. In
-<strong>team</strong> mode, members vote work in and share the cost and the
-responsibility. In <strong>solo</strong> mode, one institution commissions and funds alone and
-is solely accountable for that judgement. The mode determines who answers for
-<em>deciding to commission this work at all</em>. It has no effect on how strictly the
-result is verified, and none on what the gate requires.</p>
-<h3 id="choosing-k">Choosing k</h3>
-<p>The threshold is expressed both absolutely and proportionally: a floor of three,
-rising with the size of the active membership.</p>
-<p>The floor exists because two verifiers cannot produce a usable signal — when two
-parties disagree there is no way to tell which is wrong without a third. The
-proportional term exists so the guarantee does not silently weaken as the
-alliance grows; a fixed three-of-forty is a much weaker statement than
-three-of-five, and expressing only a fixed number lets that erosion happen
-without anyone deciding it should.</p>
-<p><strong>The threshold in force is frozen into the contract at issuance.</strong> An artifact
-is judged against the quorum that applied when it was commissioned, rather than
-one that drifted during the work. Without this, a membership change mid-delivery
-would silently move the target.</p>
-<p>One consequence has to be stated because it affects formation planning: until
-three verifiers are active, nothing can be admitted at all. Verifier recruitment
-is a launch prerequisite. An alliance that signs a provider before it has three
-verifying members will have commissioned work that cannot be consumed.</p>
+commission solo and never verify, which starves the verifier pool precisely when
+it is needed. Worse, the institutions most able to verify are the ones most able
+to go it alone.</p>
+<p>The second answer was to make verification an obligation of membership: members
+verify what the alliance commissions, and the cost is a CI job. That works, and
+it has an awkward edge — it conscripts institutions into checking projects they
+neither asked for nor consume, and it leaves unanswered which member checks which
+project.</p>
+<p><strong>The answer the model settles on is that verification follows the money.</strong> The
+institutions that sign and fund a contract are the institutions that verify it.
+All of them verify, all must agree, and a collectively-commissioned project needs
+at least two signatories to exist at all.</p>
+<p>The argument is that financial exposure is a firmer binding than an obligation.
+A signatory has already accepted the cost, and it will run the result in its own
+estate, so it carries the consequence of a bad patch twice over. It also disposes
+of the assignment problem: there is no rule needed for who checks what, because
+the contract already names them, and no project can stall waiting for a volunteer.</p>
+<p>The cost is a sunk-cost pull in the other direction — a funder that needs the
+package in production has some motive to see it pass. What holds the line is that
+the comparison is digest equality, with nothing to interpret or soften.</p>
+<h3 id="how-many-is-enough">How many is enough</h3>
+<p>Earlier drafts set a floor of three, justified on the grounds that two verifiers
+disagreeing give no way to tell which is wrong without a third.</p>
+<p>That justification does not survive inspection, because <strong>nothing in this design
+arbitrates</strong>. Disagreement is disqualifying rather than resolvable: two agree and
+the package admits, two disagree and it stops, and five would behave the same
+way. The third verifier was never going to break a tie, because there are no ties
+to break.</p>
+<p>What two rather than three does cost is compromise resistance — one bad signer is
+half the outside evidence rather than a third of it. That is accepted, and the
+reason it is acceptable is the next section.</p>
+<h3 id="the-receiving-institution-verifies-too">The receiving institution verifies too</h3>
+<p>The strongest reproduction in the model is the one nobody commissioned.</p>
+<p><strong>Every adopting institution rebuilds the package itself</strong>, from source and
+toolchain references pinned by digest in the evidence, and signs its own
+verification summary. This happens while it is still online, during resolution,
+before the evidence is sealed for offline verification — so the gate still decides
+from a sealed bundle and the decision is still replayable.</p>
+<p>This is what makes a solo-commissioned artifact consumable without a weaker tier.
+A solo project has one signatory and therefore one reproduction before the
+perimeter; the maker and the checker are separated <em>at the point where the
+decision is made</em> by the institution taking the risk. And it is why a revoked
+verifier key does not unravel past admissions: whatever happened outside, the
+receiving institution had rebuilt the package for itself.</p>
+<p>The honest cost is that verification does not compress for consumers either.
+Each adopting institution pays roughly production cost per package. Sampling
+would reduce it and would make the work differ by commissioning mode, which is
+the distinction this design refuses to draw.</p>
+<p><strong>The threshold in force is frozen into the contract at issuance</strong>, along with
+the signatory set. An artifact is judged against the parties who committed to it
+when it was commissioned, rather than against a set that drifted during the work.</p>
+<p>One consequence has to be stated because it affects formation planning: a
+collectively-commissioned project cannot begin until a second institution will
+co-fund it. Co-funding is therefore a launch prerequisite, and an alliance that
+signs a provider before it has members willing to pair up will have commissioned
+work under contracts that cannot reach fulfilment.</p>
 <hr />
 <p>Part II settles the institutional questions: a commitment that freezes on
 countersignature, a shortfall that surfaces as an amended contract, a trust root
-that survives its holders, and a quorum drawn from membership with a threshold
-that cannot quietly erode. Part III is what a receiving institution deploys.</p>
+that survives its holders, and verification bound to the parties that pay for the
+work and then rebuilt again by whoever adopts it. Part III is what a receiving
+institution deploys.</p>
 <hr />
 <h1 id="part-iii-admission-and-afterlife">Part III — Admission and afterlife</h1>
 <p>Parts I and II described a model and who operates it. This part is about what a
@@ -733,7 +778,7 @@ expect and the afterlife is larger.</p>
 <rect x="24" y="80" width="640" height="380" rx="10" fill="#fef6ec" stroke="#f3ddc0"/>
 <text x="44" y="102" font-size="12.5" font-weight="700" fill="#a1651a">ISSUER SIDE (alliance)</text>
 <rect x="700" y="80" width="696" height="380" rx="10" fill="#f2f0fb" stroke="#ddd6f3"/>
-<text x="720" y="102" font-size="12.5" font-weight="700" fill="#5b3fa8">CONSUMER SIDE (bank) — hermetic from the moment the bundle is sealed</text>
+<text x="720" y="102" font-size="12.5" font-weight="700" fill="#5b3fa8">CONSUMER SIDE (bank) — hermetic from the moment the envelope is sealed</text>
 
 <g filter="url(#s)">
 <rect x="44" y="118" width="190" height="88" rx="8" fill="#fff" stroke="#e11d48" stroke-width="1.5"/>
@@ -743,7 +788,7 @@ expect and the afterlife is larger.</p>
 </g>
 <text x="139" y="142" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">⑦ Authoring UI</text>
 <text x="139" y="162" font-size="10" fill="#64748b" text-anchor="middle">scope · baseline · corpus</text>
-<text x="139" y="177" font-size="10" fill="#64748b" text-anchor="middle">governance · osera.line</text>
+<text x="139" y="177" font-size="10" fill="#64748b" text-anchor="middle">signatories · osera.line</text>
 <text x="139" y="195" font-size="9.5" font-style="italic" fill="#a1651a" text-anchor="middle">anchor checked while drafting</text>
 <text x="347" y="142" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">⑧ Issuance</text>
 <text x="347" y="162" font-size="10" fill="#64748b" text-anchor="middle">sign · countersign · freeze</text>
@@ -760,19 +805,19 @@ expect and the afterlife is larger.</p>
 
 <rect x="252" y="224" width="392" height="88" rx="8" fill="#fff" stroke="#9fd8ce"/>
 <text x="448" y="248" font-size="12" font-weight="700" fill="#0f8a7a" text-anchor="middle">Integrated, not built</text>
-<text x="448" y="268" font-size="10" fill="#0f6f63" text-anchor="middle">Rekor (FINOS-operated, quorum-witnessed) · Fulcio · attestation index</text>
-<text x="448" y="284" font-size="10" fill="#0f6f63" text-anchor="middle">provider's pipeline (L0–L7) · verifier rebuild infra (L8)</text>
+<text x="448" y="268" font-size="10" fill="#0f6f63" text-anchor="middle">Rekor (FINOS-operated, signatory-witnessed) · Fulcio · attestation index</text>
+<text x="448" y="284" font-size="10" fill="#0f6f63" text-anchor="middle">provider's pipeline (L0–L7) · the signatories' rebuild infra (L8)</text>
 <text x="448" y="301" font-size="9.5" font-style="italic" fill="#0f8a7a" text-anchor="middle">the index is a lookup, never evidence — untrusted by design</text>
 
 <rect x="44" y="330" width="600" height="112" rx="8" fill="#fffaf3" stroke="#e6c9a0" stroke-dasharray="4 3"/>
 <text x="64" y="352" font-size="11.5" font-weight="700" fill="#a1651a">THE GAP — not engineering</text>
 <text x="64" y="372" font-size="10.5" fill="#7c5314">Who sits in the trust-root threshold · verifier on/offboarding criteria · procedure on</text>
 <text x="64" y="389" font-size="10.5" fill="#7c5314">suspected compromise. Mechanism is built (⑨); the policy is formation-stage alliance business.</text>
-<text x="64" y="412" font-size="10.5" fill="#7c5314">Also: at formation n &lt; 3 means nothing can be admitted — verifier recruitment is a launch</text>
-<text x="64" y="429" font-size="10.5" fill="#7c5314">prerequisite, not a growth activity.</text>
+<text x="64" y="412" font-size="10.5" fill="#7c5314">Also: a team project needs a second signatory before it can be commissioned at all, so</text>
+<text x="64" y="429" font-size="10.5" fill="#7c5314">co-funding — not verifier recruitment — is the launch prerequisite.</text>
 
 <rect x="664" y="80" width="34" height="380" fill="#1a2332"/>
-<text x="681" y="270" font-size="12" font-weight="700" fill="#fff" text-anchor="middle" transform="rotate(-90 681 270)">EVIDENCE BUNDLE</text>
+<text x="681" y="270" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" transform="rotate(-90 681 270)">CORE + ENVELOPE</text>
 
 <g filter="url(#s)">
 <rect x="720" y="118" width="200" height="88" rx="8" fill="#fff" stroke="#e11d48" stroke-width="1.5"/>
@@ -782,14 +827,14 @@ expect and the afterlife is larger.</p>
 <rect x="938" y="224" width="200" height="88" rx="8" fill="#fff" stroke="#e11d48" stroke-width="1.5"/>
 <rect x="1156" y="224" width="222" height="88" rx="8" fill="#eaf7ee" stroke="#8fce9f"/>
 </g>
-<text x="820" y="142" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">③ Resolver + assembly</text>
-<text x="820" y="162" font-size="10" fill="#64748b" text-anchor="middle">index → attestations → bundle</text>
-<text x="820" y="179" font-size="9.5" font-style="italic" fill="#5b3fa8" text-anchor="middle">the LAST online step</text>
-<text x="820" y="195" font-size="9.5" font-style="italic" fill="#5b3fa8" text-anchor="middle">resolution online · verification offline</text>
+<text x="820" y="142" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">③ Resolve + rebuild</text>
+<text x="820" y="160" font-size="10" fill="#64748b" text-anchor="middle">index → attestations → core</text>
+<text x="820" y="175" font-size="10" font-weight="700" fill="#b91c1c" text-anchor="middle">rebuilds, signs its own L8</text>
+<text x="820" y="192" font-size="9.5" font-style="italic" fill="#5b3fa8" text-anchor="middle">the LAST online step before sealing</text>
 <text x="1038" y="142" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">① recompile + ② Rego</text>
 <text x="1038" y="162" font-size="10" fill="#64748b" text-anchor="middle">structural: in-toto-verify</text>
 <text x="1038" y="177" font-size="10" fill="#64748b" text-anchor="middle">semantic: 16 admission rules</text>
-<text x="1038" y="195" font-size="9.5" font-style="italic" fill="#5b3fa8" text-anchor="middle">every rule decidable from the bundle alone</text>
+<text x="1038" y="195" font-size="9.5" font-style="italic" fill="#5b3fa8" text-anchor="middle">every rule decidable from the envelope</text>
 <text x="1267" y="142" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">④ Acceptance harness</text>
 <text x="1267" y="162" font-size="10" fill="#64748b" text-anchor="middle">the bank's own tests, as an</text>
 <text x="1267" y="177" font-size="10" fill="#64748b" text-anchor="middle">in-toto inspection → L9</text>
@@ -799,7 +844,7 @@ expect and the afterlife is larger.</p>
 <text x="820" y="285" font-size="10" fill="#64748b" text-anchor="middle">reads the CMDB for app inventory</text>
 <text x="820" y="302" font-size="9.5" font-style="italic" fill="#5b3fa8" text-anchor="middle">what the risk function feels daily</text>
 <text x="1038" y="248" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">⑥ Console</text>
-<text x="1038" y="268" font-size="10" fill="#64748b" text-anchor="middle">board · candidate · exposure · lineage</text>
+<text x="1038" y="268" font-size="10" fill="#64748b" text-anchor="middle">board · package · exposure · lineage</text>
 <text x="1038" y="285" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">READ TIER — writes nothing durable</text>
 <text x="1038" y="302" font-size="9.5" font-style="italic" fill="#5b3fa8" text-anchor="middle">every change routes via verdict or ledger</text>
 <text x="1267" y="252" font-size="12.5" font-weight="700" fill="#2f8f4e" text-anchor="middle">Golden repo</text>
@@ -810,8 +855,8 @@ expect and the afterlife is larger.</p>
 <rect x="720" y="330" width="658" height="112" rx="8" fill="#faf9ff" stroke="#ddd6f3"/>
 <text x="740" y="352" font-size="11.5" font-weight="700" fill="#5b3fa8">STORES, IN ONE LINE EACH</text>
 <text x="740" y="372" font-size="10.5" fill="#4c3a80">quarantine registry — written on arrival, read by the gate and by nothing else (a control, not a convenience)</text>
-<text x="740" y="389" font-size="10.5" fill="#4c3a80">bundle store (OCI) · trust material (a config-managed directory) · verdicts (content-addressed, immutable)</text>
-<text x="740" y="406" font-size="10.5" fill="#4c3a80">ledger (append-only, hash-chained) · CMDB (existing, read-only to us)</text>
+<text x="740" y="389" font-size="10.5" fill="#4c3a80">bundle store (OCI) — mirrored cores and this bank's envelopes · trust material (a config-managed directory)</text>
+<text x="740" y="406" font-size="10.5" fill="#4c3a80">verdicts (content-addressed) · ledger (append-only, hash-chained) · CMDB (existing, read-only to us)</text>
 <text x="740" y="429" font-size="10.5" font-weight="700" fill="#4c3a80">Every durable write inside the bank is append-only. Everything else is a projection.</text>
 
 <g stroke="#475569" stroke-width="1.6" fill="none" marker-end="url(#a)">
@@ -825,17 +870,17 @@ expect and the afterlife is larger.</p>
 <rect x="24" y="480" width="1372" height="120" rx="10" fill="#fff5f5" stroke="#f3c7c7"/>
 <text x="44" y="504" font-size="12.5" font-weight="700" fill="#b91c1c">THE FIVE PROPERTIES EVERYTHING ELSE SERVES</text>
 <text x="44" y="526" font-size="11" fill="#7f1d1d">1 · <tspan font-weight="700">Digest is identity.</tspan> No attestation refers to a version string.  2 · <tspan font-weight="700">The anchor is public.</tspan> If the baseline cannot be re-derived from a registry nobody</text>
-<text x="44" y="547" font-size="11" fill="#7f1d1d">here controls, the whole chain is a self-claim.  3 · <tspan font-weight="700">No single key is load-bearing.</tspan> Quorum, layout compile, TUF root, log witnessing — threshold every time,</text>
-<text x="44" y="568" font-size="11" fill="#7f1d1d">dissent disqualifying.  4 · <tspan font-weight="700">One authority per fact</tspan>, everything else a projection.  5 · <tspan font-weight="700">Offline decidable.</tspan> If the gate needs it, it ships in the bundle —</text>
-<text x="44" y="589" font-size="11" fill="#7f1d1d">which is what makes "a regulator can re-run this and get the same verdict" a physical fact rather than a promise.</text>
+<text x="44" y="547" font-size="11" fill="#7f1d1d">here controls, the whole chain is a self-claim.  3 · <tspan font-weight="700">No single key is load-bearing.</tspan> The signatory set, layout compile, TUF root, log witnessing — threshold</text>
+<text x="44" y="568" font-size="11" fill="#7f1d1d">every time, dissent disqualifying.  4 · <tspan font-weight="700">One authority per fact</tspan>, everything else a projection.  5 · <tspan font-weight="700">Offline decidable.</tspan> If the gate needs it, it ships in</text>
+<text x="44" y="589" font-size="11" fill="#7f1d1d">the envelope — which is what makes "a regulator can re-run this and get the same verdict" a physical fact rather than a promise.</text>
 
 <rect x="24" y="620" width="1372" height="150" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
 <text x="44" y="644" font-size="12.5" font-weight="700" fill="#334155">WHAT IS STILL OPEN</text>
 <text x="44" y="666" font-size="11" fill="#475569">· Alliance governance policy (above) — the largest item, and not ours to close.</text>
 <text x="44" y="687" font-size="11" fill="#475569">· Contract-schema compatibility: signed contracts are frozen forever, so the gate must evaluate every schema version ever issued.</text>
-<text x="44" y="708" font-size="11" fill="#475569">· Ingest class (b) depth — how far the gate collapses L0–L7 for FINOS-native projects is sketched, not specified.</text>
+<text x="44" y="708" font-size="11" fill="#475569">· Rebuild-input durability — source and toolchain are pinned by digest, but a pinned locator can stop resolving while every digest still checks out.</text>
 <text x="44" y="729" font-size="11" fill="#475569">· semver ecosystems have no valid hardened-coordinate encoding yet: pre-release sorts BELOW the baseline, build metadata is ignored for precedence.</text>
-<text x="44" y="750" font-size="11" fill="#475569">· Index/log reconciliation ownership · verifier rebuild siting and harness packaging · the air-gapped courier variant.</text>
+<text x="44" y="750" font-size="11" fill="#475569">· Ingest class (b) depth · index/log reconciliation ownership · the air-gapped courier variant and its mirror of the rebuild inputs.</text>
 </svg>
 </div></p>
 <hr />
@@ -870,13 +915,24 @@ graph and signature check. It knows nothing about vulnerabilities.</p>
 <p>The <strong>semantic</strong> pass asks whether the evidence <em>means</em> what the contract
 requires: that the CVEs proven fixed cover the commissioned scope, that the test
 corpus matched by digest, that coverage cleared its threshold, that conformance
-is <code>FULL</code>.</p>
-<p>Keeping them separate has a practical payoff. The structural layer is a mature,
-general-purpose framework that this design consumes unmodified. The semantic
-layer is a policy file — readable, reviewable, diffable, and modifiable by a
-security engineer without touching verification machinery. When a bank's risk
-function asks <em>what exactly does the gate check?</em>, the answer is a file they can
-read, not a codebase they have to trust.</p>
+is <code>FULL</code>, and that each vulnerability record the scope cites still reads as it
+did when the work was commissioned.</p>
+<p>That last check deserves a note, because it closes the final place the contract
+rested on an author's claim. The affected-version range written into the scope is
+written by whoever drafts the contract, and nothing checked it against the
+advisory it cites. So the advisory record is <strong>pinned at commissioning</strong> and
+travels inside the evidence, and the gate confirms the range the contract asserts
+against the copy that was frozen. Verification runs against that copy rather than
+the live feed on purpose: advisory records legitimately move, a range widened six
+months later is enrichment working correctly, and gating on it would refuse a
+conforming artifact over something the provider never controlled. Drift since
+commissioning belongs to the ledger as an exposure finding.</p>
+<p>Keeping the two passes separate has a practical payoff. The structural layer is a
+mature, general-purpose framework that this design consumes unmodified. The
+semantic layer is a policy file — readable, reviewable, diffable, and modifiable
+by a security engineer without touching verification machinery. When a bank's
+risk function asks <em>what exactly does the gate check?</em>, the answer is a file they
+can read, not a codebase they have to trust.</p>
 <p>For the running example: the structural pass confirms that a rebuild step ran and
 was signed by three registered verifiers. The semantic pass confirms that the
 deserialization CVE named in the contract has a proof that fails on the baseline
@@ -894,16 +950,29 @@ live dependency, and a live dependency means the decision cannot be replayed
 later from stored inputs. Every admission rule must be decidable from bundle
 contents alone; a rule that isn't is either a wrong rule or a missing bundle
 element.</p>
-<p>The bundle carries the artifact reference, the provider's attestations, the
-verifiers' summaries, the signed contract, the compiled policy, a snapshot of the
-trust root, and the certificate chain. Two properties matter more than the
-inventory.</p>
-<p><strong>The bundle is a container, never a credential.</strong> It carries no signature of its
-own and confers no authority on its contents. Every element inside is
+<p><strong>It arrives in two parts, assembled by two parties.</strong> The alliance seals an
+<strong>evidence core</strong> once per fulfilled contract — the provider's attestations, the
+verifiers' summaries, the signed contract, the compiled policy, and a pinned copy
+of each vulnerability record the scope cites. None of that ages, so the core
+carries no expiry and can be cited years later. The receiving institution then
+wraps it in an <strong>ingest envelope</strong> holding what is needed to judge those
+signatures today: a trust-root snapshot, log checkpoints, certificate roots, and
+where the artifact sits locally.</p>
+<p>The split earns its cost in a single property. The core has one digest, identical
+for every institution that receives it, so two of them can establish that they
+admitted the same evidence — a comparison that assembling per-institution would
+make impossible, since it would produce as many identifiers as recipients over
+one set of facts. It also puts each clock where it belongs: the evidence has
+none, and the material used to judge it is refreshed locally on a schedule.</p>
+<p><strong>Sealing confers no authority.</strong> Neither part carries a signature of its own,
+and packaging evidence establishes nothing about it — every element inside is
 independently signed and independently verified. This keeps assembly from
-becoming a trust role — the party that packages the evidence gains no power over
-whether it is believed, which means bundle assembly can happen inside the
-receiving institution without anyone having to vouch for the assembler.</p>
+becoming a trust role: the party that packages the evidence gains no power over
+whether it is believed, which is what allows the envelope to be assembled inside
+the receiving institution without anyone having to vouch for the assembler. One
+engineering consequence follows directly, because the pinned advisory records are
+digested exactly as they are carried: assembly must preserve those bytes
+verbatim, with no reformatting or re-encoding in any transport form.</p>
 <p><strong>Resolution is online; verification is offline.</strong> Discovering which attestations
 belong to an artifact digest requires a lookup, and that lookup happens <em>before</em>
 the bundle is sealed. Once sealed, nothing else is consulted. The perimeter is
@@ -913,12 +982,12 @@ lookup rather than evidence, no admission rule depends on it, and a wrong answer
 fails immediately against signed, digest-bound attestations.</p>
 <p><strong>Offline verification forfeits freshness</strong>, which has to be handled explicitly.
 A trust-root snapshot pinned into a bundle cannot learn that a verifier key was
-revoked yesterday. So the bundle carries stated maximum ages — a longer clock for
-the trust root, a much shorter one for transparency-log checkpoints — and
+revoked yesterday. So the envelope carries stated maximum ages — a longer clock
+for the trust root, a much shorter one for transparency-log checkpoints — and
 exceeding either is a <strong>named-rule rejection, not a warning</strong>. A warning defers
 the decision to whoever is reading the console, which is not a control.
 Re-resolution is cheap, because only the trust material needs refreshing; the
-artifact and its evidence are unchanged.</p>
+core and the artifact are unchanged.</p>
 <p><div class="fig"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 1010" font-family="Helvetica, Arial, sans-serif">
   <defs>
     <marker id="aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
@@ -952,7 +1021,7 @@ artifact and its evidence are unchanged.</p>
   <text x="415" y="136" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Upstream git</text>
   <text x="415" y="156" font-size="10" fill="#64748b" text-anchor="middle">R: source_ref commit SHA</text>
   <text x="630" y="136" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">OSV / NVD</text>
-  <text x="630" y="156" font-size="10" fill="#64748b" text-anchor="middle">R: CVE set at scoping</text>
+  <text x="630" y="156" font-size="10" fill="#64748b" text-anchor="middle">R: CVE record, pinned at scoping</text>
   <text x="852" y="136" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">sum.golang.org (Go only)</text>
   <text x="852" y="156" font-size="10" fill="#64748b" text-anchor="middle">R: independent checksum log</text>
   <text x="990" y="132" font-size="10.5" font-style="italic" fill="#94a3b8">Anchor strength varies: Maven/Go strong · npm, PyPI permit</text>
@@ -961,7 +1030,7 @@ artifact and its evidence are unchanged.</p>
 
   <!-- ============ ZONE 2 : OUTSIDE ============ -->
   <rect x="24" y="204" width="1392" height="300" rx="10" fill="#fef6ec" stroke="#f3ddc0"/>
-  <text x="40" y="225" font-size="12" font-weight="700" fill="#a1651a">OUTSIDE · alliance (issuer) · provider · verifier quorum — evidence PRODUCTION</text>
+  <text x="40" y="225" font-size="12" font-weight="700" fill="#a1651a">OUTSIDE · alliance (issuer) · provider · the contract's signatories — evidence PRODUCTION</text>
 
   <!-- master repo -->
   <g filter="url(#soft)"><rect x="48" y="238" width="215" height="118" rx="9" fill="#fff" stroke="#e11d48" stroke-width="1.5"/></g>
@@ -969,8 +1038,8 @@ artifact and its evidence are unchanged.</p>
   <text x="103" y="260" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">BUILD</text>
   <text x="155" y="282" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Master repo (git)</text>
   <text x="155" y="300" font-size="10" fill="#64748b" text-anchor="middle">W: contract schemas (all versions)</text>
-  <text x="155" y="315" font-size="10" fill="#64748b" text-anchor="middle">W: Rego policy bundles</text>
-  <text x="155" y="330" font-size="10" fill="#64748b" text-anchor="middle">W: layout compiler ①</text>
+  <text x="155" y="315" font-size="10" fill="#64748b" text-anchor="middle">W: Rego policy bundles · compiler ①</text>
+  <text x="155" y="330" font-size="10" fill="#64748b" text-anchor="middle">W: contracts/ · cores/ (canonical JSON)</text>
   <text x="155" y="347" font-size="9.5" font-style="italic" fill="#a1651a" text-anchor="middle">publishing surface — never read at verify</text>
 
   <!-- authoring/issuance -->
@@ -978,9 +1047,9 @@ artifact and its evidence are unchanged.</p>
   <rect x="297" y="248" width="86" height="16" rx="8" fill="#e11d48"/>
   <text x="340" y="260" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">BUILD ⑦⑧</text>
   <text x="392" y="282" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Authoring + issuance</text>
-  <text x="392" y="300" font-size="10" fill="#64748b" text-anchor="middle">W: L-1 contract (signed)</text>
-  <text x="392" y="315" font-size="10" fill="#64748b" text-anchor="middle">W: compiled layout + compilerVersion</text>
-  <text x="392" y="330" font-size="10" fill="#64748b" text-anchor="middle">R: anchor · lineage projection</text>
+  <text x="392" y="300" font-size="10" fill="#64748b" text-anchor="middle">W: L-1 contract — scope, signatories,</text>
+  <text x="392" y="315" font-size="10" fill="#64748b" text-anchor="middle">rebuild inputs, pinned CVE records</text>
+  <text x="392" y="330" font-size="10" fill="#64748b" text-anchor="middle">W: compiled layout + compilerVersion</text>
   <text x="392" y="347" font-size="9.5" font-style="italic" fill="#a1651a" text-anchor="middle">holds the issuance signing key</text>
 
   <!-- TUF -->
@@ -996,11 +1065,11 @@ artifact and its evidence are unchanged.</p>
   <!-- Rekor -->
   <g filter="url(#soft)"><rect x="744" y="238" width="200" height="118" rx="9" fill="#fff" stroke="#9fd8ce"/></g>
   <text x="844" y="264" font-size="12.5" font-weight="700" fill="#0f8a7a" text-anchor="middle">Rekor (FINOS-operated)</text>
-  <text x="844" y="284" font-size="10" fill="#0f6f63" text-anchor="middle">W: contract entry</text>
-  <text x="844" y="299" font-size="10" fill="#0f6f63" text-anchor="middle">W: delivery-manifest entry</text>
-  <text x="844" y="314" font-size="10" fill="#0f6f63" text-anchor="middle">W: attestation entries L0–L8</text>
-  <text x="844" y="333" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">quorum-witnessed: each VSA</text>
-  <text x="844" y="347" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">carries the checkpoint it observed</text>
+  <text x="844" y="284" font-size="10" fill="#0f6f63" text-anchor="middle">W: contract · delivery manifest</text>
+  <text x="844" y="299" font-size="10" fill="#0f6f63" text-anchor="middle">W: attestations L0–L8 · sealed core</text>
+  <text x="844" y="318" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">witnessed by the signatories: each L8</text>
+  <text x="844" y="332" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">carries the checkpoint it observed, so</text>
+  <text x="844" y="346" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">a split view surfaces as dissent</text>
 
   <!-- Fulcio -->
   <g filter="url(#soft)"><rect x="966" y="238" width="150" height="118" rx="9" fill="#fff" stroke="#9fd8ce"/></g>
@@ -1008,7 +1077,7 @@ artifact and its evidence are unchanged.</p>
   <text x="1041" y="288" font-size="10" fill="#0f6f63" text-anchor="middle">W: signer certs</text>
   <text x="1041" y="306" font-size="10" fill="#0f6f63" text-anchor="middle">R: cert chain</text>
   <text x="1041" y="324" font-size="10" fill="#0f6f63" text-anchor="middle">roots ship in</text>
-  <text x="1041" y="339" font-size="10" fill="#0f6f63" text-anchor="middle">the bundle</text>
+  <text x="1041" y="339" font-size="10" fill="#0f6f63" text-anchor="middle">the envelope</text>
 
   <!-- neutral repo -->
   <g filter="url(#soft)"><rect x="1138" y="238" width="250" height="118" rx="9" fill="#fff" stroke="#e6c9a0"/></g>
@@ -1020,21 +1089,32 @@ artifact and its evidence are unchanged.</p>
   <text x="1263" y="343" font-size="9.5" font-weight="700" fill="#a1651a" text-anchor="middle">expects it (Maven, npm, PyPI)</text>
 
   <!-- provider -->
-  <g filter="url(#soft)"><rect x="48" y="374" width="452" height="114" rx="9" fill="#fff" stroke="#e6c9a0"/></g>
-  <text x="70" y="397" font-size="12.5" font-weight="700" fill="#c2691a">Provider (patching vendor) — not ours</text>
-  <text x="70" y="418" font-size="10.5" fill="#7c5314">R: baseline from package registry · source from upstream git · L-1 contract</text>
-  <text x="70" y="435" font-size="10.5" fill="#7c5314">W: hardened artifact · L0–L7 attestations · recipe set (own git)</text>
-  <text x="70" y="452" font-size="10.5" fill="#7c5314">W: delivery manifest (L-1 + L0–L7), digest logged at hand-off</text>
-  <text x="70" y="474" font-size="9.5" font-style="italic" fill="#a1651a">the provider's git holds recipes only — peripheral, never on the verification path</text>
+  <g filter="url(#soft)"><rect x="48" y="374" width="382" height="114" rx="9" fill="#fff" stroke="#e6c9a0"/></g>
+  <text x="70" y="397" font-size="12.5" font-weight="700" fill="#c2691a">Provider — not ours</text>
+  <text x="70" y="418" font-size="10.5" fill="#7c5314">R: baseline from the package registry · source from upstream git · L-1</text>
+  <text x="70" y="435" font-size="10.5" fill="#7c5314">W: hardened artifact · L0–L7 · recipe set (own git)</text>
+  <text x="70" y="452" font-size="10.5" fill="#7c5314">W: delivery manifest, digest logged at hand-off</text>
+  <text x="70" y="474" font-size="9.5" font-style="italic" fill="#a1651a">the recipe repo is peripheral — never on the verification path</text>
 
-  <!-- verifiers -->
-  <g filter="url(#soft)"><rect x="522" y="374" width="594" height="114" rx="9" fill="#fff" stroke="#9fd8ce"/></g>
-  <text x="544" y="397" font-size="12.5" font-weight="700" fill="#0f8a7a">Verifier quorum — n ≈ active membership (verification is a duty) — not ours</text>
-  <text x="544" y="418" font-size="10.5" fill="#0f6f63">R: delivery manifest · baseline re-pulled from the public registry (independent anchor check)</text>
-  <text x="544" y="435" font-size="10.5" fill="#0f6f63">W: one VSA each — rebuild digest, L4/L5 recheck, conformance, observed Rekor checkpoint</text>
-  <text x="544" y="452" font-size="10.5" fill="#0f6f63">k = max(3, ceil(n/3)) · zero dissent · divergent checkpoints or digests are disqualifying</text>
-  <text x="544" y="474" font-size="9.5" font-style="italic" fill="#0f8a7a">siting is hybrid — mostly peer on-prem, so the rebuild harness must be a distributable package</text>
+  <!-- signatory verifiers -->
+  <g filter="url(#soft)"><rect x="452" y="374" width="448" height="114" rx="9" fill="#fff" stroke="#9fd8ce"/></g>
+  <text x="474" y="397" font-size="12.5" font-weight="700" fill="#0f8a7a">Signatory verifiers — not ours</text>
+  <text x="474" y="418" font-size="10.5" fill="#0f6f63">R: delivery manifest · baseline re-pulled from the public registry</text>
+  <text x="474" y="435" font-size="10.5" fill="#0f6f63">W: one L8 each — rebuild digest, L4/L5 recheck, observed checkpoint</text>
+  <text x="474" y="452" font-size="10.5" font-weight="700" fill="#0f6f63">every signatory verifies · all must agree · minimum two</text>
+  <text x="474" y="474" font-size="9.5" font-style="italic" fill="#0f8a7a">the parties that sign and fund the contract are the parties that check it</text>
 
+  <!-- evidence core -->
+  <g filter="url(#soft)"><rect x="922" y="374" width="194" height="114" rx="9" fill="#fff" stroke="#e11d48" stroke-width="1.5"/></g>
+  <rect x="934" y="382" width="96" height="16" rx="8" fill="#e11d48"/>
+  <text x="982" y="394" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">BUILD — issuer</text>
+  <text x="1019" y="416" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Evidence core</text>
+  <text x="1019" y="433" font-size="10" fill="#64748b" text-anchor="middle">sealed ONCE at Fulfilled</text>
+  <text x="1019" y="447" font-size="10" fill="#64748b" text-anchor="middle">L-1 · L0–L8 · layout · policy</text>
+  <text x="1019" y="461" font-size="10" fill="#64748b" text-anchor="middle">pinned CVE records · rebuild refs</text>
+  <text x="1019" y="478" font-size="9.5" font-weight="700" fill="#b91c1c" text-anchor="middle">ONE digest for every bank</text>
+
+  <!-- attestation index -->
   <g filter="url(#soft)"><rect x="1138" y="374" width="250" height="114" rx="9" fill="#fff" stroke="#e11d48" stroke-width="1.5"/></g>
   <rect x="1150" y="382" width="128" height="16" rx="8" fill="#e11d48"/>
   <text x="1214" y="394" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">BUILD — upstream of ③</text>
@@ -1046,32 +1126,32 @@ artifact and its evidence are unchanged.</p>
 
   <!-- ============ PERIMETER ============ -->
   <rect x="24" y="516" width="1392" height="42" rx="8" fill="#1a2332"/>
-  <text x="44" y="542" font-size="12.5" font-weight="700" fill="#ffffff">THE PERIMETER — crossed by ONE evidence bundle (OCI index; deterministic tar when air-gapped). A copy, not a protocol. Container, never a credential.</text>
-  <text x="1044" y="533" font-size="10.5" fill="#c9d3e0">RESOLUTION is online · VERIFICATION is offline</text>
-  <text x="1044" y="548" font-size="10.5" fill="#c9d3e0">freshness: TUF ≤ 7d · checkpoints ≤ 24h</text>
+  <text x="44" y="534" font-size="12.5" font-weight="700" fill="#ffffff">THE PERIMETER — a copy crosses, not a protocol. TWO containers: the issuer seals the evidence core once; each bank seals its own ingest envelope around it.</text>
+  <text x="44" y="550" font-size="10.5" fill="#c9d3e0">Sealing confers no authority on the contents · RESOLUTION is online — discovery, the pinned rebuild inputs, and the bank's own rebuild · VERIFICATION is offline · core has no clock · envelope: TUF ≤ 7d, checkpoints ≤ 24h</text>
 
   <!-- ============ ZONE 3 : BANK ============ -->
   <rect x="24" y="570" width="1392" height="300" rx="10" fill="#f2f0fb" stroke="#ddd6f3"/>
-  <text x="40" y="591" font-size="12" font-weight="700" fill="#5b3fa8">INSIDE THE BANK · hermetic and offline — no live call outward at verify time · evidence CONSUMPTION</text>
+  <text x="40" y="591" font-size="12" font-weight="700" fill="#5b3fa8">INSIDE THE BANK · the gate is hermetic and offline — no live call outward once the envelope is sealed · evidence CONSUMPTION</text>
 
   <!-- resolver -->
   <g filter="url(#soft)"><rect x="48" y="604" width="205" height="128" rx="9" fill="#fff" stroke="#e11d48" stroke-width="1.5"/></g>
   <rect x="60" y="614" width="86" height="16" rx="8" fill="#e11d48"/>
   <text x="103" y="626" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">BUILD ③</text>
-  <text x="150" y="650" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Resolver + assembly</text>
-  <text x="150" y="670" font-size="10" fill="#64748b" text-anchor="middle">R: attestation index → artifact repo</text>
-  <text x="150" y="685" font-size="10" fill="#64748b" text-anchor="middle">R: TUF snapshot · checkpoints</text>
-  <text x="150" y="700" font-size="10" fill="#64748b" text-anchor="middle">R: schema + policy (pinned)</text>
-  <text x="150" y="715" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">W: evidence bundle</text>
+  <text x="150" y="650" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Resolve + rebuild</text>
+  <text x="150" y="669" font-size="10" fill="#64748b" text-anchor="middle">R: index → artifact · core</text>
+  <text x="150" y="683" font-size="10" fill="#64748b" text-anchor="middle">R: TUF snapshot · checkpoints</text>
+  <text x="150" y="697" font-size="10" font-weight="700" fill="#b91c1c" text-anchor="middle">rebuilds from the pinned refs</text>
+  <text x="150" y="711" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">W: this bank's own L8</text>
+  <text x="150" y="725" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">W: ingest envelope</text>
 
   <!-- bundle store -->
   <g filter="url(#soft)"><rect x="275" y="604" width="185" height="128" rx="9" fill="#fff" stroke="#c7bced"/></g>
   <text x="367" y="632" font-size="12.5" font-weight="700" fill="#5b3fa8" text-anchor="middle">OCI bundle store</text>
-  <text x="367" y="654" font-size="10" fill="#6b5aa5" text-anchor="middle">W: bundles (immutable)</text>
-  <text x="367" y="669" font-size="10" fill="#6b5aa5" text-anchor="middle">R: by the gate</text>
-  <text x="367" y="690" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">blobs shared across</text>
-  <text x="367" y="704" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">bundles — trust material</text>
-  <text x="367" y="718" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">stored once, not per bundle</text>
+  <text x="367" y="654" font-size="10" fill="#6b5aa5" text-anchor="middle">W: mirrored cores</text>
+  <text x="367" y="669" font-size="10" fill="#6b5aa5" text-anchor="middle">W: this bank's envelopes</text>
+  <text x="367" y="690" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">blob sharing: one core and</text>
+  <text x="367" y="704" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">one trust snapshot stored</text>
+  <text x="367" y="718" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">once, referenced by many</text>
 
   <!-- trust store -->
   <g filter="url(#soft)"><rect x="482" y="604" width="185" height="128" rx="9" fill="#fff" stroke="#c7bced"/></g>
@@ -1087,7 +1167,7 @@ artifact and its evidence are unchanged.</p>
   <rect x="701" y="614" width="106" height="16" rx="8" fill="#e11d48"/>
   <text x="754" y="626" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">BUILD ①②④</text>
   <text x="805" y="650" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">Gate runner</text>
-  <text x="805" y="670" font-size="10" fill="#64748b" text-anchor="middle">R: bundle (everything, offline)</text>
+  <text x="805" y="670" font-size="10" fill="#64748b" text-anchor="middle">R: one envelope + the core it names</text>
   <text x="805" y="685" font-size="10" fill="#64748b" text-anchor="middle">in-toto-verify → Rego → L9</text>
   <text x="805" y="700" font-size="10" fill="#64748b" text-anchor="middle">recompiles layout ① (rule 14)</text>
   <text x="805" y="715" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">W: verdict (immutable)</text>
@@ -1098,7 +1178,8 @@ artifact and its evidence are unchanged.</p>
   <text x="1028" y="656" font-size="10" fill="#6b5aa5" text-anchor="middle">runs ④ as an in-toto</text>
   <text x="1028" y="671" font-size="10" fill="#6b5aa5" text-anchor="middle">inspection at verify time</text>
   <text x="1028" y="690" font-size="10" fill="#6b5aa5" text-anchor="middle">W: L9 acceptance</text>
-  <text x="1028" y="712" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">never leaves the bank</text>
+  <text x="1028" y="710" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">unpublished, but</text>
+  <text x="1028" y="723" font-size="9.5" font-style="italic" fill="#64748b" text-anchor="middle">disclosable on demand</text>
 
   <!-- golden -->
   <g filter="url(#soft)"><rect x="1135" y="604" width="253" height="60" rx="9" fill="#eaf7ee" stroke="#8fce9f"/></g>
@@ -1115,11 +1196,11 @@ artifact and its evidence are unchanged.</p>
   <!-- bottom row: quarantine, cmdb, console -->
   <g filter="url(#soft)"><rect x="48" y="750" width="300" height="60" rx="9" fill="#fff" stroke="#c7bced"/></g>
   <text x="198" y="774" font-size="12" font-weight="700" fill="#5b3fa8" text-anchor="middle">Quarantine registry</text>
-  <text x="198" y="793" font-size="10" fill="#64748b" text-anchor="middle">W: candidate on arrival · nothing reads it but the gate</text>
+  <text x="198" y="793" font-size="10" fill="#64748b" text-anchor="middle">W: package on arrival · nothing reads it but the gate</text>
 
   <g filter="url(#soft)"><rect x="370" y="750" width="300" height="60" rx="9" fill="#fff" stroke="#cbd5e1"/></g>
   <text x="520" y="774" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">CMDB (existing, external)</text>
-  <text x="520" y="793" font-size="10" fill="#64748b" text-anchor="middle">R only: which apps deploy which candidate</text>
+  <text x="520" y="793" font-size="10" fill="#64748b" text-anchor="middle">R only: which apps deploy which package</text>
 
   <g filter="url(#soft)"><rect x="692" y="750" width="300" height="60" rx="9" fill="#fff" stroke="#e11d48" stroke-width="1.5"/></g>
   <rect x="704" y="756" width="86" height="15" rx="7" fill="#e11d48"/>
@@ -1133,7 +1214,7 @@ artifact and its evidence are unchanged.</p>
 
   <!-- ===== flow arrows ===== -->
   <g stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#aw)">
-    <line x1="1263" y1="360" x2="1263" y2="516"/>
+    <line x1="1019" y1="492" x2="1019" y2="514"/>
     <line x1="253" y1="668" x2="273" y2="668"/>
     <line x1="460" y1="668" x2="480" y2="668"/>
     <line x1="667" y1="668" x2="687" y2="668"/>
@@ -1145,26 +1226,21 @@ artifact and its evidence are unchanged.</p>
     <line x1="630" y1="176" x2="392" y2="236"/>
   </g>
   <g stroke="#5b3fa8" stroke-width="1.3" stroke-dasharray="5 3" fill="none" marker-end="url(#aw)">
-    <line x1="150" y1="558" x2="150" y2="602"/>
+    <line x1="150" y1="560" x2="150" y2="602"/>
   </g>
   <g stroke="#2f8f4e" stroke-width="1.8" fill="none" marker-end="url(#awg)">
     <line x1="921" y1="634" x2="1133" y2="634"/>
   </g>
-  <g stroke="#5b3fa8" stroke-width="1.3" stroke-dasharray="4 3" fill="none" marker-end="url(#aw)">
-    <line x1="1261" y1="732" x2="992" y2="775"/>
-    <line x1="670" y1="775" x2="1133" y2="722"/>
-  </g>
-  <text x="1272" y="440" font-size="10" font-weight="700" fill="#475569">bundle</text>
-  <text x="1272" y="454" font-size="10" font-weight="700" fill="#475569">crosses</text>
+  <text x="1030" y="505" font-size="10" font-weight="700" fill="#475569">core crosses</text>
   <text x="960" y="628" font-size="9.5" font-weight="700" fill="#2f8f4e">admit →</text>
 
   <!-- ===== footer ===== -->
   <rect x="24" y="884" width="1392" height="106" rx="8" fill="#fff5f5" stroke="#f3c7c7"/>
   <text x="44" y="906" font-size="12" font-weight="700" fill="#b91c1c">WHAT THIS PICTURE SETTLES</text>
-  <text x="44" y="927" font-size="11" fill="#7f1d1d">· It is not "two GitHubs." Git appears twice — the alliance master repo (schemas, policy, compiler) and the provider's recipe repo — and is load-bearing in neither.</text>
+  <text x="44" y="927" font-size="11" fill="#7f1d1d">· It is not "two GitHubs." Git appears twice — the alliance master repo (schemas, policy, compiler, contracts, cores) and the provider's recipe repo — and neither repository's own hashing is load-bearing.</text>
   <text x="44" y="945" font-size="11" fill="#7f1d1d">· Artifact bytes are never duplicated: they stay in the ecosystem-native repo. A central digest→attestation index supplies discovery, and it is deliberately untrusted.</text>
-  <text x="44" y="963" font-size="11" fill="#7f1d1d">· The master repo is a PUBLISHING surface. Nothing inside the bank reads it at verify time — schema and policy ship pinned inside the bundle, or hermeticity is broken.</text>
-  <text x="44" y="981" font-size="11" fill="#7f1d1d">· Open: verifier rebuild siting (hybrid → distributable harness) · the air-gapped courier variant and its staging hosts on each side of the perimeter.</text>
+  <text x="44" y="963" font-size="11" fill="#7f1d1d">· Evidence is shared because it is frozen; trust material is per-bank because its clock runs at that bank's gate. That split is why one core carries one digest for the whole membership.</text>
+  <text x="44" y="981" font-size="11" fill="#7f1d1d">· Open: verifier rebuild siting · the air-gapped courier variant and its staging hosts · rebuild-input durability, since a pinned locator can stop resolving while every digest still checks out.</text>
 </svg>
 </div></p>
 <h3 id="what-you-actually-deploy">What you actually deploy</h3>
@@ -1175,7 +1251,7 @@ the structural pass and a policy engine for the semantic pass. Most regulated
 institutions already run both — the policy engine is frequently already deployed
 for Kubernetes admission control. The gate is stateless: it reads a bundle and
 writes a verdict.</p>
-<p><strong>The storage is unremarkable.</strong> A quarantine repository for arriving candidates,
+<p><strong>The storage is unremarkable.</strong> A quarantine repository for arriving packages,
 which nothing but the gate may read. A registry for bundles. A directory of trust
 material — a trust-root snapshot, certificate roots, checkpoints, the schema and
 policy the bundle pinned — refreshed on a schedule under ordinary configuration
@@ -1225,7 +1301,7 @@ that would need its own writer and its own clock, and therefore its own failure
 mode.</p>
 <h3 id="renewal-is-a-new-artifact-not-a-status-change">Renewal is a new artifact, not a status change</h3>
 <p>When a bridge approaches expiry and upstream still isn't adoptable, the response
-is a <strong>renewal</strong> — and a renewal is a new candidate that supersedes the old one,
+is a <strong>renewal</strong> — and a renewal is a new package that supersedes the old one,
 not a date extension on the existing one.</p>
 <p>This is not bookkeeping pedantry. The second bridge has its own commissioned
 contract, its own baseline, and very often a <em>different</em> CVE set — for a library
@@ -1244,7 +1320,7 @@ event is recorded against every affected lineage, and the console raises a revie
 trigger for the risk function to judge case by case.</p>
 <p>The alternative is worse than it first appears. Automatically invalidating
 everything a revoked key touched would let a single trust event pull hundreds of
-candidates out of production simultaneously — a self-inflicted outage triggered
+packages out of production simultaneously — a self-inflicted outage triggered
 by key hygiene rather than by any defect in an artifact. This is tolerable
 precisely because of the zero-dissent quorum: with a floor of three independent
 verifiers and no disagreement permitted, no single verifier was ever the sole
@@ -1356,7 +1432,12 @@ moment when nobody yet has a reason to care.</p>
 <p><strong>Reconciliation of the discovery index.</strong> The central attestation index is
 rebuildable from the transparency log, which is what makes omission detectable
 rather than silent. Detectable, however, only if someone performs the
-reconciliation. Ownership and cadence are unassigned.</p>
+reconciliation. The operating model proposes an owner and a daily cadence, with
+the resulting lag published as a figure so the distance between log and index is
+visible rather than assumed. Neither the owner nor the interval is settled, and
+until they are this is a duty nobody holds — which is the failure mode the whole
+class of standing obligations shares: nothing rejects, nothing alarms, and the
+omission surfaces only when a package cannot be discovered.</p>
 <p><strong>Governance policy.</strong> Who sits in the trust-root threshold, how verifiers are
 admitted and removed, and what happens on suspected compromise are undecided.
 These are the largest remaining items and they are not engineering questions.</p>
@@ -1380,7 +1461,7 @@ it is easy to mistake for a growth activity because the machinery looks complete
 without it.</p>
 <h2 id="appendix-a-figures">Appendix A — Figures</h2>
 <p>All four figures, and the sources they are generated from, are in
-<code>docs/resource/</code>. Where a figure and the design records disagree, the records are
+<code>docs/resources/</code>. Where a figure and the design records disagree, the records are
 authoritative.</p>
 <table>
 <thead>
@@ -1409,16 +1490,25 @@ authoritative.</p>
 </tbody>
 </table>
 <h2 id="appendix-b-the-admission-ruleset">Appendix B — The admission ruleset</h2>
-<p>The gate evaluates fifteen rules in two passes, structural then semantic. They
-are enumerated in full in <code>artifact-architecture</code> §3.7 rather than reproduced
-here, because they are versioned artifacts that will drift from any copy printed
-in prose.</p>
-<p>The rules divide into five groups: <strong>signature and log validity</strong> (1),
-<strong>verifier quorum</strong> (2, 5), <strong>anchor re-derivability</strong> (3), <strong>graph and
-digest-binding integrity</strong> (4, 6, 7, 11, 12), and <strong>contract conformance</strong>
-(8, 9, 10, 13). Two further rules cover <strong>compile agreement</strong> (14) — both sides
-compile the policy and compare digests — and <strong>freshness</strong> (15), since offline
-verification forfeits the trust root's own currency guarantee.</p>
+<p>The gate evaluates the ruleset in two passes, structural then semantic. It is
+enumerated in full in <code>artifact-architecture</code> §3.7, which is the only place the
+rules are numbered or counted. A count printed in prose drifts from the artifact
+it summarises, and this appendix drifted once already — it described the ruleset
+as it stood before advisory-record integrity was added.</p>
+<p>The rules divide into groups. <strong>Signature and log validity</strong> covers envelopes,
+certificate chains, log inclusion and the witnessed checkpoint set. <strong>Verifier
+quorum</strong> requires k distinct registered verifiers with no dissent. <strong>Anchor
+re-derivability</strong> requires the baseline to resolve publicly, with a supplementary
+log witness in ecosystems that permit deletion. <strong>Graph and digest-binding
+integrity</strong> covers the unbroken chain back to that anchor. <strong>Contract
+conformance</strong> covers scope, corpus, proof completeness, exploitability status and
+the binary conformance verdict. <strong>Compile agreement</strong> has both sides compile the
+policy from the signed contract and compare digests, so a signed layout is
+verified rather than merely authenticated. <strong>Bundle freshness</strong> bounds the age of
+the trust material, since offline verification forfeits the trust root's own
+currency guarantee. And <strong>advisory-record integrity</strong> pins the vulnerability
+record each scope entry cites at commissioning and digests it as carried, so the
+affected range the contract asserts is checkable rather than the author's word.</p>
 <p>Every rule must be decidable from the evidence bundle alone. A rule requiring a
 live lookup is either wrong or evidence of a missing bundle element, and that
 test is what keeps the hermeticity claim falsifiable rather than aspirational.</p>
@@ -1430,4 +1520,5 @@ must be verified against a live source before publication.</p>
 summarises and the open questions it lists — are maintained as a content-addressed
 graph under <code>.konspekt/instance/</code>. Where this paper and those records disagree,
 the records are authoritative and this paper is stale.</p>
+<p class="stamp">Built from cd3d78363f13b195366257a7506c870932262cb3</p>
 </div></body></html>

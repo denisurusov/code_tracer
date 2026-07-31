@@ -1,3 +1,5 @@
+<!-- built from cd3d78363f13b195366257a7506c870932262cb3 -->
+
 # Contract-Bound Evidence
 
 ## Admitting externally-patched open source into a regulated estate
@@ -60,7 +62,7 @@ coupling rather than by effort.
 Four figures accompany the text. Figure 1 gives the shape of the system and is
 worth reading before Part I; the rest appear where they are relevant.
 
-![Figure 1 — Lifecycle and zones](../docs/resource/p1-lifecycle.svg)
+![Figure 1 — Lifecycle and zones](../resources/p1-lifecycle.svg)
 
 *Figure 1 — Lifecycle and zones.*
 
@@ -242,7 +244,7 @@ model can support at all.
 
 ---
 
-![Figure 2 — Data model: which attribute binds to which](../docs/resource/p2-datamodel.svg)
+![Figure 2 — Data model: which attribute binds to which](../resources/p2-datamodel.svg)
 
 *Figure 2 — Data model: which attribute binds to which.*
 
@@ -300,8 +302,8 @@ deterministic, independent verifiers converge on the same digest **without
 coordinating**. There is no protocol between them, no messages, no leader. The
 correct answer is a natural focal point — the one result every honest party
 independently arrives at — and agreement is an artifact of determinism rather than
-of negotiation. Each verifier publishes its own signed verification summary.
-Admission requires *k* of them.
+of negotiation. Each verifier publishes its own signed verification summary, and
+admission requires the whole set to agree.
 
 The most important design decision in this paper is what happens when they
 disagree.
@@ -311,9 +313,9 @@ agree while one produces a different digest, the honest reading is *not* four
 against one. It is that something is wrong — either the toolchain specification is
 underdetermined and the build is not as reproducible as claimed, or something
 considerably worse — and either way the receiving institutions need to know
-loudly, before promotion. So the rule is *k*-of-*n* **with zero dissent**, never a
-simple majority. A dissenting verification summary triggers investigation, not
-arithmetic.
+loudly, before promotion. So the rule is **unanimity across the verifier set**,
+never a simple majority. A dissenting verification summary triggers investigation,
+not arithmetic.
 
 This inverts the usual instinct. Majority voting is designed to *tolerate*
 disagreement and produce an answer anyway. Here, disagreement is the most valuable
@@ -322,11 +324,18 @@ its own best alarm. It is also a signal **no single-checker design can produce a
 all** — with one verifier there is nothing to disagree with — and that, more than
 throughput or redundancy, is the strongest argument for the quorum.
 
-Two practical notes. The threshold should be expressed both absolutely and
-proportionally — a floor of three, rising with membership — so it cannot silently
-weaken as the alliance grows. And *k* must be **frozen into the contract at
-issuance**, so an artifact is judged against the quorum that applied when it was
-commissioned rather than one that drifted afterwards.
+Two practical notes. Who sits in that set, and how large it needs to be, is
+settled in Part II: the short version is that verification binds to the parties
+that sign and fund the contract, so the set is **named rather than sized**. And
+that set is **frozen into the contract at issuance**, so an artifact is judged
+against the parties who committed to it rather than against a membership that
+drifted afterwards.
+
+One further reproduction happens later and matters more than its position
+suggests: the institution that adopts the package rebuilds it again, inside its
+own perimeter, before admitting it. Part III describes where that sits and why it
+is what makes the whole arrangement work for a package only one institution
+commissioned.
 
 ---
 
@@ -341,10 +350,10 @@ actually deploys.
 # Part II — Commissioning and trust
 
 Part I described the model. This part is about the institutional machinery
-underneath it: who decides what gets commissioned, what happens when a
-commitment is not met, and how the trust root survives the organisations that
-hold it. These are governance questions, and they are the ones an alliance has to
-settle before any of the engineering matters.
+underneath it: who decides what gets commissioned, who checks the result, what
+happens when a commitment is not met, and how the trust root survives the
+organisations that hold it. These are governance questions, and they are the ones
+an alliance has to settle before any of the engineering matters.
 
 ---
 
@@ -352,9 +361,9 @@ settle before any of the engineering matters.
 
 The contract has its own lifecycle, separate from the artifact's. It is drafted,
 proposed to the provider, accepted when the provider countersigns, delivered, and
-finally fulfilled when the quorum confirms conformance. It can also be withdrawn
-before acceptance, breached on delivery, or lapse if the delivery window passes
-with nothing produced.
+finally fulfilled when the verifiers confirm conformance. It can also be
+withdrawn before acceptance, breached on delivery, or lapse if the delivery
+window passes with nothing produced.
 
 **Acceptance is the hinge.** Before it, the draft is mutable and internal to the
 issuer. From it, scope, baseline, corpus and thresholds are frozen and signed,
@@ -423,8 +432,8 @@ than a hypothetical one.
 **So the root is co-signed by a threshold of parties spanning the alliance and
 its member institutions.** Re-signing requires k of m, so it survives any single
 party disappearing, and no single compromised key can rotate the root. This is
-the same shape as the verification quorum, applied to trust material — the design
-uses thresholds wherever a single key would otherwise be load-bearing.
+the same shape as verification, applied to trust material — the design uses
+thresholds wherever a single key would otherwise be load-bearing.
 
 ### Bilateral work needs a delegated namespace
 
@@ -455,67 +464,106 @@ The trust path is recorded on the verdict for **attribution**. It tells you who
 stood behind the commissioning judgement, which is genuinely useful when
 something goes wrong. It does not alter what the gate requires.
 
+One honest qualification, developed in §8: the *rules* are identical across
+paths, and so is the work the receiving institution does. What varies is how many
+independent reproductions accompanied the artifact before it arrived.
+
 The related decision concerns the transparency log. A shared log operated by the
 alliance is convenient, but a log operator can in principle present different
 views to different parties. Rather than adding a separate witness network, each
 verifier records the log state it observed at the time of verification, and those
-observations travel with the evidence. Agreement across the quorum makes a split
-view detectable, using machinery already present for other reasons.
+observations travel with the evidence. Agreement across the verifiers makes a
+split view detectable, using machinery already present for other reasons.
 
 ---
 
-## 8. Verification as a duty, and how large the quorum should be
+## 8. Who verifies, and how many
 
 The unresolved question in early drafts was what motivates an institution to
-verify someone else's artifact. The natural answer was to make verification a
+verify someone else's artifact. The first answer was to make verification a
 credit — count it against membership dues, so institutions that verify pay less.
 
 That answer collapses on contact with bilateral commissioning. If verification
 earns credit and an institution can commission alone, the rational strategy is to
-commission solo and never verify, which starves the quorum precisely when it is
-needed. Worse, the institutions most able to verify are the ones most able to go
-it alone.
+commission solo and never verify, which starves the verifier pool precisely when
+it is needed. Worse, the institutions most able to verify are the ones most able
+to go it alone.
 
-**So verification is an obligation of membership.** Members verify what the
-alliance commissions; the cost is a CI job. This has a useful secondary effect:
-the pool of verifiers is the membership, so quorum size scales with the alliance
-rather than being separately negotiated.
+The second answer was to make verification an obligation of membership: members
+verify what the alliance commissions, and the cost is a CI job. That works, and
+it has an awkward edge — it conscripts institutions into checking projects they
+neither asked for nor consume, and it leaves unanswered which member checks which
+project.
 
-It also clarifies what the two commissioning modes actually change. In
-**team** mode, members vote work in and share the cost and the
-responsibility. In **solo** mode, one institution commissions and funds alone and
-is solely accountable for that judgement. The mode determines who answers for
-*deciding to commission this work at all*. It has no effect on how strictly the
-result is verified, and none on what the gate requires.
+**The answer the model settles on is that verification follows the money.** The
+institutions that sign and fund a contract are the institutions that verify it.
+All of them verify, all must agree, and a collectively-commissioned project needs
+at least two signatories to exist at all.
 
-### Choosing k
+The argument is that financial exposure is a firmer binding than an obligation.
+A signatory has already accepted the cost, and it will run the result in its own
+estate, so it carries the consequence of a bad patch twice over. It also disposes
+of the assignment problem: there is no rule needed for who checks what, because
+the contract already names them, and no project can stall waiting for a volunteer.
 
-The threshold is expressed both absolutely and proportionally: a floor of three,
-rising with the size of the active membership.
+The cost is a sunk-cost pull in the other direction — a funder that needs the
+package in production has some motive to see it pass. What holds the line is that
+the comparison is digest equality, with nothing to interpret or soften.
 
-The floor exists because two verifiers cannot produce a usable signal — when two
-parties disagree there is no way to tell which is wrong without a third. The
-proportional term exists so the guarantee does not silently weaken as the
-alliance grows; a fixed three-of-forty is a much weaker statement than
-three-of-five, and expressing only a fixed number lets that erosion happen
-without anyone deciding it should.
+### How many is enough
 
-**The threshold in force is frozen into the contract at issuance.** An artifact
-is judged against the quorum that applied when it was commissioned, rather than
-one that drifted during the work. Without this, a membership change mid-delivery
-would silently move the target.
+Earlier drafts set a floor of three, justified on the grounds that two verifiers
+disagreeing give no way to tell which is wrong without a third.
 
-One consequence has to be stated because it affects formation planning: until
-three verifiers are active, nothing can be admitted at all. Verifier recruitment
-is a launch prerequisite. An alliance that signs a provider before it has three
-verifying members will have commissioned work that cannot be consumed.
+That justification does not survive inspection, because **nothing in this design
+arbitrates**. Disagreement is disqualifying rather than resolvable: two agree and
+the package admits, two disagree and it stops, and five would behave the same
+way. The third verifier was never going to break a tie, because there are no ties
+to break.
+
+What two rather than three does cost is compromise resistance — one bad signer is
+half the outside evidence rather than a third of it. That is accepted, and the
+reason it is acceptable is the next section.
+
+### The receiving institution verifies too
+
+The strongest reproduction in the model is the one nobody commissioned.
+
+**Every adopting institution rebuilds the package itself**, from source and
+toolchain references pinned by digest in the evidence, and signs its own
+verification summary. This happens while it is still online, during resolution,
+before the evidence is sealed for offline verification — so the gate still decides
+from a sealed bundle and the decision is still replayable.
+
+This is what makes a solo-commissioned artifact consumable without a weaker tier.
+A solo project has one signatory and therefore one reproduction before the
+perimeter; the maker and the checker are separated *at the point where the
+decision is made* by the institution taking the risk. And it is why a revoked
+verifier key does not unravel past admissions: whatever happened outside, the
+receiving institution had rebuilt the package for itself.
+
+The honest cost is that verification does not compress for consumers either.
+Each adopting institution pays roughly production cost per package. Sampling
+would reduce it and would make the work differ by commissioning mode, which is
+the distinction this design refuses to draw.
+
+**The threshold in force is frozen into the contract at issuance**, along with
+the signatory set. An artifact is judged against the parties who committed to it
+when it was commissioned, rather than against a set that drifted during the work.
+
+One consequence has to be stated because it affects formation planning: a
+collectively-commissioned project cannot begin until a second institution will
+co-fund it. Co-funding is therefore a launch prerequisite, and an alliance that
+signs a provider before it has members willing to pair up will have commissioned
+work under contracts that cannot reach fulfilment.
 
 ---
 
 Part II settles the institutional questions: a commitment that freezes on
 countersignature, a shortfall that surfaces as an amended contract, a trust root
-that survives its holders, and a quorum drawn from membership with a threshold
-that cannot quietly erode. Part III is what a receiving institution deploys.
+that survives its holders, and verification bound to the parties that pay for the
+work and then rebuilt again by whoever adopts it. Part III is what a receiving
+institution deploys.
 
 ---
 
@@ -528,7 +576,7 @@ expect and the afterlife is larger.
 
 ---
 
-![Figure 3 — Architecture: components and the stores they touch](../docs/resource/p3-architecture.svg)
+![Figure 3 — Architecture: components and the stores they touch](../resources/p3-architecture.svg)
 
 *Figure 3 — Architecture: components and the stores they touch.*
 
@@ -573,14 +621,26 @@ graph and signature check. It knows nothing about vulnerabilities.
 The **semantic** pass asks whether the evidence *means* what the contract
 requires: that the CVEs proven fixed cover the commissioned scope, that the test
 corpus matched by digest, that coverage cleared its threshold, that conformance
-is `FULL`.
+is `FULL`, and that each vulnerability record the scope cites still reads as it
+did when the work was commissioned.
 
-Keeping them separate has a practical payoff. The structural layer is a mature,
-general-purpose framework that this design consumes unmodified. The semantic
-layer is a policy file — readable, reviewable, diffable, and modifiable by a
-security engineer without touching verification machinery. When a bank's risk
-function asks *what exactly does the gate check?*, the answer is a file they can
-read, not a codebase they have to trust.
+That last check deserves a note, because it closes the final place the contract
+rested on an author's claim. The affected-version range written into the scope is
+written by whoever drafts the contract, and nothing checked it against the
+advisory it cites. So the advisory record is **pinned at commissioning** and
+travels inside the evidence, and the gate confirms the range the contract asserts
+against the copy that was frozen. Verification runs against that copy rather than
+the live feed on purpose: advisory records legitimately move, a range widened six
+months later is enrichment working correctly, and gating on it would refuse a
+conforming artifact over something the provider never controlled. Drift since
+commissioning belongs to the ledger as an exposure finding.
+
+Keeping the two passes separate has a practical payoff. The structural layer is a
+mature, general-purpose framework that this design consumes unmodified. The
+semantic layer is a policy file — readable, reviewable, diffable, and modifiable
+by a security engineer without touching verification machinery. When a bank's
+risk function asks *what exactly does the gate check?*, the answer is a file they
+can read, not a codebase they have to trust.
 
 For the running example: the structural pass confirms that a rebuild step ran and
 was signed by three registered verifiers. The semantic pass confirms that the
@@ -604,17 +664,31 @@ later from stored inputs. Every admission rule must be decidable from bundle
 contents alone; a rule that isn't is either a wrong rule or a missing bundle
 element.
 
-The bundle carries the artifact reference, the provider's attestations, the
-verifiers' summaries, the signed contract, the compiled policy, a snapshot of the
-trust root, and the certificate chain. Two properties matter more than the
-inventory.
+**It arrives in two parts, assembled by two parties.** The alliance seals an
+**evidence core** once per fulfilled contract — the provider's attestations, the
+verifiers' summaries, the signed contract, the compiled policy, and a pinned copy
+of each vulnerability record the scope cites. None of that ages, so the core
+carries no expiry and can be cited years later. The receiving institution then
+wraps it in an **ingest envelope** holding what is needed to judge those
+signatures today: a trust-root snapshot, log checkpoints, certificate roots, and
+where the artifact sits locally.
 
-**The bundle is a container, never a credential.** It carries no signature of its
-own and confers no authority on its contents. Every element inside is
+The split earns its cost in a single property. The core has one digest, identical
+for every institution that receives it, so two of them can establish that they
+admitted the same evidence — a comparison that assembling per-institution would
+make impossible, since it would produce as many identifiers as recipients over
+one set of facts. It also puts each clock where it belongs: the evidence has
+none, and the material used to judge it is refreshed locally on a schedule.
+
+**Sealing confers no authority.** Neither part carries a signature of its own,
+and packaging evidence establishes nothing about it — every element inside is
 independently signed and independently verified. This keeps assembly from
-becoming a trust role — the party that packages the evidence gains no power over
-whether it is believed, which means bundle assembly can happen inside the
-receiving institution without anyone having to vouch for the assembler.
+becoming a trust role: the party that packages the evidence gains no power over
+whether it is believed, which is what allows the envelope to be assembled inside
+the receiving institution without anyone having to vouch for the assembler. One
+engineering consequence follows directly, because the pinned advisory records are
+digested exactly as they are carried: assembly must preserve those bytes
+verbatim, with no reformatting or re-encoding in any transport form.
 
 **Resolution is online; verification is offline.** Discovering which attestations
 belong to an artifact digest requires a lookup, and that lookup happens *before*
@@ -626,14 +700,14 @@ fails immediately against signed, digest-bound attestations.
 
 **Offline verification forfeits freshness**, which has to be handled explicitly.
 A trust-root snapshot pinned into a bundle cannot learn that a verifier key was
-revoked yesterday. So the bundle carries stated maximum ages — a longer clock for
-the trust root, a much shorter one for transparency-log checkpoints — and
+revoked yesterday. So the envelope carries stated maximum ages — a longer clock
+for the trust root, a much shorter one for transparency-log checkpoints — and
 exceeding either is a **named-rule rejection, not a warning**. A warning defers
 the decision to whoever is reading the console, which is not a control.
 Re-resolution is cheap, because only the trust material needs refreshing; the
-artifact and its evidence are unchanged.
+core and the artifact are unchanged.
 
-![Figure 4 — Physical topology: what is written where, read by whom](../docs/resource/code-tracer-topology.svg)
+![Figure 4 — Physical topology: what is written where, read by whom](../resources/code-tracer-topology.svg)
 
 *Figure 4 — Physical topology: what is written where, read by whom.*
 
@@ -648,7 +722,7 @@ institutions already run both — the policy engine is frequently already deploy
 for Kubernetes admission control. The gate is stateless: it reads a bundle and
 writes a verdict.
 
-**The storage is unremarkable.** A quarantine repository for arriving candidates,
+**The storage is unremarkable.** A quarantine repository for arriving packages,
 which nothing but the gate may read. A registry for bundles. A directory of trust
 material — a trust-root snapshot, certificate roots, checkpoints, the schema and
 policy the bundle pinned — refreshed on a schedule under ordinary configuration
@@ -710,7 +784,7 @@ mode.
 ### Renewal is a new artifact, not a status change
 
 When a bridge approaches expiry and upstream still isn't adoptable, the response
-is a **renewal** — and a renewal is a new candidate that supersedes the old one,
+is a **renewal** — and a renewal is a new package that supersedes the old one,
 not a date extension on the existing one.
 
 This is not bookkeeping pedantry. The second bridge has its own commissioned
@@ -734,7 +808,7 @@ trigger for the risk function to judge case by case.
 
 The alternative is worse than it first appears. Automatically invalidating
 everything a revoked key touched would let a single trust event pull hundreds of
-candidates out of production simultaneously — a self-inflicted outage triggered
+packages out of production simultaneously — a self-inflicted outage triggered
 by key hygiene rather than by any defect in an artifact. This is tolerable
 precisely because of the zero-dissent quorum: with a floor of three independent
 verifiers and no disagreement permitted, no single verifier was ever the sole
@@ -876,7 +950,12 @@ moment when nobody yet has a reason to care.
 **Reconciliation of the discovery index.** The central attestation index is
 rebuildable from the transparency log, which is what makes omission detectable
 rather than silent. Detectable, however, only if someone performs the
-reconciliation. Ownership and cadence are unassigned.
+reconciliation. The operating model proposes an owner and a daily cadence, with
+the resulting lag published as a figure so the distance between log and index is
+visible rather than assumed. Neither the owner nor the interval is settled, and
+until they are this is a duty nobody holds — which is the failure mode the whole
+class of standing obligations shares: nothing rejects, nothing alarms, and the
+omission surfaces only when a package cannot be discovered.
 
 **Governance policy.** Who sits in the trust-root threshold, how verifiers are
 admitted and removed, and what happens on suspected compromise are undecided.
@@ -908,7 +987,7 @@ without it.
 ## Appendix A — Figures
 
 All four figures, and the sources they are generated from, are in
-`docs/resource/`. Where a figure and the design records disagree, the records are
+`docs/resources/`. Where a figure and the design records disagree, the records are
 authoritative.
 
 | Figure | Answers |
@@ -920,17 +999,26 @@ authoritative.
 
 ## Appendix B — The admission ruleset
 
-The gate evaluates fifteen rules in two passes, structural then semantic. They
-are enumerated in full in `artifact-architecture` §3.7 rather than reproduced
-here, because they are versioned artifacts that will drift from any copy printed
-in prose.
+The gate evaluates the ruleset in two passes, structural then semantic. It is
+enumerated in full in `artifact-architecture` §3.7, which is the only place the
+rules are numbered or counted. A count printed in prose drifts from the artifact
+it summarises, and this appendix drifted once already — it described the ruleset
+as it stood before advisory-record integrity was added.
 
-The rules divide into five groups: **signature and log validity** (1),
-**verifier quorum** (2, 5), **anchor re-derivability** (3), **graph and
-digest-binding integrity** (4, 6, 7, 11, 12), and **contract conformance**
-(8, 9, 10, 13). Two further rules cover **compile agreement** (14) — both sides
-compile the policy and compare digests — and **freshness** (15), since offline
-verification forfeits the trust root's own currency guarantee.
+The rules divide into groups. **Signature and log validity** covers envelopes,
+certificate chains, log inclusion and the witnessed checkpoint set. **Verifier
+quorum** requires k distinct registered verifiers with no dissent. **Anchor
+re-derivability** requires the baseline to resolve publicly, with a supplementary
+log witness in ecosystems that permit deletion. **Graph and digest-binding
+integrity** covers the unbroken chain back to that anchor. **Contract
+conformance** covers scope, corpus, proof completeness, exploitability status and
+the binary conformance verdict. **Compile agreement** has both sides compile the
+policy from the signed contract and compare digests, so a signed layout is
+verified rather than merely authenticated. **Bundle freshness** bounds the age of
+the trust material, since offline verification forfeits the trust root's own
+currency guarantee. And **advisory-record integrity** pins the vulnerability
+record each scope entry cites at commissioning and digests it as carried, so the
+affected range the contract asserts is checkable rather than the author's word.
 
 Every rule must be decidable from the evidence bundle alone. A rule requiring a
 live lookup is either wrong or evidence of a missing bundle element, and that
