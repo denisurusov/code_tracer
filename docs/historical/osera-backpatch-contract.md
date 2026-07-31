@@ -7,7 +7,8 @@ starts* and becomes the root the entire attestation chain is verified against.
 layer beneath L0. Every attestation from L0 (baseline) through L8 (VSA) is
 checked for *conformance to this contract*, not merely for internal consistency.
 
-**Status:** draft for the FINOS OSERA formation working group.
+**Status:** draft for the FINOS OSERA formation working group. **Historical — see
+the supersession note below before relying on anything here.**
 
 > **Provenance / recovery note.** Reconstructed on 2026-07-17 from the *FINOS
 > OSERA project lookup* conversation (2026-07-15). The original was a
@@ -15,6 +16,36 @@ checked for *conformance to this contract*, not merely for internal consistency.
 > recovered substantially intact; the schema block in §3 is stitched from two
 > transcript fragments and may differ in minor field ordering. Re-paste the
 > original for a byte-complete copy.
+
+> **Superseded. One recommendation here was rejected outright, and it is the one
+> most likely to be quoted.**
+>
+> **§6 item 2 recommends PARTIAL-promotable** — admitting a delivery that fixed
+> four of five in-scope CVEs, carrying the fifth as an open exposure. That was
+> rejected by `noteworthy-conformance-binary`. Conformance at the gate is binary:
+> `FULL` promotes, `PARTIAL` and `BREACH` never do. The reasoning is that a
+> discretionary middle state destroys the property the contract exists to
+> establish — once *partial* can promote, somebody has to decide which partials
+> are acceptable, and that is exactly the unstructured judgement the commissioned
+> specification removed. An honest shortfall routes through **amendment**
+> instead: the unfixable CVE moves to `explicitlyOutOfScope` with a stated
+> reason, the provider re-countersigns, and delivery is `FULL` against a contract
+> that tells the truth. The residual exposure ends up in a signed document rather
+> than inside a softened verdict.
+>
+> Also superseded: **§3's `verification` block** — `{ model: k-of-n, k: 3 }` is
+> replaced by the contract's **signatory set**, since the parties that sign and
+> fund a contract are the parties that verify it
+> (`noteworthy-signer-verification`). The block also now carries
+> `governance{mode, sponsor, signatories, mandateRef, trustPath}`, digest-pinned
+> `rebuild` references, `osera.line`, and a `recordDigest` per in-scope CVE.
+> **§1's lifecycle diagram** is missing Drafted, Withdrawn, Breached and Lapsed.
+> **§4's rule 13** is one of sixteen now, not thirteen.
+>
+> Current: `artifact-contract-lifecycle` for the machine,
+> `artifact-architecture` §3.2 and §3.5 for what the contract freezes and how it
+> binds the chain. §6 items 1, 3 and 5 were adopted as recommended; item 4 is
+> still open. Cited by `artifact-ri-fixtures-spec` §4 for the schema shape.
 
 ---
 
@@ -94,7 +125,7 @@ does not exist yet at issue time.
     "issuer":   { "id": "https://osera.finos.org", "role": "commissioner" },
     "provider":    { "id": "https://provider-p.example",       "role": "producer/tester" },
 
-    // ── SCOPE ─────────────────────────────────────────────
+    // ── SCOPE ────────────────────────────────────
     "scope": {
       "cvesInScope": [
         { "id": "CVE-2025-XXXXX",
@@ -110,7 +141,7 @@ does not exist yet at issue time.
       "apiAbiStability": "required"   // must not break the version already deployed
     },
 
-    // ── BASELINE ──────────────────────────────────────────
+    // ── BASELINE ──────────────────────────────────
     "baseline": {
       "purl": "pkg:maven/org.example/commons-x@1.2.3",
       "digest": { "sha256": "<baseline_digest>" },
@@ -141,7 +172,7 @@ does not exist yet at issue time.
       "reproducibility": { "required": true, "level": "digest-identical" }
     },
 
-    // ── SCHEDULE ──────────────────────────────────────────
+    // ── SCHEDULE ──────────────────────────────────
     "schedule": {
       "acceptedAt":   "2026-07-01T00:00:00Z",
       "deliverBy":    "2026-07-31T00:00:00Z",
@@ -150,7 +181,7 @@ does not exist yet at issue time.
       "forwardTarget": "pkg:maven/org.example/commons-x@2.4.0"
     },
 
-    // ── CONFORMANCE OBLIGATIONS ───────────────────────────
+    // ── CONFORMANCE OBLIGATIONS ───────────────────────
     // the exact attestation set that must exist for the chain to be FULFILLED
     "requiredAttestations": [
       "osera/baseline/v1", "osera/vuln-assessment/v1", "osera/transformation/v1",
@@ -274,3 +305,12 @@ under the old terms remains provably bound to the old terms.
 5. **Schedule breach:** is late delivery a conformance failure or just a flag?
    Recommend flag-not-fail — a late but correct backpatch is still valuable; the
    schedule is for planning, not for gating security outcomes.
+
+> **Outcomes, 2026-07-30.** Item 1 adopted as recommended — amendment is a version
+> bump with a supersession pointer, and it is the *only* route by which a
+> shortfall reaches admission (`artifact-contract-lifecycle` §4–§5).
+> **Item 2 rejected** — see the supersession note at the top; this is the one
+> recommendation here that was overturned rather than refined. Item 3 settled by
+> `noteworthy-governance-modes`: by member vote in team mode, by the sponsoring
+> bank in solo. Item 4 remains open, carried in `artifact-contract-lifecycle` §8.
+> Item 5 adopted as recommended — flag, not fail.
