@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-30T00:00:00Z
+  updatedAt: 2026-07-31T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: 37d8d29a487a1e1e02ec3995be23d7d422179fab
   contentHash: 37d8d29a487a1e1e02ec3995be23d7d422179fab
   timestamp: 2026-07-17T17:15:00Z
 createdAt: 2026-07-17T17:15:00Z
-updatedAt: 2026-07-30T00:00:00Z
+updatedAt: 2026-07-31T00:00:00Z
 ```
 # code_tracer — Package and product lifecycles
 
@@ -22,7 +22,7 @@ updatedAt: 2026-07-30T00:00:00Z
 system; see §9. This artifact holds the two machines that run *after* the
 project machine freezes: the **package** machine (the hardened artifact being
 built, verified, admitted) and the **product** machine (the bridge being tracked,
-lapsing, renewing). They are distinct from the **evidence chain** (L-1…L9,
+lapsing, succeeded). They are distinct from the **evidence chain** (L-1…L9,
 `artifact-architecture` §3, *what proof has accrued*), the **project machine**
 (`artifact-contract-lifecycle`, *what was commissioned*), and the **data model**
 (`artifact-data-model`, *what records back each state*).
@@ -44,18 +44,20 @@ lapsing, renewing). They are distinct from the **evidence chain** (L-1…L9,
 > **Amendment 2026-07-27.** The identifier rename pass is complete.
 > `candidate-version` → **`package-version`** and `verdict.candidateRef` →
 > **`packageRef`** (`noteworthy-lifecycle-nouns`, amended), alongside
-> **maker → provider** and **mutualized → team** across every artifact. The
-> retired noun now survives only where it names the decision that retired it,
-> and in the entity id `noteworthy-candidate-key`, which keeps its name because
-> renaming a content-addressed id would orphan the citations to it.
+> **maker → provider** and **mutualized → team** across every artifact.
 
 > **Amendment 2026-07-30 (`noteworthy-signer-verification`,
 > `noteworthy-adoption-rebuild`).** Verified is reached when **every contract
-> signatory** has published a conforming VSA with zero dissent, replacing the
-> k-of-n threshold. The **Verified → Resolved** transition now also carries the
-> adopting bank's **own rebuild**, which runs while the resolver is still online
-> and produces an L8 the bank signs itself. This is identical in both governance
-> modes, and it is what keeps solo output consumable without a weaker tier.
+> signatory** has published a conforming VSA with zero dissent. The
+> **Verified → Resolved** transition also carries the adopting bank's **own
+> rebuild**, identical in both governance modes.
+
+> **Amendment 2026-07-31 (`noteworthy-successor-project`,
+> `noteworthy-service-level-parameters`).** §7 is retitled: what was a *renewal
+> loop* is a **successor project**, and nothing is renewed. §5's Sunset →
+> Drafted′ transition is a successor entering the demand pipeline at nomination,
+> not a loop back to the ballot. §10's sunset-signalling item is **closed by
+> formula** — the notice window is derived rather than chosen.
 
 ## 1. The boundary
 
@@ -82,7 +84,7 @@ Digest-keyed. Every state below is a statement about one `hardened_digest`.
 |-------|------|---------|-----------|
 | Built | outside | hardened artifact produced; provider claims minted | L0–L7 |
 | Verified | outside | independently rebuilt by every contract signatory, zero dissent | L8 set |
-| Resolved | inside | evidence bundle collected and sealed inside the bank, and the bank's own rebuild done | component ③ |
+| Resolved | inside | evidence bundle collected and sealed, and the bank's own rebuild done | component ③ |
 | Gate | inside | under evaluation: structural + semantic + acceptance | components ①②④ |
 | Adopted | inside | admitted, promoted to the golden repo | L9 |
 | **Rejected** | inside | terminal — an admission rule failed | (failing rule recorded) |
@@ -133,7 +135,13 @@ digest, which is why the key is version-less (`noteworthy-candidate-key`).
 | Adopted → Active | promoted to golden repo, deployed; ledger (⑤) writes `issued` and begins tracking |
 | Active → Sunset | bridge window lapses |
 | Sunset → Retired | the application has moved to an upstream-fixed release **(terminal)** |
-| Sunset → Drafted′ | **renewal** — a new project is drafted against the same line (§7) |
+| Sunset → Drafted′ | a **successor project** was commissioned against the same line and has reached Accepted (§7) |
+
+The last row is not a loop. `Drafted′` belongs to a *different* project, which
+entered the demand pipeline at nomination and ran the whole of it — seconding,
+prioritisation, commissioning ballot, issuance. What connects the two is
+`osera.line` and a `supersedes` edge, not a shortcut through the pipeline
+(`noteworthy-successor-project`).
 
 ## 6. Class (a)/(b) divergence — isolated to the top band
 
@@ -150,28 +158,34 @@ load-bearing: it is what lets the gate be a single parameterized tool rather
 than two, and the data model relies on it (one record shape inside the boundary,
 class only tags the production-side evidence).
 
-The same invariant now holds across governance modes: from Resolved inward, a
-team package and a solo package are handled identically, including the bank's own
+The same invariant holds across governance modes: from Resolved inward, a team
+package and a solo package are handled identically, including the bank's own
 rebuild. Mode changes what accompanied the package across the perimeter, never
 what happens to it after.
 
-## 7. The renewal loop — superseding versions
+## 7. Successor projects — nothing is renewed
 
 A backpatch is a **bridge**: a deliberately temporary hardening of an old
 version that closes the gap between "vulnerable now" and "upstream fix adoptable
 later." It ships with a sunset date because a privately-maintained fork is itself
-a standing liability. At sunset, exactly one of two things happens — Retire (the
-proper upstream fix is now in reach) or **Renew**.
+a standing liability. At sunset, exactly one of two things happens — **Retire**
+(the proper upstream fix is now in reach) or a **successor project**.
 
-A renewal is modeled as a **new project whose package `supersedes` the prior
-one**, with the same record cycling back under a mutated status explicitly
-rejected. The reason is that the referent itself changes: each renewal is issued
-under its *own* L-1 contract, with its own `baseline.digest` (a new functionality
-baseline) and its own `cvesInScope` (very likely a new problem set discovered
-since the last bridge). A status field could not represent this without silently
-overwriting the prior contract it was verified against.
+**A successor is a fresh commissioning decision in every respect.** Its own
+contract, its own `baseline.digest`, very likely its own CVE set discovered since
+the last bridge, its own signatories, its own money. It is nominated, seconded,
+prioritised and commissioned like any other project. The only thing carried over
+is `contract.osera.line`, and a line is a **label rather than a funding
+decision** (`noteworthy-successor-project`).
 
-Consequences, which the data model inherits:
+The word *renewal* was retired because it implied otherwise, and the implication
+was load-bearing: it produced a serious proposal that a renewal could skip the
+commissioning ballot under a standing authorisation for its line, on the grounds
+that the alliance had already decided the bridge was worth funding. It had
+decided the *previous* bridge was, against different inputs and possibly with
+different members paying.
+
+What genuinely continues, and is unaffected:
 
 - **Append-only, content-addressed.** `commons-x:3.2.1-osera.1` and
   `…-osera.2` are two immutable `package-version` records, each with its own
@@ -181,15 +195,13 @@ Consequences, which the data model inherits:
   status field cannot answer after the fact.
 - **Lineage-stable.** `lineKey` (version-less upstream purl +
   `contract.osera.line`) is constant across the supersedes chain, so the
-  state-pointer and ledger follow renewals. A renewal that jumps lines is a new
-  lineage: the old line Retires and a new one starts with a fresh project.
+  state-pointer and ledger follow successors. A successor that jumps lines is a
+  new lineage: the old line Retires and a new one starts fresh.
 - **Aligned with konspekt's grain** — append-only, superseding, hash-anchored —
   so the same discipline runs end to end.
 
-A renewal also re-enters at the **commissioning ballot** rather than at
-nomination: the lineage was already voted in, and a continuation carries the same
-`osera.line`. What it does need is a signatory set of its own, which may differ
-from the original project's.
+These are continuities of **lineage**. What does not continue is the
+**commitment**, and one word had been conflating the two.
 
 ## 8. Terminals
 
@@ -202,7 +214,8 @@ from the original project's.
 ## 9. Relation to the other artifacts
 
 - `artifact-contract-lifecycle` — the **project** machine, whose Accepted state
-  is this artifact's entry point (§3).
+  is this artifact's entry point (§3), and whose terminal states now have a
+  defined route out (`noteworthy-failure-vote`).
 - `artifact-architecture` — the integrating narrative. Its §3 (the L-1…L9
   attestation chain) is the *evidence* axis these machines are threaded onto;
   its §3.6 names who verifies, and §4–§5 describe the gate and ledger that back
@@ -212,19 +225,24 @@ from the original project's.
 - `artifact-data-model` — one record schema per state, keyed by digest on the
   package side and by lineage on the product side, carrying the
   append-only/supersedes semantics fixed in §7.
+- `artifact-operating-model` — who performs each transition, on what clock. Its
+  §5 formula supplies the notice window §10 used to leave open.
 - `noteworthy-lifecycle-nouns` — the decision that split this artifact in two.
 
 ## 10. Open items
 
-- **Sunset signaling** — how far ahead of lapse the ledger (⑤) surfaces an
-  Active product as approaching Sunset. The computed-view decision is settled
-  (`artifact-data-model` §5); the window value is not, and it should be derived
-  from the renewal path's own durations rather than picked, since the notice has
-  to cover commissioning, delivery, verification and admission.
+- **Sunset signalling — closed by formula.** How far ahead of lapse the ledger
+  (⑤) surfaces an Active product as approaching Sunset is
+  `WINDOW_NOTICE`, computed from the service-level parameters rather than chosen
+  (`artifact-operating-model` §5,
+  `noteworthy-service-level-parameters`). The window must cover a whole
+  commissioning cycle, because a successor runs the full pipeline — which makes
+  `CADENCE_BALLOT` its dominant term. What remains open is the **values**, and
+  those are policy rather than design.
 - **Multi-package products** — a product shipping as several packages currently
   yields one lineage per package, so one backpatch touching three modules is
   three lineages for one project.
 - **Rebuild cost at Resolved** — the bank's own reproduction costs roughly what
   production cost, per package, per adopting institution. Accepted as the price
-  of mode-independent admission; whether an estate can absorb it at scale is a
+  of mode-independent admission; whether an estate absorbs it at scale is a
   rollout question the topology has to answer.
