@@ -60,9 +60,10 @@ and applied across the records, the publications here, and the figures:
 | **Bank** | a member and consumer; runs the gate, rebuilds what it adopts, keeps the ledger | — |
 
 Retired: *candidate* (it spanned three grains), *maker* (now provider),
-*mutualized* (now team). The identifier renames that followed: `candidateKey` →
-`lineKey`, `candidate-version` → `package-version`, `verdict.candidateRef` →
-`packageRef`.
+*mutualized* (now team), and *blessing* — which named a fact `trustPath` already
+carried (`noteworthy-solo-distribution`). The identifier renames that followed:
+`candidateKey` → `lineKey`, `candidate-version` → `package-version`,
+`verdict.candidateRef` → `packageRef`.
 
 **The rename pass ran on 2026-07-27** across the records, the publications, the
 figures and the paper sources. Two things deliberately still carry the old
@@ -85,7 +86,7 @@ no more than the last time somebody looked.
 
 ## The design records
 
-Ten artifacts, plus twenty-eight decision records carrying their rejected
+Ten artifacts, plus twenty-nine decision records carrying their rejected
 alternatives. The design is factored into evidence, project, package/product and
 data, with the perimeter interface and the physical topology alongside, and the
 operating layer above them all. Read them in this order.
@@ -132,10 +133,11 @@ and deliberately not merged: a state machine and a duty register age differently
 and the duty register carries values that are somebody else's to ratify.
 
 Its section eight marks every unsettled value with the party that settles it —
-alliance policy, bank policy, or engineering. **One of them is live**: the
-blessing-petition threshold, which `lifecycle.md` currently refers to without a
-value, because it borrowed a number that stopped existing when the quorum became
-the signatory set.
+alliance policy, bank policy, or engineering — and records which of them the
+document deliberately declines to propose. **No value in it is currently
+contradicted by another document**; the one that was, the blessing-petition
+threshold, closed on 2026-07-31 by removing the petition itself
+(`noteworthy-solo-distribution`).
 
 ## The paper
 
@@ -143,10 +145,12 @@ the signatory set.
 formation working group: four parts plus front matter and appendices, assembled
 by `assemble.py` into a single document and converted onward by `mkdocx.js`.
 
-The **sources** are current as of 2026-07-30. The **built outputs** in
-[`build/`](build/) predate both the rename pass and the signatory-verification
-amendments, so they are stale twice over and must be regenerated before anything
-is circulated. They are a projection over the parts — rebuild rather than edit
+The **sources** and the **built outputs** in [`build/`](build/) are both current
+as of 2026-07-30, built from commit `cd3d7836` and stamped with it. Every output
+names the tree it came from — in the markdown's first line, the HTML's meta tag
+and footer, the DOCX's `dc:subject`, and the PDF's `/Subject` and page footer —
+so a reader can tell whether a file matches the sources without diffing it. They
+are a projection over the parts: rebuild rather than edit
 (`noteworthy-authoritative-form`).
 
 Appendix B deliberately carries no rule count or enumeration. The ruleset is
