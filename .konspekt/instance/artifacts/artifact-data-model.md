@@ -7,14 +7,14 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-30T00:00:00Z
+  updatedAt: 2026-07-31T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: 259d3019f66d621539c97fbba96ac8d3ad138e53
   contentHash: 259d3019f66d621539c97fbba96ac8d3ad138e53
   timestamp: 2026-07-17T17:45:00Z
 createdAt: 2026-07-17T17:45:00Z
-updatedAt: 2026-07-30T00:00:00Z
+updatedAt: 2026-07-31T00:00:00Z
 ```
 # code_tracer — Data model
 
@@ -27,32 +27,29 @@ carry several of at once, each contributing a reusable schema mixin.
 
 > **Amendment 2026-07-21.** §4 (`verdict`, `policy-object`, L-1 `governance`,
 > L8 `log.checkpoint`) and §5 (`ledger-event`, revocation) amended per the
-> issuer-side batch — excerpts `c284e12b3f1e77a4f712644a85aba7e8195b4648`,
-> `b73f250d059666768988095d440fa673548ef9d2`,
-> `362e1ebe2a81cdfabf6b106db12db1e3ade7531a`,
-> `62f7c4b932187a51625b047401a2925cb3b0715e`,
-> `19c83a6696b0385da970572660b26d3871318fad`.
+> issuer-side batch.
 >
 > **Amendment 2026-07-25.** §2, §3 and §4 (`verdict.coreDigest`) amended for the
-> core/envelope split — excerpt `7aa6325730d0516102bfe4d0adffadbc846626f1`
-> (`noteworthy-bundle-split`); §4 gains the `evidence-core` record shape —
-> excerpt `4c033a33595c2cf803123955559edfbeb6585d05` (`noteworthy-core-manifest`).
+> core/envelope split (`noteworthy-bundle-split`); §4 gains the `evidence-core`
+> record shape (`noteworthy-core-manifest`).
 >
 > **Amendment 2026-07-26 (`noteworthy-lifecycle-nouns`).** The retired noun
 > *candidate* is removed throughout: **`candidate-version` → `package-version`**
 > (digest-grain), **`candidateKey` → `lineKey`** (lineage-grain), and
 > `verdict.candidateRef` → `verdict.packageRef`. `governance.mode` value
-> `mutualized` → `team`. Lifecycle-phase names follow the split: the immutable
-> span now opens at **Accepted** rather than Commissioned, which was a duplicate
-> of it. Record shapes and semantics are unchanged.
+> `mutualized` → `team`.
 >
 > **Amendment 2026-07-30 (`noteworthy-signer-verification`,
 > `noteworthy-adoption-rebuild`).** `governance` gains **`signatories[]`** and
-> `verification.k` becomes that set rather than a computed threshold; L-1 gains
-> **`rebuild`** references and the evidence core carries them; **L8 is written
-> twice** — once per signatory outside, once by the adopting bank inside — so
-> the attestation row is no longer wholly outside-zone; and §5's revocation
-> argument is replaced, since it rested on the retired floor of three.
+> `verification.k` becomes that set; L-1 gains **`rebuild`** references; **L8 is
+> written twice**, once per signatory outside and once by the adopting bank
+> inside; and §5's revocation argument is replaced.
+>
+> **Amendment 2026-07-31 (`noteworthy-successor-project`).** The `ledger-event`
+> kind **`renewed` → `succeeded`**. A schema value rather than prose: the event
+> means what it always meant — this lineage continues under a new package — but
+> it no longer implies the commitment was extended, which it never is. Breaking,
+> and cheap only because nothing has written an event yet.
 
 ## 1. Facets
 
@@ -91,7 +88,7 @@ facet.
 | Compiled layout ① + Rego policy ② | — | ✓ | ✓ | ✓ | in | Gate (compiled from L-1) | immutable |
 | Package version (digest + snapshot) | — | ~ purl | ✓ | — | spans | Accepted (exists across all) | immutable |
 | Admission verdict (gate-run record) | ✓ | ~ | ✓ | ✓ | in | Gate | immutable |
-| Supersedes link (version → prior) | — | — | ✓ | — | in | Sunset (at renewal) | immutable |
+| Supersedes link (version → prior) | — | — | ✓ | — | in | Sunset (at succession) | immutable |
 | Contract draft | — | — | ✗ | — | out | Drafted (issuer-side) | mutable |
 | Current-state pointer | — | — | ✗ | — | in | all (recomputed each transition) | projection |
 | Ledger event (append-only, hash-chained) | — | — | ✗ | — | in | Adopted→Sunset | append-only |
@@ -227,29 +224,27 @@ governance
   sponsor:      <alliance URI | sponsoring bank id>
   signatories:  [ <member id> … ]    # the parties that sign, fund and verify
   mandateRef:   { sha256: <vote record | bank authorization digest> }
-  trustPath:    osera-root | delegated:<bank>
+  trustPath:    osera-root | delegated:<bank>    # fixed at issuance, never changes
 ```
 
 `governance.trustPath` MUST agree with the namespace the artifact is actually
 signed under — a checkable admission invariant, in the same family as the
 supersedes-agrees-with-line rule below. Mode changes *who is accountable for the
 commissioning judgement* and how many reproductions precede the perimeter, never
-what the gate requires (`noteworthy-governance-modes`).
+what the gate requires (`noteworthy-governance-modes`), and the path is permanent
+(`noteworthy-solo-distribution`).
 
 **`verification.k` is the signatory set itself**, frozen at issuance rather than
 computed. Every signatory verifies, all must agree, and a team-mode project needs
 at least two; solo has exactly one. An artifact is judged against the parties who
 committed to it rather than a membership that drifted during the work. Rules 2′
 and 5′ evaluate against `governance.signatories`
-(`noteworthy-signer-verification`, superseding the sizing rule in
-`noteworthy-quorum-parameters`).
+(`noteworthy-signer-verification`).
 
 **L8 `log.checkpoint`** is the Rekor tree head each verifier *observed*, not one
 the log asserted. Because the log is FINOS-operated, a single checkpoint would
 have to be trusted; independently observed ones cannot be split without producing
-a dissent, which is already disqualifying. Agreement over checkpoints is
-therefore split-view detection built from machinery that already exists
-(`noteworthy-transparency-log`).
+a dissent, which is already disqualifying (`noteworthy-transparency-log`).
 
 ```
 verdict                                        policy-object
@@ -282,7 +277,8 @@ Four fields make the verdict **self-contained for replay**:
   verifier is later revoked (§5).
 - **`trustPath`** — OSERA root or delegated bilateral namespace, and therefore
   which governance mode commissioned it. **Attribution, not leniency:** the
-  admission policy is identical across paths, as is the bank's own rebuild.
+  admission policy is identical across paths, as is the bank's own rebuild. It is
+  also immutable, which is what lets an old verdict keep naming something true.
 
 `policy-object` gains **`compilerVersion`** for `kind: layout`, because the
 layout compiler is dual-sited and byte-deterministic: the bank recompiles from
@@ -291,9 +287,9 @@ digest mismatch rather than silent divergence (`noteworthy-compiler-siting`).
 
 The **supersedes link** is not a separate record; it is the `supersedes` field
 on `package-version`, projected into the graph as a `supersedes` edge. A
-renewal's contract carries the *same* `osera.line` as its predecessor; a line
-change means a new lineage, not a supersede — so the `supersedes` edge and the
-shared `osera.line` must agree (a checkable admission invariant).
+**successor's** contract carries the *same* `osera.line` as its predecessor; a
+line change means a new lineage, not a supersede — so the `supersedes` edge and
+the shared `osera.line` must agree (a checkable admission invariant).
 
 ## 5. Operational elements
 
@@ -301,7 +297,7 @@ shared `osera.line` must agree (a checkable admission invariant).
 # durable substrate — append-only, hash-chained (the operational-side log)
 ledger-event   { id: <sha256>, prev: <prior event id for lineKey> | null,
                  lineKey, ref: <package-version id>,
-                 kind: issued | renewed | expired | retired | verifier-revoked, at,
+                 kind: issued | succeeded | expired | retired | verifier-revoked, at,
                  coveredCves[] (from L-1 scope) }
 
 # projections — replayed from the event chain, NOT authoritative state
@@ -315,11 +311,19 @@ application     { key: appId, name, owner, deployed:[<package-version id>…], s
 verifier-entry  { key: verifierId, keys[], status: active|revoked, rotationRef, signed: root }
 ```
 
+**`succeeded`, not `renewed`.** The event records that this lineage continues
+under a new package, and the new package belongs to a **successor project** — a
+fresh commissioning decision with its own contract, baseline, scope, signatories
+and funding. `renewed` implied the commitment had been extended, which it never
+is (`noteworthy-successor-project`). The rename is a breaking schema change made
+now precisely because no event has been written yet: the ledger is append-only,
+so an event carrying the old kind would carry it forever.
+
 `lineKey` = the version-less upstream purl + `contract.osera.line` — the
 handle for one **bridge lineage**, constant across the supersedes chain so the
-pointer and ledger follow renewals. `app` is deliberately *not* in it: a bridge
-is built and verified once regardless of how many apps adopt it, so the per-app
-dimension lives only in the ledger's composite `(appId, lineKey)`. See
+pointer and ledger follow successive bridges. `app` is deliberately *not* in it:
+a bridge is built and verified once regardless of how many apps adopt it, so the
+per-app dimension lives only in the ledger's composite `(appId, lineKey)`. See
 `noteworthy-candidate-key`.
 
 **`verifier-revoked` — records an exposure, does not invalidate.** When a
@@ -348,7 +352,8 @@ Two rules fixed inside the model:
 
 - **`Expiring` is a computed view, not a stored state** — `now ≥ expiresAt −
   window` over the ledger row. Deriving it avoids a mutable status needing its
-  own writer and clock. (Resolves the lifecycle's sunset-signalling item.)
+  own writer and clock. The window itself is also derived rather than chosen
+  (`noteworthy-service-level-parameters`).
 - **The ledger is an append-only, hash-chained event log** (Merkle-style, not a
   consensus blockchain) — each `ledger-event` carries the digest of its
   predecessor for that `lineKey`; `ledger-row`/`state-pointer` are replayed
@@ -367,8 +372,7 @@ one link and everything above it is worthless (architecture §3.1, §3.4, §5.1)
 ## 6. Relation to other artifacts & open items
 
 - `artifact-product-lifecycle` — the package and product state sets and the
-  renewal rule (§7) are this model's fixed inputs; each state names the
-  element(s) it owns.
+  succession rule (§7) are this model's fixed inputs.
 - `artifact-contract-lifecycle` — the project machine; owns the contract
   draft and the delivery manifest.
 - `artifact-evidence-bundle` — the perimeter interface: the shared **evidence
@@ -376,6 +380,7 @@ one link and everything above it is worthless (architecture §3.1, §3.4, §5.1)
   `verdict.coreDigest` and `verdict.bundleDigest`.
 - `artifact-architecture` §3 — the L-1…L9 chain this model gives record shapes
   to; it is the integrating overview across all four axes.
+- `artifact-operating-model` — who writes each record, on what clock.
 
 Decided:
 
@@ -395,16 +400,19 @@ Decided:
 - **Bundle split** — issuer-sealed evidence core with one shared digest, per-bank
   ingest envelope carrying the trust material, its freshness clock and this
   bank's own L8. `noteworthy-bundle-split`.
-- **Core form** — one canonical JSON file in the master repo, `sha256` over its
-  bytes as identity, Rekor entry as the freeze, now including advisory snapshots
-  and rebuild references among its elements. `noteworthy-core-manifest`.
+- **Core form** — one canonical JSON file, `sha256` over its bytes as identity,
+  Rekor entry as the freeze, including advisory snapshots and rebuild references.
+  `noteworthy-core-manifest`.
 - **Revocation semantics** — exposure with review trigger, verdict stands, and
   the bank's own rebuild is what makes that safe. `noteworthy-revocation-semantics`.
 - **Who verifies** — `verification.k` is the signatory set, zero dissent, minimum
-  two in team mode; `k = max(3, ceil(n/3))` retired.
-  `noteworthy-signer-verification`.
+  two in team mode. `noteworthy-signer-verification`.
 - **Adoption rebuild** — L8 is written on both sides of the perimeter; the core
   carries digest-pinned rebuild references. `noteworthy-adoption-rebuild`.
+- **Trust path is permanent** — fixed at issuance, never re-attributed.
+  `noteworthy-solo-distribution`.
+- **`ledger-event.kind` `succeeded`** — renamed from `renewed`, because nothing
+  is renewed. `noteworthy-successor-project`.
 - **Record names** — `package-version` (digest-grain), `lineKey` (lineage-grain);
   the noun *candidate* is retired. `noteworthy-lifecycle-nouns`.
 

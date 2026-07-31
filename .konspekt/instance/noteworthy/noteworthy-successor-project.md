@@ -36,7 +36,28 @@ a section titled Renewal whose first sentence says "a renewal is a new project
 against the same line." The sentence undoes the heading, which is a reliable sign
 the heading is wrong.
 
-**What genuinely continues, and is unaffected:**
+## The `ledger-event` kind renames too
+
+**`renewed` → `succeeded`** in the `ledger-event.kind` enumeration
+(`artifact-data-model` §5). This is a **schema value, not prose**, and it is
+changed deliberately rather than swept along:
+
+- Leaving it would have the ledger record the word *renewed* for the one thing
+  this decision insists is not a renewal — in the durable, append-only log that
+  exists precisely so a bank can answer what was in force and why. A stale noun
+  in a projection is a readability problem; a stale noun in an event kind is a
+  wrong fact in the record of record.
+- The event still means what it meant: this lineage continues under a new
+  package. What changes is that it no longer implies the commitment was extended.
+
+**Cost, accepted.** It is a breaking schema change. Because the ledger is
+append-only, any events already written carry the old kind forever — a real
+migration would need readers to accept both, or a one-time rewrite that the
+append-only discipline forbids. Nothing is deployed yet, so the cost here is a
+fixture update and nothing else, which is exactly why it is worth doing **now**
+rather than after the reference implementation writes its first event.
+
+## What genuinely continues, and is unaffected
 
 - **`lineKey`** — version-less purl + `osera.line`. Constant across the chain so
   the state pointer and the ledger follow the lineage.
@@ -44,6 +65,9 @@ the heading is wrong.
   with the shared line.
 - **The exposure history**, which is what lets a bank answer what was in force in
   March.
+- **`-osera.N`** — the suffix still increments per successive bridge in a line;
+  `N` is a succession count rather than a renewal count, and the ordering and
+  monotonicity requirements are untouched (`noteworthy-purl-namespace`).
 
 Those are continuities of **lineage**. What does not continue is the
 **commitment**, and the two were being conflated by one word.
@@ -57,6 +81,8 @@ That roughly doubles it, and the derivation is now honest about why
 **Binds:** the Renewal sections of `docs/lifecycle.md` and
 `artifact-product-lifecycle` §7; the Sunset → Drafted′ transition, which is a
 successor rather than a loop; `artifact-operating-model` §4, where E2's
-re-entry point is the demand pipeline rather than the commissioning ballot alone.
-**Relates:** `noteworthy-lifecycle-nouns`, which retired *candidate* for the same
-reason — a noun spanning grains that the machine keeps separate.
+re-entry point is the demand pipeline rather than the commissioning ballot alone;
+the `ledger-event.kind` enumeration in `artifact-data-model` §5 and every
+document that lists it. **Relates:** `noteworthy-lifecycle-nouns`, which retired
+*candidate* for the same reason — a noun spanning grains that the machine keeps
+separate.
