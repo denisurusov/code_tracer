@@ -1,12 +1,40 @@
 # OSERA Attestation Chain (L0–L9)
 
-**Status:** draft for the FINOS OSERA formation working group.
+**Status:** draft for the FINOS OSERA formation working group. **Historical — see
+the supersession note below before relying on anything here.**
 
 > **Provenance / recovery note.** This document was reconstructed on 2026-07-17
 > from the *FINOS OSERA project lookup* design conversation (2026-07-15/16). The
 > original was a per-conversation output file, which does not persist. Sections
 > §1–§2 are recovered in full; §3, §6, §8, §9 are partially preserved and are
 > marked inline. Re-paste the original to complete the marked sections.
+
+> **Superseded 2026-07-30. Three things in this document are now wrong, and two
+> of them read as recommendations, so a reader who takes them at face value is
+> actively misled.**
+>
+> - **§9 item 6 recommends the credit model** for verification — counting it
+>   against funding contribution. That was rejected: a credit invites a member to
+>   commission alone and never verify, starving the verifier pool. It was first
+>   replaced by a duty of membership (`noteworthy-governance-modes`) and then, on
+>   2026-07-30, by **verification bound to the contract's signatories** — the
+>   parties that sign and fund a contract verify it, all of them, zero dissent,
+>   minimum two (`noteworthy-signer-verification`).
+> - **§8's `k-of-n` framing** goes with it. There is no computed threshold: `k`
+>   is the signatory set itself. The zero-dissent rule in §8.3 survives unchanged
+>   and is still correct.
+> - **§2's claim that L9 "never leaves the bank"** overstates the property. L9 and
+>   the bank's own L8 are unpublished by default and **disclosable on demand** — a
+>   supervisor may require confirmation that the institution rebuilt and tested
+>   (`noteworthy-adoption-rebuild`).
+>
+> Also since superseded: the chain now runs to **sixteen** admission rules, not
+> the thirteen §4 refers to; L8 is signed by every signatory **and by the adopting
+> bank** over its own rebuild; and the anchor is the canonical registry for the
+> artifact's purl type rather than Maven specifically.
+>
+> Current: `artifact-architecture` §3. This note is kept for its framing and its
+> open questions, and because the recovery gaps are themselves part of the record.
 
 ---
 
@@ -130,3 +158,10 @@ Partially recovered — the following items were preserved:
 8. **Transparency log:** shared FINOS-operated Rekor instance, or the public one?
 
 > **[Recovery note — items 2–4 were not preserved in the transcript.]**
+>
+> **Outcomes, 2026-07-30.** Item 1 settled per-artifact, implicitly, by the chain
+> binding every attestation to a `hardened_digest`. Item 6's recommendation was
+> rejected — see the supersession note at the top. Item 7 settled as recommended:
+> dissent disqualifies globally. Item 8 settled as a shared FINOS-operated
+> instance, witnessed by the signatories (`noteworthy-transparency-log`). Item 5
+> remains open and is carried in `artifact-contract-lifecycle` §8.
