@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>code_tracer — operating model</title>
+<style>
+:root{
+  --ink:#1a2332; --slate:#475569; --mute:#64748b; --faint:#94a3b8;
+  --rule:#e2e8f0; --paper:#fbfcfd; --panel:#f1f5f9;
+  --alliance:#a1651a; --alliance-bg:#fef6ec; --alliance-line:#f3ddc0;
+  --provider:#c2691a; --provider-bg:#fdf4e9;
+  --verifier:#0f8a7a; --verifier-bg:#f0fdfa; --verifier-line:#9fd8ce;
+  --bank:#5b3fa8; --bank-bg:#f2f0fb; --bank-line:#ddd6f3;
+  --ours:#e11d48; --go:#2f8f4e; --stop:#b91c1c;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 15px/1.62 var(--sans);}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px 96px}
+a{color:var(--bank);text-decoration:none;border-bottom:1px solid var(--bank-line)}
+a:focus-visible{outline:2px solid var(--ours);outline-offset:2px}
+
+header.masthead{padding:56px 0 28px;border-bottom:2px solid var(--ink)}
+.eyebrow{font:500 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+h1{font:600 34px/1.15 var(--sans);letter-spacing:-.015em;margin:14px 0 10px}
+.stand{font-size:16.5px;color:var(--slate);max-width:74ch;margin:0}
+.rev{margin-top:20px;display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:500 11px/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;padding:6px 9px;border:1px solid var(--rule);background:#fff;color:var(--mute)}
+.chip.proposed{border-color:var(--alliance-line);background:var(--alliance-bg);color:var(--alliance)}
+
+section{padding-top:46px}
+.sec-label{font:500 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);border-top:1px solid var(--rule);padding-top:10px;margin-bottom:16px}
+h2{font:600 23px/1.2 var(--sans);letter-spacing:-.01em;margin:0 0 10px}
+h3{font:600 16px/1.3 var(--sans);margin:26px 0 8px}
+p{margin:0 0 12px;max-width:82ch}
+.lede{font-size:16px;color:var(--slate);max-width:80ch}
+code,.id{font:500 13px/1.4 var(--mono);color:var(--ink);background:var(--panel);padding:1px 5px;border-radius:2px}
+
+.principles{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:18px}
+.principle{border-top:2px solid var(--ink);padding-top:12px}
+.principle .n{font:600 11px/1 var(--mono);color:var(--ours);letter-spacing:.08em}
+.principle h4{font:600 15.5px/1.3 var(--sans);margin:8px 0 6px}
+.principle p{font-size:14px;color:var(--slate);margin:0}
+
+table{width:100%;border-collapse:collapse;margin:16px 0 8px;font-size:14px}
+th{text-align:left;font:500 10.5px/1.3 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);border-bottom:1px solid var(--ink);padding:0 12px 7px 0;vertical-align:bottom}
+td{padding:9px 12px 9px 0;border-bottom:1px solid var(--rule);vertical-align:top;color:var(--slate)}
+td strong{color:var(--ink);font-weight:500}
+tbody tr:hover td{background:#fff}
+.zone{font:500 10px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;padding:4px 6px;white-space:nowrap}
+.z-out{background:var(--alliance-bg);color:var(--alliance)}
+.z-in{background:var(--bank-bg);color:var(--bank)}
+
+figure{margin:22px 0 8px}
+figure svg{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--rule)}
+figcaption{font-size:13px;color:var(--mute);margin-top:10px;max-width:88ch}
+
+.index{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:7px;margin:20px 0 4px}
+.index a{display:block;border:1px solid var(--rule);background:#fff;padding:8px 10px;font-size:13px;color:var(--slate)}
+.index a:hover{border-color:var(--ink);color:var(--ink)}
+.index a .k{font:500 12px/1 var(--mono);color:var(--ours);margin-right:7px}
+
+.phase{margin-top:34px;padding-top:10px;border-top:1px solid var(--rule)}
+.phase h3{margin:0 0 4px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:500}
+.phase .why{font-size:14px;color:var(--slate);margin:0 0 6px;max-width:82ch}
+
+.box{border:1px solid var(--rule);border-left-width:3px;background:#fff;padding:16px 18px;margin:14px 0;break-inside:avoid}
+.box.alliance{border-left-color:var(--alliance)}
+.box.provider{border-left-color:var(--provider)}
+.box.verifier{border-left-color:var(--verifier)}
+.box.bank{border-left-color:var(--bank)}
+.box.exception{border-left-color:var(--faint);background:var(--panel)}
+.box-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:4px}
+.box-head .bid{font:600 13px/1 var(--mono);color:var(--ours)}
+.box-head h4{font:600 17px/1.25 var(--sans);margin:0}
+.box-head .out{font-size:13.5px;color:var(--mute)}
+dl{display:grid;grid-template-columns:132px 1fr;gap:0;margin:10px 0 0}
+dt{font:500 10.5px/1.7 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);padding:6px 12px 6px 0;border-top:1px solid var(--rule)}
+dd{margin:0;padding:6px 0;border-top:1px solid var(--rule);font-size:14px;color:var(--slate)}
+dd.trace{color:var(--ink)}
+dd.exit{color:var(--stop)}
+dt:first-of-type,dd:first-of-type{border-top:0}
+
+.callout{border:1px solid var(--bank-line);background:var(--bank-bg);padding:14px 16px;margin:18px 0;font-size:14px;color:var(--slate)}
+.callout strong{color:var(--bank)}
+.warn{border-color:#f3c7c7;background:#fff5f5}
+.warn strong{color:var(--stop)}
+ol.open{padding-left:22px;font-size:14.5px;color:var(--slate);max-width:84ch}
+span.own{display:inline-block;font:500 9.5px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;padding:3px 6px;margin-right:7px;vertical-align:1px;border:1px solid var(--rule)}
+span.own.a{background:var(--alliance-bg);color:var(--alliance);border-color:var(--alliance-line)}
+span.own.b{background:var(--bank-bg);color:var(--bank);border-color:var(--bank-line)}
+span.own.e{background:var(--panel);color:var(--mute)}
+ol.open li{margin-bottom:9px}
+ol.open strong{color:var(--ink);font-weight:500}
+footer{margin-top:60px;padding-top:16px;border-top:2px solid var(--ink);font-size:13px;color:var(--mute)}
+
+@media (max-width:820px){
+  .principles{grid-template-columns:1fr}
+  dl{grid-template-columns:1fr}
+  dt{padding-bottom:0;border-top:1px solid var(--rule)}
+  dd{border-top:0;padding-top:2px}
+  h1{font-size:27px}
+}
+@media print{
+  body{background:#fff;font-size:10.5pt}
+  .wrap{max-width:none;padding:0}
+  .box,table,figure{break-inside:avoid}
+  a{color:var(--ink);border:0}
+  .index{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">code_tracer · the operating layer</div>
+  <h1>Operating model</h1>
+  <p class="stand">Four axes already describe this system — the evidence chain, the project machine, the package and product machines, and the data model — with two further documents covering the perimeter interface and the physical stores. Between them they cover what it means, where the bytes live, and when each write happens. This one covers who is on the hook, by when, and what each activity leaves behind. Twenty-nine activities, four parties, one perimeter.</p>
+  <div class="rev">
+    <span class="chip proposed">review: proposed</span>
+    <span class="chip">rev 1 · 29 Jul 2026</span>
+    <span class="chip">rolling — sections added in place</span>
+    <span class="chip">renders offline · no fetched assets</span>
+  </div>
+</header>
+
+<section id="principles">
+  <div class="sec-label">One · the organising principle</div>
+  <h2>Every activity leaves a trace the machinery already defines</h2>
+  <p class="lede">A duty whose only output is that somebody looked cannot be audited and cannot be shown to have lapsed. So each of the twenty-nine activities below terminates in one of four things: a signed record, a transparency-log entry, a hash-chained ledger event, or a projection that visibly ages. Nothing in this model asks an operator to agree in private.</p>
+  <div class="principles">
+    <div class="principle">
+      <div class="n">01</div>
+      <h4>Evidence keeps; trust material does not</h4>
+      <p>A sealed evidence set never expires: one from last year proves exactly what it proved then. What ages is the material used to check the signatures on it — who counts as a current verifier, and the log proofs. So the evidence is assembled once for the whole membership, and each bank re-checks it against material current at its own gate. That is why some duties happen once at the alliance and others repeat at every member.</p>
+    </div>
+    <div class="principle">
+      <div class="n">02</div>
+      <h4>Failure is loud by construction</h4>
+      <p>Expired trust metadata hard-fails closed, stale material is a named-rule reject, a single dissent is disqualifying. The mechanism already makes bad evidence noisy. The operating model's own job is the remaining class: a duty that quietly goes unperformed.</p>
+    </div>
+    <div class="principle">
+      <div class="n">03</div>
+      <h4>The gate is identical everywhere</h4>
+      <p>Team and solo modes, alliance and delegated trust paths, first admission and re-admission all face the same sixteen rules. What differs is who is accountable for having commissioned the work, recorded in the verdict as the trust path.</p>
+    </div>
+  </div>
+  <div class="callout"><strong>Mechanism, policy, and which layer this is.</strong> The architecture is explicit about its own boundary: it builds the mechanism and leaves alliance governance policy — trust-root membership, verifier admission criteria, the compromise procedure — to the alliance, on the grounds that those are not engineering questions. This document sits a layer above, where that boundary does not hold. An operating model with no cadence, no threshold and no service level cannot be run, so it proposes values and names who ratifies each one. What it never does is present a proposed value as a ratified one: every unsettled number here is marked, with its owner, in section eight.</div>
+  <div class="callout"><strong>Sealing is separate from signing.</strong> Containers are sealed and logged; they carry no signature of their own, and sealing confers no authority on the contents. Every element inside is independently signed. This is what lets the issuer assemble the shared evidence core without becoming a trust role, and it is why the delivery manifest is frozen by a log entry — an inclusion proof establishes that a set existed at a moment, and cannot be misread as an endorsement.</div>
+</section>
+
+<section id="roles">
+  <div class="sec-label">Two · roles</div>
+  <h2>Four parties, and the functions inside them</h2>
+  <p class="lede">The design names actors by role rather than by company. Operating them needs a decomposition one level down, because most of these functions are separately staffed and separately keyed. The four parties are numbered #1 to #4 and referenced by number on the chart and throughout the register; the circled numerals ①–⑨ are something else entirely — they are the nine components built here, and they belong to whichever party operates them.</p>
+  <table>
+    <thead><tr><th style="width:112px">Party</th><th style="width:140px">Function</th><th>Holds</th><th style="width:118px">Activities</th><th style="width:74px">Zone</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="7"><strong>#1 Issuer</strong><br><span style="color:var(--alliance)">the alliance</span></td><td><strong>Secretariat</strong></td><td>The demand pipeline: declarations, seconding tallies, both ballots, and the mandate record</td><td><code style="font-size:11.5px;background:none;padding:0">N2 N3 N4 A4</code></td><td><span class="zone z-out">outside</span></td></tr>
+      <tr><td><strong>Contract author</strong></td><td>Scope, baseline, corpus, schedule, and the release-line judgement. Component ⑦</td><td><code style="font-size:11.5px;background:none;padding:0">A2</code></td><td><span class="zone z-out">outside</span></td></tr>
+      <tr><td><strong>Registrar</strong></td><td>Verifier registry, the active count that sets the quorum, and verifier assignment. Component ⑨</td><td><code style="font-size:11.5px;background:none;padding:0">A4 S2</code></td><td><span class="zone z-out">outside</span></td></tr>
+      <tr><td><strong>Root custodian</strong></td><td>Trust-root ceremony participation and the metadata re-signing cadence</td><td><code style="font-size:11.5px;background:none;padding:0">S1</code></td><td><span class="zone z-out">outside</span></td></tr>
+      <tr><td><strong>Log operator</strong></td><td>The transparency log: availability, key custody, checkpoint publication</td><td><code style="font-size:11.5px;background:none;padding:0">S1</code></td><td><span class="zone z-out">outside</span></td></tr>
+      <tr><td><strong>Core assembler</strong></td><td>Seals the evidence core once per fulfilled project</td><td><code style="font-size:11.5px;background:none;padding:0">A3</code></td><td><span class="zone z-out">outside</span></td></tr>
+      <tr><td><strong>Index operator</strong></td><td>The digest-to-attestation index, and its daily reconciliation against the log</td><td><code style="font-size:11.5px;background:none;padding:0">S1</code></td><td><span class="zone z-out">outside</span></td></tr>
+      <tr><td><strong>#2 Provider</strong></td><td><strong>Build and delivery</strong></td><td>Countersigns the contract, mints L0–L7, assembles and logs the delivery manifest</td><td><code style="font-size:11.5px;background:none;padding:0">A2a B1 B2</code></td><td><span class="zone z-out">outside</span></td></tr>
+      <tr><td><strong>#3 Verifier</strong><br><span style="color:var(--verifier)">×k assigned</span></td><td><strong>Verification operator</strong></td><td>Runs the distributable rebuild harness and signs a verification summary under its own registry identity</td><td><code style="font-size:11.5px;background:none;padding:0">C1 C2 C3</code></td><td><span class="zone z-out">outside</span></td></tr>
+      <tr><td rowspan="4"><strong>#4 Bank</strong><br><span style="color:var(--bank)">the member</span></td><td><strong>Gate operator</strong></td><td>Resolution and the gate run; keeps the local trust material inside its windows. Components ①②③</td><td><code style="font-size:11.5px;background:none;padding:0">D1 D2 D3 D3a E2a S5</code></td><td><span class="zone z-in">inside</span></td></tr>
+      <tr><td><strong>App team</strong></td><td>Owns the acceptance suite, consumes from the golden repository, performs migrations. Component ④</td><td><code style="font-size:11.5px;background:none;padding:0">D3 E1a</code></td><td><span class="zone z-in">inside</span></td></tr>
+      <tr><td><strong>Exposure owner</strong></td><td>One per application and lineage: nominates, tracks, decides retire or renew, records benefits. Component ⑤</td><td><code style="font-size:11.5px;background:none;padding:0">N1 E1 E2 N5 S6</code></td><td><span class="zone z-in">inside</span></td></tr>
+      <tr><td><strong>Second line</strong></td><td>Risk acceptances against named failing rules, revocation reviews, the standing warranty finding</td><td><code style="font-size:11.5px;background:none;padding:0">N1 D3b E2a</code></td><td><span class="zone z-in">inside</span></td></tr>
+    </tbody>
+  </table>
+  <div class="callout"><strong>Functions and activities do not correspond one to one.</strong> A function is a standing unit with an identity and a signing key; an activity is one thing done once per project or on a timer. The exposure owner performs four activities across three grains, and D3 needs two functions at once. The column above is there so coverage can be checked in both directions: every one of the twenty-nine activities has at least one function against it, and no function sits idle. Running it is what broke the old E3: three issuer functions — root custodian, log operator, index operator — appeared nowhere except that one box, which was carrying nine duties across six functions on four cadences. It is now the six-activity band at the foot of the chart, and each of those functions owns something named.</div>
+  <div class="callout warn"><strong>Every member is both a verifier and a bank.</strong> If one team holds both functions, that member's own verification summary and its own admission verdict rest on the same people and the same keys, and independence is nominal even though the arithmetic still reads k-of-n. Proposed as an invariant: the two functions are separately owned and separately keyed, and the registry entry carries the verification identity alone.</div>
+</section>
+
+<section id="flow">
+  <div class="sec-label">Three · the flow</div>
+  <h2>Twenty-nine activities, nine rows and a standing band</h2>
+  <p class="lede">Reading order is left to right, then down. Each box names what it acts on and what it leaves behind. Colour is the party; a crimson edge marks the components built here. The band at the foot runs on timers, with no package in front of it.</p>
+
+  <figure>
+  <svg viewBox="0 0 1120 1180" role="img" aria-labelledby="flowT flowD" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+    <title id="flowT">The operating-model flow</title>
+    <desc id="flowD">Twenty-nine activities. Nine rows carry one package from demand through commissioning, production, independent verification, sealing and publication, across the bank perimeter to resolution, verification, admission or refusal, operation and closure. A band beneath holds six standing duties that run on timers.</desc>
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1 L8 5 L2 9" fill="none" stroke="#64748b" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      <pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="7" stroke="#e6c9a0" stroke-width="1"/></pattern>
+    </defs>
+    <rect width="1120" height="1180" fill="#ffffff"/>
+
+    <rect x="24" y="34" width="1072" height="466" fill="url(#hatch)" opacity=".5"/>
+    <rect x="24" y="34" width="1072" height="466" fill="none" stroke="#f3ddc0"/>
+    <text x="40" y="26" font-size="10.5" letter-spacing="1.6" fill="#a1651a" font-weight="700">OUTSIDE THE BANK — #1 ISSUER, #2 PROVIDER, #3 VERIFIERS PRODUCE EVIDENCE</text>
+
+    <rect x="24" y="516" width="1072" height="380" fill="#f2f0fb" opacity=".55"/>
+    <rect x="24" y="516" width="1072" height="380" fill="none" stroke="#ddd6f3"/>
+    <text x="40" y="512" font-size="10.5" letter-spacing="1.6" fill="#5b3fa8" font-weight="700">INSIDE THE BANK — #4 THE MEMBER CHECKS IT, OFFLINE</text>
+
+    <g font-size="15" font-weight="600" fill="#1a2332">
+      <g><rect x="40" y="60" width="320" height="64" rx="5" fill="#f2f0fb" stroke="#5b3fa8" stroke-width=".9"/><text x="56" y="83">N1 · nominate</text><text x="56" y="102" font-size="12" font-weight="400" fill="#475569">product nominated</text><text x="56" y="117" font-size="10" font-weight="700" letter-spacing=".9" fill="#5b3fa8">#4 BANK · EXPOSURE OWNER</text></g>
+      <g><rect x="400" y="60" width="320" height="64" rx="5" fill="#fef6ec" stroke="#a1651a" stroke-width=".9"/><text x="416" y="83">N2 · second</text><text x="416" y="102" font-size="12" font-weight="400" fill="#475569">project backlogged</text><text x="416" y="117" font-size="10" font-weight="700" letter-spacing=".9" fill="#a1651a">#1 MEMBERS</text></g>
+      <g><rect x="760" y="60" width="320" height="64" rx="5" fill="#fef6ec" stroke="#a1651a" stroke-width=".9"/><text x="776" y="83">N3 · prioritise</text><text x="776" y="102" font-size="12" font-weight="400" fill="#475569">backlog ranked</text><text x="776" y="117" font-size="10" font-weight="700" letter-spacing=".9" fill="#a1651a">#1 SECRETARIAT · ONE VOTE EACH</text></g>
+
+      <g><rect x="40" y="150" width="320" height="64" rx="5" fill="#fef6ec" stroke="#a1651a" stroke-width=".9"/><text x="56" y="173">N4 · commission</text><text x="56" y="192" font-size="12" font-weight="400" fill="#475569">mandate signed</text><text x="56" y="207" font-size="10" font-weight="700" letter-spacing=".9" fill="#a1651a">#1 WEIGHTED BALLOT · OR #4 SPONSOR</text></g>
+      <g><rect x="400" y="150" width="320" height="64" rx="5" fill="#fef6ec" stroke="#a1651a" stroke-width=".9"/><text x="416" y="173">A2 · issue</text><text x="416" y="192" font-size="12" font-weight="400" fill="#475569">contract signed</text><text x="416" y="207" font-size="10" font-weight="700" letter-spacing=".9" fill="#a1651a">#1 ISSUER · CONTRACT AUTHOR ⑦</text></g>
+      <g><rect x="760" y="150" width="320" height="64" rx="5" fill="#fdf4e9" stroke="#c2691a" stroke-width=".9"/><text x="776" y="173">A2a · countersign</text><text x="776" y="192" font-size="12" font-weight="400" fill="#475569">contract frozen — the hinge</text><text x="776" y="207" font-size="10" font-weight="700" letter-spacing=".9" fill="#c2691a">#2 PROVIDER</text></g>
+
+      <g><rect x="40" y="240" width="320" height="64" rx="5" fill="#fdf4e9" stroke="#c2691a" stroke-width=".9"/><text x="56" y="263">B1 · build</text><text x="56" y="282" font-size="12" font-weight="400" fill="#475569">package built · L0–L7 signed</text><text x="56" y="297" font-size="10" font-weight="700" letter-spacing=".9" fill="#c2691a">#2 PROVIDER</text></g>
+      <g><rect x="400" y="240" width="320" height="64" rx="5" fill="#fdf4e9" stroke="#c2691a" stroke-width=".9"/><text x="416" y="263">B2 · hand off</text><text x="416" y="282" font-size="12" font-weight="400" fill="#475569">delivery manifest logged</text><text x="416" y="297" font-size="10" font-weight="700" letter-spacing=".9" fill="#c2691a">#2 PROVIDER</text></g>
+
+      <g><rect x="40" y="330" width="320" height="64" rx="5" fill="#f0fdfa" stroke="#0f8a7a" stroke-width=".9"/><text x="56" y="353">C1 · rebuild</text><text x="56" y="372" font-size="12" font-weight="400" fill="#475569">package rebuilt · digest compared</text><text x="56" y="387" font-size="10" font-weight="700" letter-spacing=".9" fill="#0f8a7a">#3 VERIFIER ×k</text></g>
+      <g><rect x="400" y="330" width="320" height="64" rx="5" fill="#f0fdfa" stroke="#0f8a7a" stroke-width=".9"/><text x="416" y="353">C2 · re-run tests</text><text x="416" y="372" font-size="12" font-weight="400" fill="#475569">results compared</text><text x="416" y="387" font-size="10" font-weight="700" letter-spacing=".9" fill="#0f8a7a">#3 VERIFIER ×k</text></g>
+      <g><rect x="760" y="330" width="320" height="64" rx="5" fill="#f0fdfa" stroke="#0f8a7a" stroke-width=".9"/><text x="776" y="353">C3 · attest</text><text x="776" y="372" font-size="12" font-weight="400" fill="#475569">verification summary signed</text><text x="776" y="387" font-size="10" font-weight="700" letter-spacing=".9" fill="#0f8a7a">#3 VERIFIER ×k · ZERO DISSENT</text></g>
+
+      <g><rect x="40" y="420" width="320" height="64" rx="5" fill="#fef6ec" stroke="#a1651a" stroke-width=".9"/><text x="56" y="443">A3 · seal core</text><text x="56" y="462" font-size="12" font-weight="400" fill="#475569">evidence core sealed and logged</text><text x="56" y="477" font-size="10" font-weight="700" letter-spacing=".9" fill="#a1651a">#1 ISSUER · CORE ASSEMBLER</text></g>
+      <g><rect x="400" y="420" width="320" height="64" rx="5" fill="#fef6ec" stroke="#a1651a" stroke-width=".9"/><text x="416" y="443">A4 · publish</text><text x="416" y="462" font-size="12" font-weight="400" fill="#475569">core published · blessed or petitioned</text><text x="416" y="477" font-size="10" font-weight="700" letter-spacing=".9" fill="#a1651a">#1 ISSUER · REGISTRAR</text></g>
+
+      <g><rect x="40" y="530" width="320" height="64" rx="5" fill="#ffffff" stroke="#e11d48" stroke-width="1.4"/><text x="56" y="553">D1 · resolve</text><text x="56" y="572" font-size="12" font-weight="400" fill="#475569">ingest envelope sealed · last online step</text><text x="56" y="587" font-size="10" font-weight="700" letter-spacing=".9" fill="#5b3fa8">#4 BANK · GATE OPERATOR ③</text></g>
+      <g><rect x="400" y="530" width="320" height="64" rx="5" fill="#ffffff" stroke="#e11d48" stroke-width="1.4"/><text x="416" y="553">D2 · verify</text><text x="416" y="572" font-size="12" font-weight="400" fill="#475569">sixteen rules checked, offline</text><text x="416" y="587" font-size="10" font-weight="700" letter-spacing=".9" fill="#5b3fa8">#4 BANK · GATE OPERATOR ①②</text></g>
+      <g><rect x="760" y="530" width="320" height="64" rx="5" fill="#ffffff" stroke="#e11d48" stroke-width="1.4"/><text x="776" y="553">D3 · admit</text><text x="776" y="572" font-size="12" font-weight="400" fill="#475569">L9 and verdict signed · promoted</text><text x="776" y="587" font-size="10" font-weight="700" letter-spacing=".9" fill="#5b3fa8">#4 BANK · GATE ④ · APP TEAM</text></g>
+
+      <g><rect x="40" y="620" width="320" height="64" rx="5" fill="#f1f5f9" stroke="#94a3b8" stroke-width=".9"/><text x="56" y="643">D3a · refuse</text><text x="56" y="662" font-size="12" font-weight="400" fill="#475569">rejected · failing rule named</text><text x="56" y="677" font-size="10" font-weight="700" letter-spacing=".9" fill="#64748b">BANK · GATE OPERATOR</text></g>
+      <g><rect x="400" y="620" width="320" height="64" rx="5" fill="#f1f5f9" stroke="#94a3b8" stroke-width=".9"/><text x="416" y="643">D3b · accept risk</text><text x="416" y="662" font-size="12" font-weight="400" fill="#475569">acceptance signed against a rule</text><text x="416" y="677" font-size="10" font-weight="700" letter-spacing=".9" fill="#64748b">BANK · SECOND LINE</text></g>
+
+      <g><rect x="40" y="710" width="320" height="64" rx="5" fill="#ffffff" stroke="#e11d48" stroke-width="1.4"/><text x="56" y="733">E1 · open exposure</text><text x="56" y="752" font-size="12" font-weight="400" fill="#475569">product active · issued event written</text><text x="56" y="767" font-size="10" font-weight="700" letter-spacing=".9" fill="#5b3fa8">#4 BANK · EXPOSURE OWNER ⑤</text></g>
+      <g><rect x="400" y="710" width="320" height="64" rx="5" fill="#f2f0fb" stroke="#5b3fa8" stroke-width=".9"/><text x="416" y="733">E2 · review</text><text x="416" y="752" font-size="12" font-weight="400" fill="#475569">product expiring · retire or renew</text><text x="416" y="767" font-size="10" font-weight="700" letter-spacing=".9" fill="#5b3fa8">#4 BANK · EXPOSURE OWNER</text></g>
+      <g><rect x="760" y="710" width="320" height="64" rx="5" fill="#f2f0fb" stroke="#5b3fa8" stroke-width=".9"/><text x="776" y="733">E1a · migrate</text><text x="776" y="752" font-size="12" font-weight="400" fill="#475569">product retired · exposure closed</text><text x="776" y="767" font-size="10" font-weight="700" letter-spacing=".9" fill="#5b3fa8">#4 BANK · APP TEAM</text></g>
+
+      <g><rect x="40" y="800" width="320" height="64" rx="5" fill="#f2f0fb" stroke="#5b3fa8" stroke-width=".9"/><text x="56" y="823">N5 · benefits</text><text x="56" y="842" font-size="12" font-weight="400" fill="#475569">project closed against its mandate</text><text x="56" y="857" font-size="10" font-weight="700" letter-spacing=".9" fill="#5b3fa8">#4 BANK · EXPOSURE OWNER</text></g>
+      <g><rect x="400" y="800" width="320" height="64" rx="5" fill="#ffffff" stroke="#e11d48" stroke-width="1.4"/><text x="416" y="823">E2a · re-run</text><text x="416" y="842" font-size="12" font-weight="400" fill="#475569">fresh verdict · same core digest</text><text x="416" y="857" font-size="10" font-weight="700" letter-spacing=".9" fill="#5b3fa8">#4 BANK · GATE OPERATOR</text></g>
+    </g>
+
+    <g stroke="#64748b" stroke-width="1.2" fill="none" marker-end="url(#ar)">
+      <line x1="360" y1="92" x2="394" y2="92"/><line x1="720" y1="92" x2="754" y2="92"/>
+      <line x1="360" y1="182" x2="394" y2="182"/><line x1="720" y1="182" x2="754" y2="182"/>
+      <line x1="360" y1="272" x2="394" y2="272"/>
+      <line x1="360" y1="362" x2="394" y2="362"/><line x1="720" y1="362" x2="754" y2="362"/>
+      <line x1="360" y1="452" x2="394" y2="452"/>
+      <line x1="360" y1="562" x2="394" y2="562"/><line x1="720" y1="562" x2="754" y2="562"/>
+      <line x1="360" y1="652" x2="394" y2="652"/>
+      <line x1="360" y1="742" x2="394" y2="742"/><line x1="720" y1="742" x2="754" y2="742"/>
+      <path d="M920 124 L920 137 L200 137 L200 147"/>
+      <path d="M920 214 L920 227 L200 227 L200 237"/>
+      <path d="M560 304 L560 317 L200 317 L200 327"/>
+      <path d="M920 394 L920 407 L200 407 L200 417"/>
+      <path d="M560 484 L560 507 L200 507 L200 527"/>
+      <path d="M560 594 L560 607 L200 607 L200 617"/>
+      <path d="M920 594 L920 697 L200 697 L200 707"/>
+      <path d="M920 774 L920 787 L200 787 L200 797"/>
+    </g>
+
+    <line x1="24" y1="507" x2="1096" y2="507" stroke="#e11d48" stroke-width="1" stroke-dasharray="6 4"/>
+    <text x="1096" y="502" font-size="10.5" letter-spacing="1.2" fill="#e11d48" font-weight="700" text-anchor="end">PERIMETER · A SEALED COPY CROSSES</text>
+
+
+    <rect x="24" y="926" width="1072" height="196" fill="#fbfcfd" stroke="#cbd5e1" stroke-dasharray="5 4"/>
+    <text x="40" y="918" font-size="10.5" letter-spacing="1.6" fill="#64748b" font-weight="700">STANDING — ON TIMERS, WITH NO PACKAGE IN FRONT OF THEM</text>
+      <g><rect x="40" y="950" width="320" height="64" rx="5" fill="#fef6ec" stroke="#a1651a" stroke-width=".9"/><text x="56" y="973" font-size="15" font-weight="600" fill="#1a2332">S1 · trust metadata</text><text x="56" y="992" font-size="12" font-weight="400" fill="#475569">metadata re-signed before expiry</text><text x="56" y="1007" font-size="10" font-weight="700" letter-spacing=".9" fill="#a1651a">#1 ROOT CUSTODIAN · PER EXPIRY</text></g>
+      <g><rect x="400" y="950" width="320" height="64" rx="5" fill="#fef6ec" stroke="#a1651a" stroke-width=".9"/><text x="416" y="973" font-size="15" font-weight="600" fill="#1a2332">S2 · registry and assignment</text><text x="416" y="992" font-size="12" font-weight="400" fill="#475569">active count published</text><text x="416" y="1007" font-size="10" font-weight="700" letter-spacing=".9" fill="#a1651a">#1 REGISTRAR ⑨ · MONTHLY</text></g>
+      <g><rect x="760" y="950" width="320" height="64" rx="5" fill="#fef6ec" stroke="#a1651a" stroke-width=".9"/><text x="776" y="973" font-size="15" font-weight="600" fill="#1a2332">S3 · log and checkpoints</text><text x="776" y="992" font-size="12" font-weight="400" fill="#475569">tree heads published</text><text x="776" y="1007" font-size="10" font-weight="700" letter-spacing=".9" fill="#a1651a">#1 LOG OPERATOR · CONTINUOUS</text></g>
+      <g><rect x="40" y="1038" width="320" height="64" rx="5" fill="#fef6ec" stroke="#a1651a" stroke-width=".9"/><text x="56" y="1061" font-size="15" font-weight="600" fill="#1a2332">S4 · index reconciliation</text><text x="56" y="1080" font-size="12" font-weight="400" fill="#475569">index lag published</text><text x="56" y="1095" font-size="10" font-weight="700" letter-spacing=".9" fill="#a1651a">#1 INDEX OPERATOR · DAILY</text></g>
+      <g><rect x="400" y="1038" width="320" height="64" rx="5" fill="#f2f0fb" stroke="#5b3fa8" stroke-width=".9"/><text x="416" y="1061" font-size="15" font-weight="600" fill="#1a2332">S5 · trust material refresh</text><text x="416" y="1080" font-size="12" font-weight="400" fill="#475569">local material inside its windows</text><text x="416" y="1095" font-size="10" font-weight="700" letter-spacing=".9" fill="#5b3fa8">#4 GATE OPERATOR · 7 DAYS / 24 HOURS</text></g>
+      <g><rect x="760" y="1038" width="320" height="64" rx="5" fill="#f2f0fb" stroke="#5b3fa8" stroke-width=".9"/><text x="776" y="1061" font-size="15" font-weight="600" fill="#1a2332">S6 · ledger reconciliation</text><text x="776" y="1080" font-size="12" font-weight="400" fill="#475569">untracked deployments named</text><text x="776" y="1095" font-size="10" font-weight="700" letter-spacing=".9" fill="#5b3fa8">#4 EXPOSURE OWNER ⑤ · MONTHLY</text></g>
+
+    <text x="40" y="1150" font-size="11.5" fill="#64748b">Amber #1 issuer · ochre #2 provider · teal #3 verifier quorum · purple #4 bank · grey refusal path · crimson edge = built here</text>
+    <text x="40" y="1166" font-size="11.5" fill="#64748b">Renewal from E2 re-enters at N4 · benefits from N5 weight the next N1 · E2a fires on demand · the band fires on timers</text>
+  </svg>
+  </figure>
+  <figcaption>The nouns read as an arc: product at N1, project at N2–N3, contract at N4–A2a, package at B1–C1, bundle at B2–D2, package again at D3, product at E1–E1a, project at N5. It opens on a product and closes on a project, which is what makes the commitment answerable. N3's backlog names no noun deliberately — it is a projection over seconded declarations, in the same family as the exposure row.</figcaption>
+
+  <div class="callout"><strong>The fork sits at D2, not D3.</strong> Verification produces the verdict; admit and refuse are the two ways one evaluation terminates. Branching from D3 would imply refusal happens after admission.</div>
+</section>
+
+<section id="register">
+  <div class="sec-label">Four · the register</div>
+  <h2>Every box, spelled out</h2>
+  <p class="lede">Eight fields each, in fixed order, so the set reads as a register. Where a value is unset in the graph today it says so and carries a number into the open items.</p>
+
+  <nav class="index" aria-label="Box index">
+    <a href="#N1"><span class="k">N1</span>nominate</a><a href="#N2"><span class="k">N2</span>second</a><a href="#N3"><span class="k">N3</span>prioritise</a><a href="#N4"><span class="k">N4</span>commission</a>
+    <a href="#A2"><span class="k">A2</span>issue</a><a href="#A2a"><span class="k">A2a</span>countersign</a><a href="#B1"><span class="k">B1</span>build</a><a href="#B2"><span class="k">B2</span>hand off</a>
+    <a href="#C1"><span class="k">C1</span>rebuild</a><a href="#C2"><span class="k">C2</span>re-run tests</a><a href="#C3"><span class="k">C3</span>attest</a><a href="#A3"><span class="k">A3</span>seal core</a>
+    <a href="#A4"><span class="k">A4</span>publish</a><a href="#D1"><span class="k">D1</span>resolve</a><a href="#D2"><span class="k">D2</span>verify</a><a href="#D3"><span class="k">D3</span>admit</a>
+    <a href="#D3a"><span class="k">D3a</span>refuse</a><a href="#D3b"><span class="k">D3b</span>accept risk</a><a href="#E1"><span class="k">E1</span>open exposure</a><a href="#E2"><span class="k">E2</span>review</a>
+    <a href="#E1a"><span class="k">E1a</span>migrate</a><a href="#N5"><span class="k">N5</span>benefits</a><a href="#E2a"><span class="k">E2a</span>re-run</a>
+    <a href="#S1"><span class="k">S1</span>trust metadata</a><a href="#S2"><span class="k">S2</span>registry</a><a href="#S3"><span class="k">S3</span>log</a><a href="#S4"><span class="k">S4</span>index</a><a href="#S5"><span class="k">S5</span>material</a><a href="#S6"><span class="k">S6</span>ledger</a>
+  </nav>
+
+  <div class="phase">
+    <h3>Rows one and two · demand and commissioning</h3>
+    <p class="why">The first actor in the whole model is a member bank, working from its own exposure data. Solo mode skips N2 and N3 and keeps everything else.</p>
+  </div>
+
+  <article class="box bank" id="N1">
+    <div class="box-head"><span class="bid">N1</span><h4>Nominate</h4><span class="out">product nominated</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Exposure data shows a product the estate cannot upgrade away from, or an application team asks for a project with no upstream baseline.</dd>
+      <dt>Actor</dt><dd>#4 Bank — exposure owner, with second line countersigning the contribution commitment.</dd>
+      <dt>Inputs</dt><dd>Ledger projections; application records from the configuration database; advisory findings; the live projection of package and release line over accepted contracts.</dd>
+      <dt>Action</dt><dd>File a signed, expiring interest declaration naming subject, driver, priority band, desired timeline and committed contribution.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Signed interest declaration, logged.</dd>
+      <dt>State effect</dt><dd>None — no project exists yet.</dd>
+      <dt>Service level</dt><dd>Declarations expire; a lapsed one is filed afresh.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Expiry without seconding: the subject leaves the pipeline and returns only on a new declaration.</dd>
+    </dl>
+  </article>
+
+  <article class="box alliance" id="N2">
+    <div class="box-head"><span class="bid">N2</span><h4>Second</h4><span class="out">project backlogged</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>An open, unexpired declaration.</dd>
+      <dt>Actor</dt><dd>#1 Other members in alliance capacity; the secretariat tallies.</dd>
+      <dt>Inputs</dt><dd>The set of open declarations.</dd>
+      <dt>Action</dt><dd>Members second the declarations they share. Those crossing the seconding threshold enter the project backlog.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Seconding records. Backlog membership is a projection over them.</dd>
+      <dt>State effect</dt><dd>None — still pre-project.</dd>
+      <dt>Service level</dt><dd>Tally inside the declaration's own expiry window.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Threshold unmet at expiry: drops, as in N1. Threshold value is unset — open item 3.</dd>
+    </dl>
+  </article>
+
+  <article class="box alliance" id="N3">
+    <div class="box-head"><span class="bid">N3</span><h4>Prioritise</h4><span class="out">backlog ranked</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>A non-empty backlog at the ballot cadence.</dd>
+      <dt>Actor</dt><dd>#1 Secretariat runs it; members vote, one member one vote.</dd>
+      <dt>Inputs</dt><dd>The backlog, and the benefits records produced by N5 in earlier cycles.</dd>
+      <dt>Action</dt><dd>Rank the backlog.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Ballot record carrying the resulting ranking.</dd>
+      <dt>State effect</dt><dd>None.</dd>
+      <dt>Service level</dt><dd>The ballot cadence — unset, open item 4. An exploited-in-the-wild flaw cannot wait for a quarterly ballot, so an emergency route with later ratification is proposed alongside it.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Voter quorum unmet: the previous ranking stands unchanged.</dd>
+    </dl>
+  </article>
+
+  <article class="box alliance" id="N4">
+    <div class="box-head"><span class="bid">N4</span><h4>Commission</h4><span class="out">mandate signed</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>A ranked entry reaches the commissioning ballot, or a sponsoring bank authorises alone in solo mode. Renewals re-enter here.</dd>
+      <dt>Actor</dt><dd>#1 Secretariat with a contribution-weighted ballot, or the #4 sponsoring bank.</dd>
+      <dt>Inputs</dt><dd>Ranked backlog; contribution register; membership terms.</dd>
+      <dt>Action</dt><dd>Vote the project in and record the authorisation, fixing mode, sponsor and trust path.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Signed mandate record; its digest becomes the governance mandate reference inside the contract.</dd>
+      <dt>State effect</dt><dd>The project may be drafted.</dd>
+      <dt>Service level</dt><dd>None.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Not carried: returns to the backlog at its rank. Weighting basis is unset — open item 3.</dd>
+    </dl>
+  </article>
+
+  <article class="box alliance" id="A2">
+    <div class="box-head"><span class="bid">A2</span><h4>Issue</h4><span class="out">contract signed</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Mandate recorded.</dd>
+      <dt>Actor</dt><dd>#1 Issuer — contract author, signing with the issuer key.</dd>
+      <dt>Inputs</dt><dd>Mandate digest; the baseline artifact at its public coordinates; the upstream commit; advisory records for each flaw in scope; the test corpus; the live package-and-line projection; the active verifier count.</dd>
+      <dt>Action</dt><dd>Author governance, scope, baseline, corpus, schedule and release line; compute the quorum size as the greater of three and a third of the active set, and write it in; snapshot each advisory record for pinning; sign and issue. The line judgement is explicit and defaults to nothing, because continuing a lineage and starting one are different decisions.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Signed contract statement, digest minted, published to the master repository and logged.</dd>
+      <dt>State effect</dt><dd>Project drafted → proposed.</dd>
+      <dt>Service level</dt><dd>None.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Provider negotiates: back to drafted. Issuer retracts: withdrawn, terminal. A mis-picked line surfaces as an admission failure at D2 rather than as silent drift.</dd>
+    </dl>
+  </article>
+
+  <article class="box provider" id="A2a">
+    <div class="box-head"><span class="bid">A2a</span><h4>Countersign</h4><span class="out">contract frozen — the hinge</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>A proposed contract reaches the named provider.</dd>
+      <dt>Actor</dt><dd>#2 Provider.</dd>
+      <dt>Inputs</dt><dd>The signed contract; the provider's own feasibility assessment.</dd>
+      <dt>Action</dt><dd>Countersign, accepting scope, baseline, corpus, schedule, quorum size and governance. This is the second of the two signatures on the contract and the moment the terms stop being negotiable.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Countersignature over the contract digest.</dd>
+      <dt>State effect</dt><dd>Project proposed → accepted. Scope, baseline and acceptance criteria become immutable; the package machine may open.</dd>
+      <dt>Service level</dt><dd>Inside the offer window — unset, open item 2.</dd>
+      <dt>Exit on failure</dt><dd class="exit">No countersignature before the window closes: back to drafted, or withdrawn. How the provider was chosen is unowned — open item 1.</dd>
+    </dl>
+  </article>
+
+  <div class="phase">
+    <h3>Rows three and four · production and independent verification</h3>
+    <p class="why">Everything here runs on somebody else's infrastructure. The bank observes it and controls none of it, which is why a package resting in these rows is nobody's queue at the bank to clear.</p>
+  </div>
+
+  <article class="box provider" id="B1">
+    <div class="box-head"><span class="bid">B1</span><h4>Build</h4><span class="out">package built · L0–L7 signed</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Contract accepted.</dd>
+      <dt>Actor</dt><dd>#2 Provider build infrastructure.</dd>
+      <dt>Inputs</dt><dd>The contract; the baseline artifact from the public registry; upstream source at the named commit; the recipe set or patch; a pinned toolchain.</dd>
+      <dt>Action</dt><dd>Apply the transformation, build the hardened artifact, mint the eight provider claims covering baseline, flaw assessment, transformation, build provenance, test results, proof of fix, parts list and flaw status.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Eight signed statements attached as blobs and logged; the hardened digest and its suffixed package identifier.</dd>
+      <dt>State effect</dt><dd>Package accepted → built.</dd>
+      <dt>Service level</dt><dd>The contract's delivery date.</dd>
+      <dt>Exit on failure</dt><dd class="exit">A shortfall against scope routes through amendment before the delivery date — a new contract version with a fresh countersignature, so delivery is complete against a contract that tells the truth. Nothing delivered by the date: project lapsed, terminal.</dd>
+    </dl>
+  </article>
+
+  <article class="box provider" id="B2">
+    <div class="box-head"><span class="bid">B2</span><h4>Hand off</h4><span class="out">delivery manifest logged</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>The provider claims are minted and resolvable.</dd>
+      <dt>Actor</dt><dd>#2 Provider.</dd>
+      <dt>Inputs</dt><dd>The contract and the eight claims; the contract's list of required attestations.</dd>
+      <dt>Action</dt><dd>Assemble the delivery manifest, check it mechanically for completeness against the required list, and log its digest. This closes the loophole one layer out from the corpus freeze: what was submitted cannot be adjusted after seeing how verification went.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Delivery manifest plus its log inclusion proof. No signature — the entry establishes that this exact set existed at a moment and says nothing about whether it is correct.</dd>
+      <dt>State effect</dt><dd>Project accepted → delivered.</dd>
+      <dt>Service level</dt><dd>The delivery date.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Incomplete against the required list: delivery does not stand, and the delivery clock keeps running.</dd>
+    </dl>
+  </article>
+
+  <article class="box verifier" id="C1">
+    <div class="box-head"><span class="bid">C1</span><h4>Rebuild</h4><span class="out">package rebuilt · digest compared</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Delivery, plus an assignment naming this verifier.</dd>
+      <dt>Actor</dt><dd>#3 Each assigned verifier's verification operator.</dd>
+      <dt>Inputs</dt><dd>Delivery manifest; the contract; the baseline from the public registry; the pinned toolchain; the distributable rebuild harness at its current version.</dd>
+      <dt>Action</dt><dd>Rebuild from the named source and transformation, then compare the resulting digest with the hardened digest. Reproducibility is what lets independent parties converge without coordinating.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Rebuild result, held for C3.</dd>
+      <dt>State effect</dt><dd>None until C3.</dd>
+      <dt>Service level</dt><dd>From delivery — proposed at five business days, open item 2.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Digest mismatch is dissent, which disqualifies rather than being outvoted. The project freezes pending investigation.</dd>
+    </dl>
+  </article>
+
+  <article class="box verifier" id="C2">
+    <div class="box-head"><span class="bid">C2</span><h4>Re-run tests</h4><span class="out">results compared</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Rebuild complete.</dd>
+      <dt>Actor</dt><dd>#3 The same verification operator.</dd>
+      <dt>Inputs</dt><dd>The corpus named by digest in the contract; the supplemental suite; the provider's test and proof claims; a proof case for each flaw in scope.</dd>
+      <dt>Action</dt><dd>Re-run the corpus and the proofs; confirm each proof fails on the baseline and passes on the hardened build; check interface stability and coverage of the changed code against the contract's thresholds; compare everything with what the provider claimed.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Result set, held for C3.</dd>
+      <dt>State effect</dt><dd>None until C3.</dd>
+      <dt>Service level</dt><dd>Inside the same window as C1.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Divergence from the provider's claims is dissent, handled as in C1.</dd>
+    </dl>
+  </article>
+
+  <article class="box verifier" id="C3">
+    <div class="box-head"><span class="bid">C3</span><h4>Attest</h4><span class="out">verification summary signed</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>C1 and C2 complete for this verifier.</dd>
+      <dt>Actor</dt><dd>#3 The same operator, signing with the verification identity held in the registry.</dd>
+      <dt>Inputs</dt><dd>Rebuild and test results; the contract; the log tree head observed at signing time.</dd>
+      <dt>Action</dt><dd>Publish a verification summary asserting the digest match, the re-checked results, the policy pass, and conformance against the named contract version.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Signed summary, logged, carrying the observed tree head — which is what makes a split view of the log detectable later.</dd>
+      <dt>State effect</dt><dd>Once the required number exist with zero dissent: package built → verified, and project delivered → fulfilled.</dd>
+      <dt>Service level</dt><dd>As C1.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Too few summaries by the delivery date: project lapsed. Any conformance breach: breached, terminal. Any dissent: frozen for investigation, since a lone disagreement is either a defect in the toolchain specification or something worse, and both need saying out loud.</dd>
+    </dl>
+  </article>
+
+  <div class="phase">
+    <h3>Row five · sealing and publication</h3>
+    <p class="why">Two boxes the graph and the on-screen explainer both under-specify. A3 creates the shared identifier that lets two members cite one evidence set; A4 is the only activity whose behaviour differs by governance mode.</p>
+  </div>
+
+  <article class="box alliance" id="A3">
+    <div class="box-head"><span class="bid">A3</span><h4>Seal core</h4><span class="out">evidence core sealed and logged</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>The project reaches fulfilled.</dd>
+      <dt>Actor</dt><dd>#1 Issuer — core assembler.</dd>
+      <dt>Inputs</dt><dd>Delivery manifest and its proof; the contract; the eight provider claims and every verification summary; the compiled layout with its compiler version; the policy bundle with its version; one pinned advisory snapshot per flaw in scope.</dd>
+      <dt>Action</dt><dd>Assemble the core as one canonical file listing each element's digest and locator, compute the core digest, and log it. Assembled once for the whole membership, because assembling it per bank would produce many identifiers over one evidence set and then no two members could cite the same thing.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">The canonical core file in the master repository plus its log entry. Sealed and logged, carrying no signature of its own.</dd>
+      <dt>State effect</dt><dd>None in any machine. The core is the precondition for the crossing.</dd>
+      <dt>Service level</dt><dd>Same day as fulfilment — proposed, open item 2.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Any element missing or not resolvable by digest: no core, and the package cannot cross the perimeter.</dd>
+    </dl>
+  </article>
+
+  <article class="box alliance" id="A4">
+    <div class="box-head"><span class="bid">A4</span><h4>Publish</h4><span class="out">core published · blessed or petitioned</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Core sealed.</dd>
+      <dt>Actor</dt><dd>#1 Issuer — registrar for the trust path, secretariat where a petition is needed.</dd>
+      <dt>Inputs</dt><dd>The core; the governance mode and trust path frozen in the contract.</dd>
+      <dt>Action</dt><dd>Team output publishes to the shared distribution point under the alliance root, carrying blessing by definition. Solo output stays on its sponsor's delegated path until a blessing petition meets the quorum threshold.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Publication record, and a petition record where one applies.</dd>
+      <dt>State effect</dt><dd>None. It determines which members can discover the core on shared rails.</dd>
+      <dt>Service level</dt><dd>None.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Petition fails: the core stays on the sponsor's delegated path. Another member may still consume it, carrying the commissioning judgement as its own — the evidence is identical, and only the question of whether the work was worth commissioning was one member's.</dd>
+    </dl>
+  </article>
+
+  <div class="phase">
+    <h3>Row six · the gate</h3>
+    <p class="why">Everything from here runs inside the bank, offline. Resolution is the last activity that touches a network.</p>
+  </div>
+
+  <article class="box bank" id="D1">
+    <div class="box-head"><span class="bid">D1</span><h4>Resolve</h4><span class="out">ingest envelope sealed · last online step</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>A package reaches verified and its core digest is published.</dd>
+      <dt>Actor</dt><dd>#4 Bank — gate operator, running the resolver.</dd>
+      <dt>Inputs</dt><dd>The artifact digest; the attestation index; the published core; local trust material; the artifact's location in the quarantine registry.</dd>
+      <dt>Action</dt><dd>Discover the attestation set through the index, fetch the core, obtain a current tree head with consistency proofs against the heads frozen in the verification summaries, and seal the envelope over the core digest. The index is a lookup and never evidence, so a wrong index fails immediately against signed, digest-bound records. Carry each pinned advisory snapshot through <em>verbatim</em>: rule 16 digests those bytes as they are carried, so reformatting, re-indenting or re-encoding during assembly invalidates them in both the registry and the tar form.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">The sealed envelope, identified by its own digest, held in the bank's bundle store.</dd>
+      <dt>State effect</dt><dd>Package verified → resolved.</dd>
+      <dt>Service level</dt><dd>None on the step. The material it seals carries the windows, and they are measured at D2.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Incomplete index lookup: a reconciliation record against the index operator, retried after replay. Divergent tree heads across the quorum: the split-view path, disqualifying, no envelope sealed. Material outside its window: refresh and re-seal.</dd>
+    </dl>
+  </article>
+
+  <article class="box bank" id="D2">
+    <div class="box-head"><span class="bid">D2</span><h4>Verify</h4><span class="out">sixteen rules checked, offline</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Envelope sealed.</dd>
+      <dt>Actor</dt><dd>#4 Bank — gate operator. The runner is stateless.</dd>
+      <dt>Inputs</dt><dd>One envelope and the core it names, and nothing else. Anything the gate needs from elsewhere would be a live dependency.</dd>
+      <dt>Action</dt><dd>Recompile the layout locally from the signed contract and compare digests; run the structural pass over the layout for the right steps, right signers, thresholds met and graph intact; run the semantic pass for meaning — flaws fixed covering scope, digest agreement across the quorum, coverage above threshold, conformance full, freshness inside limits, and every in-scope flaw carrying a pinned advisory snapshot whose bytes match the digest the contract recorded and whose affected range agrees with what the contract asserts. Structure and meaning are two passes because neither alone is sufficient.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Rule-by-rule evaluation, carried into the verdict at D3 or D3a.</dd>
+      <dt>State effect</dt><dd>Package resolved → gate.</dd>
+      <dt>Service level</dt><dd>None on the decision, which takes as long as the evidence requires. Queue age from resolution is the figure that is measured.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Any rule failing routes to D3a with the rule named.</dd>
+    </dl>
+  </article>
+
+  <article class="box bank" id="D3">
+    <div class="box-head"><span class="bid">D3</span><h4>Admit</h4><span class="out">L9 and verdict signed · promoted</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Structural and semantic passes both hold.</dd>
+      <dt>Actor</dt><dd>#4 Bank — gate operator running the harness; the application team owns the suite inside it.</dd>
+      <dt>Inputs</dt><dd>The bank's own acceptance suite, executed as an inspection during verification. The layout may require that an inspection by this name exists and never supplies its command.</dd>
+      <dt>Action</dt><dd>Fold the acceptance result into the same verdict; on admission, promote the artifact to the golden repository, which is the only path to consumption.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Signed acceptance record, which never leaves the bank; an immutable verdict pinning the core digest, the envelope digest, the trust-root version and the trust path; and the suite digest, so that a suite quietly ceasing to exercise the package becomes visible.</dd>
+      <dt>State effect</dt><dd>Package gate → adopted.</dd>
+      <dt>Service level</dt><dd>None on the decision; queue age measured.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Acceptance failure routes to D3a like any other rule.</dd>
+    </dl>
+  </article>
+
+  <div class="phase">
+    <h3>Row seven · refusal</h3>
+    <p class="why">The half the on-screen explainer has yet to draw. Conformance is binary, so this row is where an honest shortfall becomes visible instead of being softened into a passing verdict.</p>
+  </div>
+
+  <article class="box exception" id="D3a">
+    <div class="box-head"><span class="bid">D3a</span><h4>Refuse</h4><span class="out">rejected · failing rule named</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Any of the sixteen rules fails, dissent is present, or acceptance fails.</dd>
+      <dt>Actor</dt><dd>#4 Bank — gate operator.</dd>
+      <dt>Inputs</dt><dd>The evaluation from D2.</dd>
+      <dt>Action</dt><dd>Record the verdict naming the failing rule. The artifact stays in the quarantine registry, whose only reader is the gate — any other reader would let a team consume something unadmitted.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Signed verdict, decision refused, failing rule recorded.</dd>
+      <dt>State effect</dt><dd>Package gate → rejected, terminal. A corrected resubmission is a new package under a new project.</dd>
+      <dt>Service level</dt><dd>None.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Routes to D3b, or the application team does without.</dd>
+    </dl>
+  </article>
+
+  <article class="box exception" id="D3b">
+    <div class="box-head"><span class="bid">D3b</span><h4>Accept risk</h4><span class="out">acceptance signed against a rule</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>A refused package the bank still needs, or the standing finding that no warranty is offered.</dd>
+      <dt>Actor</dt><dd>#4 Bank — second line.</dd>
+      <dt>Inputs</dt><dd>The refusing verdict and the rule it names.</dd>
+      <dt>Action</dt><dd>Record an explicit acceptance citing that rule. No weaker admission tier exists, in any mode or on any trust path, which is what keeps the shortfall loud instead of load-bearing and forgotten three years later.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Signed risk acceptance citing the verdict digest and the rule, carrying its own review date.</dd>
+      <dt>State effect</dt><dd>None. The package remains refused.</dd>
+      <dt>Service level</dt><dd>The review date on the acceptance.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Not available as a console write path until version two; the record shape exists now, and the same finding covers the absence of a warranty.</dd>
+    </dl>
+  </article>
+
+  <div class="phase">
+    <h3>Rows eight and nine · operation and closure</h3>
+    <p class="why">The bridge is temporary by design, so this is where the model spends most of its calendar time. Expiry is arithmetic over the current date, never a stored status.</p>
+  </div>
+
+  <article class="box bank" id="E1">
+    <div class="box-head"><span class="bid">E1</span><h4>Open exposure</h4><span class="out">product active · issued event written</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Adoption, and the package deployed.</dd>
+      <dt>Actor</dt><dd>#4 Bank — exposure owner, through the tracker.</dd>
+      <dt>Inputs</dt><dd>The verdict; application records; the bridge expiry from the contract schedule; the flaws the contract covers.</dd>
+      <dt>Action</dt><dd>Write the issued event and open a row against the application and the lineage. The bridge was built and checked once, so the per-application dimension lives only here.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">A hash-chained ledger event. The exposure row and the state pointer are projections replayed from the chain, which is how the estate can answer what was in force on a past date and what it covered.</dd>
+      <dt>State effect</dt><dd>Product → active. This is the handover, and the seam between digest-keyed records and lineage-keyed ones.</dd>
+      <dt>Service level</dt><dd>Same day as deployment.</dd>
+      <dt>Exit on failure</dt><dd class="exit">A deployment the configuration database knows and the ledger does not is an untracked bridge, caught by the monthly reconciliation at S6.</dd>
+    </dl>
+  </article>
+
+  <article class="box bank" id="E2">
+    <div class="box-head"><span class="bid">E2</span><h4>Review</h4><span class="out">product expiring · retire or renew</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Expiry falls inside the notice window, computed at read time.</dd>
+      <dt>Actor</dt><dd>#4 Bank — exposure owner, with second line on the decision record.</dd>
+      <dt>Inputs</dt><dd>The exposure row; the stated destination release; upstream availability; the application team's migration capacity.</dd>
+      <dt>Action</dt><dd>Decide retire or renew, per application.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">The decision, and either a migration commitment for E1a or a fresh commissioning at N4.</dd>
+      <dt>State effect</dt><dd>Product active → sunset at lapse, whichever way the decision goes.</dd>
+      <dt>Service level</dt><dd>Decided before the notice window closes. The window is the sum of the service levels on the renewal path plus buffer, so it is derived rather than picked — open item 2.</dd>
+      <dt>Exit on failure</dt><dd class="exit">No decision by lapse: sunset with the exposure still open, which the debt figures count and name.</dd>
+    </dl>
+  </article>
+
+  <article class="box bank" id="E1a">
+    <div class="box-head"><span class="bid">E1a</span><h4>Migrate</h4><span class="out">product retired · exposure closed</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Retirement decided.</dd>
+      <dt>Actor</dt><dd>#4 Bank — application team.</dd>
+      <dt>Inputs</dt><dd>The destination release named on the exposure row; the bank's release train.</dd>
+      <dt>Action</dt><dd>Move the application onto the upstream-fixed release and drop the bridge. This is the only activity in the model that actually removes an exposure.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">A retired event closing the row.</dd>
+      <dt>State effect</dt><dd>Product sunset → retired, terminal.</dd>
+      <dt>Service level</dt><dd>The bridge expiry date.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Not migrated by expiry: the exposure sits past expiry and undecided, which is the figure the risk function watches.</dd>
+    </dl>
+  </article>
+
+  <article class="box bank" id="N5">
+    <div class="box-head"><span class="bid">N5</span><h4>Benefits</h4><span class="out">project closed against its mandate</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Every exposure under one project closed, or its bridge expiry reached.</dd>
+      <dt>Actor</dt><dd>#4 Bank — exposure owner. The secretariat consumes the result.</dd>
+      <dt>Inputs</dt><dd>The mandate record; the flaws the contract covered; exposure history; migration outcomes.</dd>
+      <dt>Action</dt><dd>Record what the project delivered against what its mandate claimed. Without this the next prioritisation ballot runs with no evidence of what the last one achieved.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">A benefits record citing the mandate reference and the closed exposures.</dd>
+      <dt>State effect</dt><dd>Project closed inside the bank. The arc that opened on a product now closes on the commitment made about it.</dd>
+      <dt>Service level</dt><dd>Within one cadence of the last exposure closing.</dd>
+      <dt>Exit on failure</dt><dd class="exit">No record: the loop back to N1 and N3 runs on opinion. What the record asserts — countable outcomes, or a judgement about spend — is open item 5.</dd>
+    </dl>
+  </article>
+
+  <article class="box bank" id="E2a">
+    <div class="box-head"><span class="bid">E2a</span><h4>Re-run</h4><span class="out">fresh verdict · same core digest</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>On demand: a revoked verifier key, a refreshed envelope, a supervisor's request, or the standing replay drill.</dd>
+      <dt>Actor</dt><dd>#4 Bank — gate operator; second line for the drill.</dd>
+      <dt>Inputs</dt><dd>The stored core and a freshly sealed envelope over it. A sealed set from last year still proves what it proved then, so it can be re-admitted against current trust material.</dd>
+      <dt>Action</dt><dd>Re-run the gate offline from stored inputs and compare. Two runs from the same inputs must produce the same verdict, byte for byte.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">A fresh verdict over the same core digest with a new envelope digest. The earlier verdict is never edited.</dd>
+      <dt>State effect</dt><dd>None, unless the outcome differs — which is itself the finding.</dd>
+      <dt>Service level</dt><dd>The drill runs twice a year; on-demand runs are unbounded.</dd>
+      <dt>Exit on failure</dt><dd class="exit">A differing outcome is investigated as a finding. A core no longer retrievable makes the claim of offline re-runnability false, which is open item 6.</dd>
+    </dl>
+  </article>
+
+  <div class="phase">
+    <h3>The standing band · no package in front of them</h3>
+    <p class="why">Six duties on timers rather than on deliveries. They were a single box until the coverage check found three issuer functions appearing nowhere else, which is how a bucket hides work nobody has been asked to staff. Every other activity in this register waits for something to arrive; these run whether or not anything does.</p>
+  </div>
+
+  <article class="box alliance" id="S1">
+    <div class="box-head"><span class="bid">S1</span><h4>Trust metadata</h4><span class="out">metadata re-signed before expiry</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Each role's metadata approaching its expiry, and any suspected compromise.</dd>
+      <dt>Actor</dt><dd>#1 Issuer — root custodian, with the full co-signing threshold for a change to the root itself.</dd>
+      <dt>Inputs</dt><dd>Current metadata versions; the registry snapshot; co-signing keys, held across the alliance and its member banks rather than in one organisation.</dd>
+      <dt>Action</dt><dd>Re-sign the short-lived metadata on its own cadence, and run the rotation ceremony annually and on compromise. The threshold spans several organisations so that no single one disappearing can strand it.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">A new metadata version, published as static files.</dd>
+      <dt>State effect</dt><dd>None.</dd>
+      <dt>Service level</dt><dd>Ahead of each expiry, by a margin.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Metadata allowed to expire fails every client closed and verification stops entirely. Of every duty here this is the one whose omission is most expensive, and it is invisible until the day it bites.</dd>
+    </dl>
+  </article>
+
+  <article class="box alliance" id="S2">
+    <div class="box-head"><span class="bid">S2</span><h4>Registry and assignment</h4><span class="out">active count published</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Monthly, and each time a project reaches accepted.</dd>
+      <dt>Actor</dt><dd>#1 Issuer — registrar, component ⑨.</dd>
+      <dt>Inputs</dt><dd>Verifier entries and their attested activity; the contract digest, for assignment.</dd>
+      <dt>Action</dt><dd>Confirm each entry active or revoked and publish the active count. Then derive each project's verifier assignment from the contract digest over the registry snapshot, so that no one selects a friendly quorum and the selection can be checked afterwards by anyone holding the same snapshot.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Entry statuses, the published count, and an assignment record per project.</dd>
+      <dt>State effect</dt><dd>None directly. It sets the required quorum that is then written into each new contract.</dd>
+      <dt>Service level</dt><dd>Monthly attestation; assignment at acceptance.</dd>
+      <dt>Exit on failure</dt><dd class="exit">A stale count silently lowers the required quorum, because the number is computed from it. This is the one skipped duty in the model that the gate cannot catch, which is why it carries a published figure of its own.</dd>
+    </dl>
+  </article>
+
+  <article class="box alliance" id="S3">
+    <div class="box-head"><span class="bid">S3</span><h4>Log and checkpoints</h4><span class="out">tree heads published</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Continuous.</dd>
+      <dt>Actor</dt><dd>#1 Issuer — log operator.</dd>
+      <dt>Inputs</dt><dd>Entries submitted by every party that logs one: contracts, delivery manifests, verification summaries, sealed cores.</dd>
+      <dt>Action</dt><dd>Operate the append-only log and publish signed tree heads. Because one party operates it, consumers rely on heads observed independently by the quorum rather than on a single asserted head.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">Signed tree heads and inclusion proofs.</dd>
+      <dt>State effect</dt><dd>None.</dd>
+      <dt>Service level</dt><dd>An availability commitment, unset. This is a real operational undertaking: a log, its database, key custody and an uptime promise.</dd>
+      <dt>Exit on failure</dt><dd class="exit">With no current head an envelope cannot be sealed at D1 and ingest stops. Divergent heads across the quorum are the split-view path.</dd>
+    </dl>
+  </article>
+
+  <article class="box alliance" id="S4">
+    <div class="box-head"><span class="bid">S4</span><h4>Index reconciliation</h4><span class="out">index lag published</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Daily.</dd>
+      <dt>Actor</dt><dd>#1 Issuer — index operator.</dd>
+      <dt>Inputs</dt><dd>The log, and the current index.</dd>
+      <dt>Action</dt><dd>Replay the log into the index, confirm the index is complete, and publish the lag as a number so it is visible rather than assumed.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">A reconciliation record carrying the lag.</dd>
+      <dt>State effect</dt><dd>None. The index is a lookup and never evidence, so an incomplete index delays discovery and cannot admit anything wrong.</dd>
+      <dt>Service level</dt><dd>Lag at or under twenty-four hours.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Omissions go unnoticed, and D1 fails to discover attestations that do exist.</dd>
+    </dl>
+  </article>
+
+  <article class="box bank" id="S5">
+    <div class="box-head"><span class="bid">S5</span><h4>Trust material refresh</h4><span class="out">local material inside its windows</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>The windows themselves: seven days for the trust-root snapshot, twenty-four hours for the checkpoint set.</dd>
+      <dt>Actor</dt><dd>#4 Bank — gate operator.</dd>
+      <dt>Inputs</dt><dd>Published metadata and checkpoints; the local directory that holds them, under configuration management.</dd>
+      <dt>Action</dt><dd>Refresh the local material and stamp its version. Triage the board in the same pass, leaving the columns outside the perimeter alone, since a package resting there is nobody's queue here to clear.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">The refreshed directory at a recorded version, which every verdict then pins.</dd>
+      <dt>State effect</dt><dd>None. It is the precondition for sealing an envelope at all.</dd>
+      <dt>Service level</dt><dd>Tightenable by the bank, never loosenable.</dd>
+      <dt>Exit on failure</dt><dd class="exit">Stale material is a named refusal at D2 — loud, and correctly so, since the alternative is admitting against material nobody checked.</dd>
+    </dl>
+  </article>
+
+  <article class="box bank" id="S6">
+    <div class="box-head"><span class="bid">S6</span><h4>Ledger reconciliation</h4><span class="out">untracked deployments named</span></div>
+    <dl>
+      <dt>Trigger</dt><dd>Monthly.</dd>
+      <dt>Actor</dt><dd>#4 Bank — exposure owner, component ⑤.</dd>
+      <dt>Inputs</dt><dd>The ledger projections, and the estate's own application records.</dd>
+      <dt>Action</dt><dd>Compare what is deployed against what the ledger tracks, in both directions.</dd>
+      <dt class="trace">Trace</dt><dd class="trace">A discrepancy record naming each untracked deployment.</dd>
+      <dt>State effect</dt><dd>None directly. Each discrepancy resolves into an issued event or a corrected record.</dd>
+      <dt>Service level</dt><dd>Monthly.</dd>
+      <dt>Exit on failure</dt><dd class="exit">A deployment the estate knows about and the ledger does not is a bridge running with no expiry attached to it, which is the failure the whole ledger exists to prevent.</dd>
+    </dl>
+  </article>
+
+</section>
+
+<section id="clocks">
+  <div class="sec-label">Five · clocks</div>
+  <h2>Validity windows, then service levels</h2>
+  <p class="lede">Two different kinds of time constant, and only the second is a target for how long an activity may take. Conflating them is why the first draft of this model read as vague.</p>
+
+  <h3>Validity windows — already mechanical</h3>
+  <table>
+    <thead><tr><th style="width:230px">Window</th><th style="width:120px">Value</th><th style="width:170px">Enforced by</th><th>On expiry</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Trust-root snapshot age</strong></td><td>≤ 7 days</td><td>the gate, at D2</td><td>Named-rule refusal. Tightenable per bank and never loosenable.</td></tr>
+      <tr><td><strong>Checkpoint set age</strong></td><td>≤ 24 hours</td><td>the gate, at D2</td><td>Named-rule refusal. This is the constraint an air-gapped estate has to plan a courier around.</td></tr>
+      <tr><td><strong>Trust metadata expiry</strong></td><td>per role</td><td>the trust client</td><td>Hard fail closed. Verification stops entirely, which is why the root threshold spans several organisations.</td></tr>
+      <tr><td><strong>Delivery date, embargo, bridge expiry</strong></td><td>per contract</td><td>the state machines</td><td>Lapsed, or sunset. Frozen at countersignature and never adjusted.</td></tr>
+      <tr><td><strong>Evidence core</strong></td><td>never expires</td><td>—</td><td>Nothing expires. A set sealed last year is re-admitted against current trust material, inside a new envelope.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Service levels — measured, and mostly unset</h3>
+  <table>
+    <thead><tr><th style="width:230px">Activity</th><th style="width:140px">Proposed</th><th style="width:150px">Owner</th><th>On breach</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Offer window</strong> · A2 to A2a</td><td>unset</td><td>issuer</td><td>Back to drafted, or withdrawn.</td></tr>
+      <tr><td><strong>Verification</strong> · B2 to C3</td><td>5 business days</td><td>each assigned verifier</td><td>Flag, and reassign to a substitute so the project does not lapse on an unperformed duty.</td></tr>
+      <tr><td><strong>Core sealing</strong> · fulfilment to A3</td><td>same day</td><td>core assembler</td><td>Flag. Nothing can cross until it is done.</td></tr>
+      <tr><td><strong>Gate queue age</strong> · D1 to a verdict</td><td>measured, no target</td><td>gate operator</td><td>Reported. The decision itself carries no deadline; the queue does.</td></tr>
+      <tr><td><strong>S4</strong> · index reconciliation lag</td><td>≤ 24 hours</td><td>index operator</td><td>Published as a number, so the lag is visible rather than assumed.</td></tr>
+      <tr><td><strong>S2</strong> · registry activity attestation</td><td>monthly</td><td>registrar</td><td>Entry falls inactive, which lowers the active count and the required quorum with it.</td></tr>
+      <tr><td><strong>S6</strong> · ledger and estate reconciliation</td><td>monthly</td><td>exposure owner</td><td>Discrepancy record naming the untracked deployment.</td></tr>
+      <tr><td><strong>E2a</strong> · replay drill</td><td>twice a year</td><td>gate operator, second line</td><td>Finding. An untested replay claim is false on the day it is needed.</td></tr>
+      <tr><td><strong>Notice window</strong> · E2 before expiry</td><td>derived</td><td>exposure owner</td><td>Sum of the renewal path's service levels plus buffer. If the sum exceeds what a release train absorbs, that is a finding about the path.</td></tr>
+      <tr><td><strong>Ballot cadence</strong> · N3 and N4</td><td>unset</td><td>secretariat</td><td>Ranking carries over. An emergency route is needed for flaws already being exploited.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="exceptions">
+  <div class="sec-label">Six · exception paths</div>
+  <h2>Eight ways this goes wrong, each with an owner</h2>
+  <p class="lede">None of these is a step anyone performs on a normal day, so they attach to boxes as exits rather than appearing on the chart. Every one of them terminates in a record.</p>
+  <table>
+    <thead><tr><th style="width:150px">Path</th><th style="width:100px">From</th><th style="width:150px">Owner</th><th>First action, and where it ends</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Dissent</strong></td><td>C1, C2</td><td>registrar</td><td>Freeze the project at delivered and investigate reproducibility before conformance. A single disagreement disqualifies; it is never outvoted.</td></tr>
+      <tr><td><strong>Breach</strong></td><td>C3</td><td>secretariat</td><td>Terminal, recorded. Not remediable under this contract version.</td></tr>
+      <tr><td><strong>Lapse</strong></td><td>B1, B2, C3</td><td>secretariat</td><td>Terminal on the delivery date. Distinguish a slow provider from an unperformed verification duty, since the record reads the same from outside.</td></tr>
+      <tr><td><strong>Amendment</strong></td><td>B1</td><td>issuer, provider</td><td>New contract version, fresh countersignature, supersession pointer. The only route by which a shortfall reaches admission honestly.</td></tr>
+      <tr><td><strong>Verifier revocation</strong></td><td>S2</td><td>registrar, every second line</td><td>A revocation event, then an exposure recorded per affected package. Earlier verdicts stand, pinned to the trust-root version current when they were made.</td></tr>
+      <tr><td><strong>Root compromise</strong></td><td>S1</td><td>root co-signers</td><td>Emergency rotation ceremony. The reason member banks sit in the root threshold rather than below it.</td></tr>
+      <tr><td><strong>Split view of the log</strong></td><td>D1</td><td>log operator</td><td>Divergent tree heads across the quorum are disqualifying. No envelope is sealed, and the divergence is investigated.</td></tr>
+      <tr><td><strong>Core unavailable</strong></td><td>E2a</td><td>issuer, bank</td><td>A verdict naming a core nobody serves cannot be replayed. Retention and hosting are unresolved — open item 6.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="metrics">
+  <div class="sec-label">Seven · health</div>
+  <h2>What to watch, all of it already stored</h2>
+  <p class="lede">Every figure below is a read over the ledger, the verdict store or the registry. The model adds no store to support its own measurement.</p>
+  <table>
+    <thead><tr><th style="width:150px">Area</th><th>Figures</th><th style="width:210px">What a bad number means</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Quorum</strong></td><td>Active count; required number in force; assignment completion; median days from delivery to fulfilment</td><td>Verification duty going unperformed, which surfaces as provider lateness unless it is measured separately</td></tr>
+      <tr><td><strong>Dissent</strong></td><td>Rate; time to resolution</td><td>A defect in the toolchain specification, or something worse</td></tr>
+      <tr><td><strong>Admission</strong></td><td>Pass rate; refusals by rule; the most common failing rule</td><td>Either a systematic provider problem or an over-tight local policy</td></tr>
+      <tr><td><strong>Freshness</strong></td><td>Median trust-material age at the gate; count of stale refusals, target zero</td><td>A refresh duty being skipped rather than a supply problem</td></tr>
+      <tr><td><strong>Queue</strong></td><td>Age at resolution; age at gate</td><td>Work arriving faster than the bank reviews it, with no deadline to breach</td></tr>
+      <tr><td><strong>Debt</strong></td><td>Bridges active; inside notice; past expiry and undecided; applications on bridges; oldest lineage</td><td>Temporary fixes becoming permanent, which is the liability the bridge exists to bound</td></tr>
+      <tr><td><strong>Assurance</strong></td><td>Drills run; byte-identical rate; index reconciliation lag</td><td>The offline re-runnability claim drifting from true</td></tr>
+      <tr><td><strong>Benefits</strong></td><td>Projects closed with a benefits record; flaws closed against flaws commissioned</td><td>Commissioning decisions made without evidence from the last cycle</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="open">
+  <div class="sec-label">Eight · open</div>
+  <h2>Seven values, and who settles each</h2>
+  <p class="lede">Three owners, and the distinction is about authority rather than difficulty. <span class="own a">alliance policy</span> binds every member, so a bank cannot set it alone. <span class="own b">bank policy</span> is internal and needs no one else's agreement. <span class="own e">engineering</span> is ours to specify and lands in an artifact. Where a defensible default exists it is proposed; where the value encodes how much influence contribution buys, no default is offered, because that is a constitutional question wearing operational clothes.</p>
+  <ol class="open">
+    <li><span class="own a">alliance policy</span><strong>Provider selection.</strong> Who selects the provider, and against what criteria. The mechanism obligation is ours and already satisfied: the mandate records the selection and the contract carries it, so "was this properly commissioned" stays checkable. Proposed default — the commissioning ballot selects in team mode, the sponsor selects in solo mode, and either way the mandate names the choice. Until this is answered, box A2a describes a countersignature by a party nobody has been appointed to be.</li>
+    <li><span class="own a">alliance policy</span><span class="own b">bank policy</span><strong>Service levels, then the notice window.</strong> The verification window binds members, so it is the alliance's; the offer window is the issuer's; the notice window at E2 is internal to each bank. Proposed — five business days from delivery to a verification summary, and the notice window derived as the sum of the renewal path's service levels plus buffer rather than picked.</li>
+    <li><span class="own a">alliance policy</span><strong>Seconding threshold and ballot weighting.</strong> No default proposed. Both values encode how much influence a contribution buys over what gets commissioned, which the membership has to decide for itself. The mechanism is indifferent to the numbers: N2 tallies against a threshold and N4 weights a ballot whatever the values are.</li>
+    <li><span class="own a">alliance policy</span><strong>Ballot cadence and the emergency route.</strong> Proposed — a regular cadence plus standing emergency authority with later ratification, because a flaw under active exploitation cannot wait for a scheduled vote and the alternative is commissioning outside the process entirely.</li>
+    <li><span class="own b">bank policy</span><span class="own a">alliance floor</span><strong>What a benefits record asserts.</strong> The alliance needs flaws closed and applications migrated, since those are what weight the next prioritisation ballot. Beyond that floor a bank can measure what it likes, including spend against mandate, which is a judgement rather than a count.</li>
+    <li><span class="own e">engineering</span><span class="own a">alliance policy</span><strong>Core hosting and retention.</strong> Hosting is settled — the alliance master repository serves the core. The retention period is not, and the replay claim in E2a holds only as long as both the core and the envelope are held. A verdict naming a core nobody serves cannot be re-run.</li>
+    <li><span class="own a">alliance policy</span><span class="own e">engineering</span><strong>Verifier and admission separation.</strong> Whether a member must own and key its verification function separately from its admission function, as a membership term. The engineering hook exists either way: the registry records the verification identity alone, so the separation is checkable once it is required.</li>
+  </ol>
+  <div class="callout"><strong>Ours alone, and still open:</strong> whether A2 splits into separate drafting and issuance activities, given the release-line judgement has a screen of its own; how demand formation works for a project with no prior baseline, since N1 assumes exposure data a new project does not have; and which activities the reference implementation exercises, where the answer is probably the replay drill and the stale-material refusal alone. These three land in artifacts without anyone else's agreement.</div>
+  <div class="callout warn"><strong>One item is genuinely not ours at any layer.</strong> Which organisations sit in the trust-root threshold, how a verifier is admitted or removed, and what happens on suspected compromise. That is about which institutions hold which keys, and no operating model can propose it on the membership's behalf. The mechanism is built — a co-signed root with delegation — and the architecture names this as the largest remaining item for exactly this reason.</div>
+</section>
+
+<footer>
+  <p><strong>code_tracer · operating model</strong> — the operating layer over the four design axes, the perimeter interface and the physical topology. Rolling document: sections are revised in place and the revision line at the top moves. Nothing here is accepted into the knowledge graph yet.</p>
+</footer>
+
+</div>
+</body>
+</html>
