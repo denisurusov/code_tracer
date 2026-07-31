@@ -27,15 +27,24 @@ field-by-field register this artifact indexes.
 
 **What acceptance covers.** The activities, the roles, the two kinds of clock,
 the exception paths and the principle in §1 are accepted as the shape of the
-operating layer. The values in §7 are **not** accepted by this: each is marked
-with the party that ratifies it, and three of them are not ours to settle at all.
-Accepting the model is accepting where the questions sit, not answers to them.
+operating layer. The **values** are not: §5 names every service level as a
+parameter and marks it TBD, and §7 marks every unsettled question with the party
+that ratifies it. Accepting the model is accepting where the questions sit, not
+answers to them.
 
 > **Amendment 2026-07-31 (`noteworthy-solo-distribution`).** The
 > blessing-petition threshold is closed by removing the thing that needed one.
 > Solo output distributes on the same terms as team output under its own trust
 > path; there is no blessing, no petition and no re-attribution. Activity A4
-> loses its petition branch, and §7 drops from eight values to seven.
+> loses its petition branch.
+
+> **Amendment 2026-07-31 (three decisions).** §4 — a "renewal" is a **successor
+> project** and re-enters the pipeline at N1, not N4
+> (`noteworthy-successor-project`). §5 — service levels become **named parameters
+> with TBD values**, and the notice window is **derived by formula**
+> (`noteworthy-service-level-parameters`). §6 — every contract failure resolves
+> by a **vote of the contract's signatories**, replacing five separately reasoned
+> escalations (`noteworthy-failure-vote`).
 
 ## 1. The organising principle
 
@@ -66,9 +75,10 @@ alliance governance policy to the alliance, because those are not engineering
 questions.
 
 **That boundary does not hold one layer up.** An operating model with no cadence,
-no threshold and no service level cannot be run. So this artifact **proposes
-values and names who ratifies each**. What it never does is present a proposed
-value as a ratified one: §7 marks every unsettled value with its owner.
+no threshold and no service level cannot be run. So this artifact **names the
+parameters and states how they combine**, and leaves the values to whoever
+ratifies them. Naming is the part that must exist to be runnable; the numbers are
+policy.
 
 ## 3. Roles — the functions inside each party
 
@@ -79,7 +89,7 @@ of these are separately staffed and separately keyed.
 |---|---|
 | **#1 Issuer** | secretariat (demand pipeline, ballots, mandate) · contract author (⑦) · registrar (⑨, the active count) · root custodian · log operator · core assembler · index operator |
 | **#2 Provider** | build and delivery — countersigns, mints L0–L7, assembles and logs the delivery manifest |
-| **#3 Signatory** | verification operator — runs the distributable rebuild harness, signs an L8 under its registry identity |
+| **#3 Signatory** | verification operator — runs the distributable rebuild harness, signs an L8 under its registry identity; and votes on any failure of the contract it signed |
 | **#4 Bank** | gate operator (①②③) · app team (④, migrations) · exposure owner (⑤) · second line (risk acceptances, revocation review) |
 
 **Every member is simultaneously #3 and #4.** If one team holds both, that
@@ -117,7 +127,7 @@ actor, inputs, action, trace, state effect, service level, failure exit — is i
 | D3a | refuse | #4 gate operator | verdict naming the failing rule |
 | D3b | accept risk | #4 second line | signed acceptance against that rule |
 | E1 | open exposure | #4 exposure owner (⑤) | `issued` ledger event |
-| E2 | review | #4 exposure owner | retire or renew decision |
+| E2 | review | #4 exposure owner | retire, or nominate a successor |
 | E1a | migrate | #4 app team | `retired` event |
 | N5 | benefits | #4 exposure owner | record citing `mandateRef` |
 | E2a | re-run | #4 gate operator | fresh verdict, same `coreDigest` |
@@ -134,9 +144,12 @@ never changes afterwards (`noteworthy-solo-distribution`). This was the one
 activity whose behaviour differed by governance mode; it no longer does, which
 means **no activity in this register branches on mode**.
 
-**Two loops, different meanings.** E2's renewal re-enters at N4, because the
-lineage was already voted in and a continuation carries the same `osera.line`.
-N5 re-enters at N1, because benefits data is what argues the next nomination.
+**Both loops return to N1.** E2's continuation is a **successor project** — a
+fresh commissioning decision with its own contract, baseline, CVE set,
+signatories and money, carrying over only `osera.line`
+(`noteworthy-successor-project`). So it runs the whole pipeline from nomination
+rather than re-entering at the ballot. N5's benefits record returns to N1 too,
+because it is what argues the next nomination. One re-entry point, two reasons.
 
 **S1–S6 were one activity until the coverage check.** Three issuer functions —
 root custodian, log operator, index operator — appeared nowhere else, which meant
@@ -152,66 +165,122 @@ named in `docs/lifecycle.md` under "Not yet in the machines".
 
 Conflating these is why an earlier draft read as vague.
 
-**Validity windows** — already mechanical, this layer adds only an owner:
-trust-root snapshot ≤ 7 days and checkpoint set ≤ 24 hours, both enforced at D2
-as named-rule rejects and tightenable per bank; TUF metadata expiry, which fails
-closed; `deliverBy`, `embargoUntil` and `bridgeExpiry`, frozen at
+### Validity windows — real values, already mechanical
+
+Trust-root snapshot **≤ 7 days** and checkpoint set **≤ 24 hours**, both enforced
+at D2 as named-rule rejects and tightenable per bank; TUF metadata expiry, which
+fails closed; `deliverBy`, `embargoUntil` and `bridgeExpiry`, frozen at
 countersignature. The evidence core has none.
 
-**Service levels** — measured, and mostly unset. Nothing in the system rejects
-anything because a party was slow: a signatory who never verifies produces no
-dissent and no failing rule, and the project simply reaches `deliverBy` and
-Lapses, where the record is indistinguishable from provider lateness
-(`artifact-contract-lifecycle` §2). That is the silent-lapse class §1 exists to
-catch, and it needs a measured figure plus an escalation rather than a rule.
+These are **settled, not placeholders** (`noteworthy-bundle-freshness`). They are
+a different kind of clock — a validity window the gate checks, rather than a
+service level a party is measured against — and marking them TBD alongside the
+rest would suggest the gate has an unset parameter, which it does not.
 
-Proposed: verification within 5 business days of Delivered; core sealed same-day
-at Fulfilled; index reconciliation lag ≤ 24 hours; registry attestation monthly;
-ledger reconciliation monthly; replay drill twice yearly. **The gate carries no
-decision deadline** — review takes as long as the evidence requires — but queue
-age from Resolved is measured.
+### Service levels — named parameters, values TBD
 
-**The notice window at E2 is derived, not chosen.** It must cover the whole
-renewal path — commission, deliver, verify, admit, deploy — so it is the sum of
-those service levels plus buffer. Picking a number first and hoping the path fits
-inverts the dependency; if the sum exceeds what a release train absorbs, that is
-a finding about the path.
+Nothing in the system rejects anything because a party was slow: a signatory who
+never verifies produces no dissent and no failing rule, and the project simply
+reaches `deliverBy` and Lapses, where the record is indistinguishable from
+provider lateness (`artifact-contract-lifecycle` §2). That is the silent-lapse
+class §1 exists to catch, and it needs a measured figure plus an escalation
+rather than a rule.
+
+| Parameter | Spans | Owner |
+|---|---|---|
+| `CADENCE_BALLOT` | nomination → commissioning | alliance |
+| `SL_OFFER` | A2 issue → A2a countersign | issuer |
+| `SL_VERIFY` | B2 delivered → C3 attested | alliance |
+| `SL_SEAL` | Fulfilled → A3 | issuer |
+| `SL_RESOLVE` | Verified → envelope sealed | bank |
+| `SL_GATE_QUEUE` | D1 → verdict | bank — **measured, no target** |
+| `SL_RECONCILE` | S4, S6 | issuer, bank |
+| `SL_DRILL` | E2a replay | bank |
+| `RELEASE_TRAIN` | admitted → deployed | bank — estate-specific |
+
+All values TBD (`noteworthy-service-level-parameters`). `SL_GATE_QUEUE` carries
+no target by design: the review takes as long as the evidence requires, and what
+is measured is queue age from Resolved.
+
+### The notice window is computed, never set
+
+```
+WINDOW_NOTICE = CADENCE_BALLOT + SL_OFFER + contract.deliverBy
+              + SL_VERIFY + SL_SEAL + SL_RESOLVE + SL_GATE_QUEUE
+              + RELEASE_TRAIN + BUFFER
+```
+
+Its job is to give a **successor project** time to complete before the incumbent
+bridge lapses, and a successor runs the whole pipeline — so `CADENCE_BALLOT` is
+in the sum and cannot be dropped. Two things the formula makes visible:
+
+- **`CADENCE_BALLOT` dominates.** The window can never be shorter than one ballot
+  cycle, so lengthening the cadence lengthens every bridge in the estate — a
+  governance decision with an operational cost most participants would not
+  otherwise see attached to it.
+- **If the sum exceeds what a release train absorbs, that is a finding about the
+  path**, not a reason to shorten the notice. Shortening would move the problem
+  and put bridges into Sunset with work still in flight.
 
 ## 6. Exception paths
 
-Eight, each with a trigger, an owner and a terminating record. None is performed
-on a normal day, so they attach to activities as exits rather than appearing in
-§4: **dissent** (registrar; freeze at Delivered, investigate reproducibility
-before conformance) · **breach** and **lapse** (secretariat; terminal) ·
-**amendment** (issuer + provider; the only route by which a shortfall reaches
-admission honestly) · **verifier revocation** (registrar + every second line;
-verdicts stand, pinned to their `trustRootVersion`) · **root compromise**
-(co-signers; emergency ceremony) · **split view** (log operator; disqualifying,
-no envelope sealed) · **core unavailable** (issuer + bank; a verdict naming a core
-nobody serves cannot be replayed — the retention question).
+**Every contract failure resolves the same way: the contract's signatories vote
+on how to proceed** (`noteworthy-failure-vote`). They funded it and they carry
+the consequence, which is the same binding that makes them the verifiers. In solo
+mode the vote is the sponsor's decision alone — degenerate, and consistent.
+
+**Detection and decision are separate.** Each path below names who *detects and
+records*; none of them decides the response.
+
+| Path | Detected by | Terminating record |
+|---|---|---|
+| **Dissent** | registrar | project frozen at Delivered; investigation, then a vote |
+| **Breach** | secretariat | conformance BREACH recorded; vote |
+| **Lapse** | secretariat | `deliverBy` passed; vote |
+| **Missed service level** | the parameter's owner | measured figure; vote if material |
+| **Amendment** | issuer + provider | new contract version, fresh countersignature |
+| **Verifier revocation** | registrar + every second line | `verifier-revoked` event; verdicts stand |
+| **Root compromise** | co-signers | emergency rotation ceremony |
+| **Split view** | log operator | disqualifying; no envelope sealed |
+| **Core unavailable** | issuer + bank | a verdict naming a core nobody serves cannot be replayed |
+
+The last four are **trust and infrastructure events rather than contract
+failures**, so they do not route to a vote — nothing about them is the
+signatories' to decide.
+
+**The vote is a recorded event**, like the commissioning mandate it resembles, so
+a project abandoned rather than amended leaves evidence of the decision and not
+just of the failure. **The gate is untouched:** no vote promotes a package that
+failed a rule, and conformance stays binary
+(`noteworthy-conformance-binary`).
 
 ## 7. Open — with owners
 
 Three owners, and the distinction is authority rather than difficulty.
 **Alliance policy** binds every member. **Bank policy** is internal. **Engineering**
-is ours and lands in an artifact. **None of these seven is settled by this
-artifact's acceptance.**
+is ours and lands in an artifact. **None of these is settled by this artifact's
+acceptance.**
 
-| # | Value | Owner | Proposed |
-|---|---|---|---|
-| 1 | Provider selection criteria | alliance | ballot selects in team mode, sponsor in solo; the mandate names the choice either way. Mechanism already satisfied — the contract records it |
-| 2 | Service levels, then the derived notice window | alliance (verification), issuer (offer), bank (notice) | §5 |
-| 3 | Seconding threshold; ballot weighting basis | alliance | **none offered** — both encode how much influence a contribution buys, which is constitutional rather than operational |
-| 4 | Ballot cadence and the emergency route | alliance | a regular cadence plus standing emergency authority with later ratification; an exploited flaw cannot wait for a scheduled vote |
-| 5 | What a benefits record asserts | bank, with an alliance floor | floor: flaws closed and applications migrated, since those weight the next ballot |
-| 6 | Core hosting and retention; rebuild-input mirroring | engineering (hosting), alliance (retention) | the replay claim holds only while both core and envelope are held |
-| 7 | Verification and admission separately keyed | alliance (membership term) | §3. Engineering hook exists either way |
+| # | Question | Owner |
+|---|---|---|
+| 1 | Provider selection criteria. Mechanism already satisfied — the mandate and the contract record the choice | alliance |
+| 2 | **Values for every parameter in §5.** The names and the formula are settled; the numbers are not | alliance, issuer, bank per the §5 table |
+| 3 | Seconding threshold; ballot weighting basis. **No default offered** — both encode how much influence a contribution buys, which is constitutional rather than operational | alliance |
+| 4 | `CADENCE_BALLOT` and whether an emergency route bypasses it. An exploited flaw cannot wait for a scheduled vote | alliance |
+| 5 | What a benefits record asserts. Floor: flaws closed and applications migrated, since those weight the next nomination | bank, with an alliance floor |
+| 6 | Core hosting and retention; rebuild-input mirroring. The replay claim holds only while both core and envelope are held | engineering (hosting), alliance (retention) |
+| 7 | Verification and admission separately keyed, as a membership term | alliance |
+
+**Items 2 and 4 are the same question seen twice.** `CADENCE_BALLOT` is one of
+the §5 parameters and the dominant term in the notice window, so setting it is
+both an operating value and a governance rhythm. It is listed separately because
+the emergency route is a distinct decision from the cadence itself.
 
 **Closed 2026-07-31:** the blessing-petition threshold, by removing the petition
-(`noteworthy-solo-distribution`). Worth recording how it closed — not by choosing
-a number but by noticing that the thing needing one should not exist. It had been
-unanswerable because it quietly depended on item 3, the one place this artifact
-deliberately proposes nothing.
+(`noteworthy-solo-distribution`) — not by choosing a number but by noticing that
+the thing needing one should not exist. It had been unanswerable because it
+quietly depended on item 3, the one place this artifact deliberately proposes
+nothing.
 
 Ours alone, and open: whether A2 splits into separate drafting and issuance
 activities, given the release-line judgement has its own screen; how demand
@@ -228,11 +297,15 @@ behalf.
 
 - `artifact-architecture` — §3.6 fixes who verifies; §3.7 the rules D2 evaluates;
   §9's index/log reconciliation item is answered by S4.
-- `artifact-contract-lifecycle` — N1–A2a and the Lapsed ambiguity §5 measures.
-- `artifact-product-lifecycle` — D1–E1a; the derived notice window closes its
-  sunset-signalling item.
+- `artifact-contract-lifecycle` — N1–A2a, the Lapsed ambiguity §5 measures, and
+  the three terminal states §6 now gives a route out of.
+- `artifact-product-lifecycle` — D1–E1a; §5's formula closes its
+  sunset-signalling item, and its renewal loop is a successor project.
 - `artifact-evidence-bundle` — A3, A4, D1, and the clock split §1 rests on.
 - `artifact-deployment-topology` — the stores every activity writes to.
 - `noteworthy-signer-verification`, `noteworthy-adoption-rebuild` — why C1–C3
   bind to signatories and why D1 rebuilds.
 - `noteworthy-solo-distribution` — why A4 has no branch.
+- `noteworthy-successor-project` — why both loops return to N1.
+- `noteworthy-service-level-parameters` — §5.
+- `noteworthy-failure-vote` — §6.
