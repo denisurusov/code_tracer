@@ -7,23 +7,23 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-26T18:45:00Z
+  updatedAt: 2026-07-31T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   sourceRef: ce42f850ccfc660dde5fce05f46db479f0993fe0
   contentHash: ce42f850ccfc660dde5fce05f46db479f0993fe0
   timestamp: 2026-07-17T18:45:00Z
 createdAt: 2026-07-17T18:45:00Z
-updatedAt: 2026-07-26T18:45:00Z
+updatedAt: 2026-07-31T00:00:00Z
 ```
 # Decision: purl namespace for backpatched artifacts
 
 **Decision (Option B).** A backpatched artifact carries a **distinct
 version-suffixed purl** — `pkg:maven/…@<upstream>-osera.N`, where `N` is the
-renewal count (`3.2.1-osera.1`, `3.2.1-osera.2`, …). The `sha256` digest remains
-the identity (chain principle #1); the purl is the legible label. The hardening
-relationship is declared explicitly: L2 names `baseline → hardened`, and L6/L7
-(SBOM/VEX) assert the is-hardening-of link and the fixed CVEs.
+**succession count** (`3.2.1-osera.1`, `3.2.1-osera.2`, …). The `sha256` digest
+remains the identity (chain principle #1); the purl is the legible label. The
+hardening relationship is declared explicitly: L2 names `baseline → hardened`,
+and L6/L7 (SBOM/VEX) assert the is-hardening-of link and the fixed CVEs.
 
 Rejected **Option A** (same coordinate as upstream, distinguished only by
 digest): although equally safe under digest-keyed verification, it produces a
@@ -58,7 +58,7 @@ to prevent, reintroduced through ecosystem assumptions
 
 > The hardened coordinate MUST sort **above** its baseline in the ecosystem's own
 > version ordering, MUST NOT collide with any upstream release, and MUST remain
-> monotonic across renewals (`N` increasing).
+> monotonic across successive bridges in a line (`N` increasing).
 
 **Per-ecosystem encodings satisfying it:**
 
@@ -90,6 +90,22 @@ label; the is-hardening-of relationship remains declared in L2/L6/L7.
 
 The record this decision binds is now `package-version`
 (`noteworthy-lifecycle-nouns`); the field it fixes is unchanged.
+
+---
+
+## Amendment 2026-07-31 — `N` counts successions, and the suffix does not change
+
+`N` was described as a **renewal count**. Nothing is renewed
+(`noteworthy-successor-project`): each increment marks a **successor project**
+with its own contract, baseline, scope, signatories and funding, continuing the
+same `osera.line`. So `N` is a **succession count**.
+
+**The literal `-osera.N` is deliberately untouched.** It is a coordinate carrying
+ordering, non-collision and monotonicity requirements, embedded in repository
+managers, app manifests and every purl in the design. Renaming it would break all
+of that to correct a word that does not appear in it — the suffix says `osera`,
+not `renewal`. The vocabulary sweep stops at the boundary where a name is a
+label and starts being an interface.
 
 **Binds:** `artifact-data-model` `package-version.purl` (§4). **Resolves:** the
 purl question in `artifact-architecture` §7.
