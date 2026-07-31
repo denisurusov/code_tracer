@@ -7,7 +7,7 @@ review: accepted
 summary:
   origin: machine
   pinned: true
-  updatedAt: 2026-07-30T00:00:00Z
+  updatedAt: 2026-07-31T00:00:00Z
 provenance:
   conversationId: konspekt-architecture-draft
   inputs:
@@ -15,7 +15,7 @@ provenance:
     - docs/historical/osera-bank-schematic.svg     # artifact #2
     - docs/historical/osera-standards-register.md  # artifact #3
 createdAt: 2026-07-17T00:00:00Z
-updatedAt: 2026-07-30T00:00:00Z
+updatedAt: 2026-07-31T00:00:00Z
 ```
 
 # code_tracer — Architecture & Design
@@ -86,6 +86,13 @@ is `artifact-operating-model`.
 > sits above the four axes rather than beside them: this document builds the
 > mechanism and defers policy, and that boundary deliberately does not hold one
 > layer up, where values have to be named to be runnable.
+
+> **Amendment 2026-07-31 (solo distribution).** §3.8 and §9 amended per
+> `noteworthy-solo-distribution`. Solo output publishes on the same terms as team
+> output under its own trust path; **blessing and the blessing petition are
+> retired**, and `governance.trustPath` is fixed at issuance and never changes.
+> The blessing-petition threshold leaves §9's open list — closed by removing the
+> thing that needed one rather than by choosing a number.
 
 ---
 
@@ -184,6 +191,13 @@ requires or what the adopting bank does. Inside-zone activity is identical in
 both modes, because every adopting bank rebuilds for itself (§3.6,
 `noteworthy-adoption-rebuild`).
 
+**Distribution is identical too.** Output publishes to the shared distribution
+point under whichever trust path its contract froze, with no gate in between, and
+that path never changes afterwards. A bank commissions solo to use the standards
+on work only it wants done, rather than to obtain the alliance's endorsement — so
+there is nothing for a blessing to grant, and the concept is retired
+(`noteworthy-solo-distribution`).
+
 ---
 
 ## 2. The two ingest classes
@@ -250,7 +264,8 @@ chain above it is verified *against*. It freezes:
 
 - **Governance** — `mode`, `sponsor`, `mandateRef`, `trustPath` and the
   **signatory set**, so "was this properly commissioned?" and "who owes
-  verification?" are both checkable rather than assumed.
+  verification?" are both checkable rather than assumed. `trustPath` is fixed
+  here and never changes afterwards (`noteworthy-solo-distribution`).
 - **Baseline** — `contract.baseline.digest`, the exact upstream artifact to
   start from.
 - **Scope** — `contract.scope.cvesInScope` (what must be fixed) and
@@ -647,8 +662,11 @@ deliberately does not:
   gate requires is unchanged, and the consuming bank rebuilds for itself as it
   would for any package — so the difference is in how much independent
   corroboration accompanied the artifact across the perimeter, which the trust
-  path on the verdict records (`noteworthy-governance-modes`,
-  `noteworthy-adoption-rebuild`).
+  path on the verdict records. Solo output is **distributed on the same terms**,
+  with no petition and no re-attribution; the licence makes exclusivity
+  unenforceable in any case, so free-riding is membership economics rather than
+  a mechanism question (`noteworthy-governance-modes`,
+  `noteworthy-solo-distribution`).
 
 ---
 
@@ -885,6 +903,12 @@ ratifies each).
 - **Adoption rebuild** — every adopting bank rebuilds inside its own zone in both
   modes and signs its own L8; the core carries digest-pinned rebuild references.
   `noteworthy-adoption-rebuild`.
+- **Solo distribution** — solo output publishes on the same terms as team output
+  under its own trust path; blessing and the blessing petition are retired, and
+  `trustPath` is fixed at issuance and never changes. Gating discoverability
+  would have been a weaker tier by another door, and re-attribution would have
+  let a package's path move after verdicts had pinned it.
+  `noteworthy-solo-distribution`.
 - **Transparency log** — shared FINOS Rekor, witnessed by the signatories.
   `noteworthy-transparency-log`.
 - **Evidence-bundle format** — OCI canonical, deterministic tar projection.
@@ -914,9 +938,6 @@ ratifies each).
 - **Alliance governance policy** — trust-root threshold membership, verifier
   on/offboarding criteria, procedure on suspected compromise. Not an engineering
   question; the largest remaining item.
-- **Blessing-petition threshold.** The petition that moves solo output onto the
-  shared distribution path borrowed "the quorum threshold", which no longer names
-  a number now that `k` is the signatory set. It needs a threshold of its own.
 - **Rebuild-input durability.** The core pins source and toolchain by digest, but
   a pinned locator can stop resolving years later while every digest still
   checks out. Same shape as the anchor-durability problem, and it wants the same
