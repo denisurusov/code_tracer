@@ -186,3 +186,10 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-notes-adoptrebuild-opmodel | notes | noteworthy:noteworthy-adoption-rebuild | artifact:artifact-operating-model | |
 | e-notes-governance-opmodel | notes | noteworthy:noteworthy-governance-modes | artifact:artifact-operating-model | |
 | e-notes-trustroot-opmodel | notes | noteworthy:noteworthy-trust-root-ownership | artifact:artifact-operating-model | |
+| e-prod-issuer-solodist | produces | node:goal-issuer-side | noteworthy:noteworthy-solo-distribution | |
+| e-notes-solodist-arch | notes | noteworthy:noteworthy-solo-distribution | artifact:artifact-architecture | |
+| e-notes-solodist-opmodel | notes | noteworthy:noteworthy-solo-distribution | artifact:artifact-operating-model | |
+| e-notes-solodist-datamodel | notes | noteworthy:noteworthy-solo-distribution | artifact:artifact-data-model | |
+| e-rel-solodist-governance | relates | noteworthy:noteworthy-solo-distribution | noteworthy:noteworthy-governance-modes | 0.95 |
+| e-rel-solodist-trustroot | relates | noteworthy:noteworthy-solo-distribution | noteworthy:noteworthy-trust-root-ownership | 0.95 |
+| e-rel-solodist-signerverify | relates | noteworthy:noteworthy-solo-distribution | noteworthy:noteworthy-signer-verification | 0.85 |
