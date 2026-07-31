@@ -173,3 +173,16 @@ Single typed edge table (konspekt serialization v1). `from` / `to` are
 | e-notes-adoptrebuild-topology | notes | noteworthy:noteworthy-adoption-rebuild | artifact:artifact-deployment-topology | |
 | e-rel-adoptrebuild-signerverify | relates | noteworthy:noteworthy-adoption-rebuild | noteworthy:noteworthy-signer-verification | 0.95 |
 | e-rel-adoptrebuild-coremanifest | relates | noteworthy:noteworthy-adoption-rebuild | noteworthy:noteworthy-core-manifest | 0.9 |
+| e-prod-gate-opmodel | produces | node:goal-admission-gate | artifact:artifact-operating-model | |
+| e-rel-opmodel-issuer | relates | artifact:artifact-operating-model | node:goal-issuer-side | 0.9 |
+| e-rel-opmodel-arch | relates | artifact:artifact-operating-model | artifact:artifact-architecture | 0.9 |
+| e-rel-opmodel-contractlc | relates | artifact:artifact-operating-model | artifact:artifact-contract-lifecycle | 0.95 |
+| e-rel-opmodel-lifecycle | relates | artifact:artifact-operating-model | artifact:artifact-product-lifecycle | 0.95 |
+| e-rel-opmodel-bundle | relates | artifact:artifact-operating-model | artifact:artifact-evidence-bundle | 0.85 |
+| e-rel-opmodel-topology | relates | artifact:artifact-operating-model | artifact:artifact-deployment-topology | 0.9 |
+| e-rel-opmodel-datamodel | relates | artifact:artifact-operating-model | artifact:artifact-data-model | 0.8 |
+| e-rel-opmodel-mockup | relates | artifact:artifact-operating-model | node:task-lifecycle-mockup | 0.8 |
+| e-notes-signerverify-opmodel | notes | noteworthy:noteworthy-signer-verification | artifact:artifact-operating-model | |
+| e-notes-adoptrebuild-opmodel | notes | noteworthy:noteworthy-adoption-rebuild | artifact:artifact-operating-model | |
+| e-notes-governance-opmodel | notes | noteworthy:noteworthy-governance-modes | artifact:artifact-operating-model | |
+| e-notes-trustroot-opmodel | notes | noteworthy:noteworthy-trust-root-ownership | artifact:artifact-operating-model | |
