@@ -1,0 +1,8 @@
+{
+  "description": "Dependency vulnerability policy for runtime dependencies (npm audit --omit=dev).",
+  "scope": "runtime",
+  "checks": {
+    "SCA-001": { "fail_on": ["critical", "high"] },
+    "SCA-002": { "warn_on": ["moderate", "low", "info"] }
+  }
+}

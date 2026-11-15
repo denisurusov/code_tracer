@@ -1,0 +1,138 @@
+name: demo test evidence
+
+# Runs the demo end to end: every test category, conversion to CTRF/SARIF,
+# signed in-toto test-result attestations, named sign-offs, the gate, and the
+# gate's negative cases. Evidence is uploaded as a run artifact.
+#
+# Signing uses throwaway Ed25519 keys generated in the job, so the run shows the
+# mechanics; trust does not carry across runs. The optional github-attest job
+# additionally publishes each predicate through GitHub artifact attestations
+# (Sigstore keyless, identity = this workflow). That needs a public repository or
+# GitHub Enterprise Cloud, so it is off by default.
+
+on:
+  workflow_dispatch:
+    inputs:
+      github-attest:
+        description: "Also publish predicates with actions/attest (public repo or GHEC only)"
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      github-attest:
+        type: boolean
+        default: false
+  pull_request:
+    paths: ["demo/**", ".github/workflows/demo-test-evidence.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-test-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: demo
+    outputs:
+      source-digest: ${{ steps.digest.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: demo/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Install scanners (gitleaks, semgrep)
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz \
+            | sudo tar xz -C /usr/local/bin gitleaks
+          pipx install semgrep==1.185.0
+          gitleaks version && semgrep --version
+
+      # Playwright uses the Google Chrome preinstalled on ubuntu-latest (channel "chrome").
+      - name: Run all test categories and sign the evidence
+        run: npm run evidence
+
+      - name: Named sign-offs (demo reviewers)
+        run: npm run signoffs
+
+      - name: Gate
+        run: npm run gate
+
+      - name: Gate negative cases
+        run: npm run gate:negative
+
+      - id: digest
+        name: Source digest
+        run: echo "sha256=$(node -e "import('./evidence/lib/digest.mjs').then(m=>console.log(m.sourceDigest().digest))")" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Test evidence"
+            echo
+            echo "| category | result | passed | warned | failed |"
+            echo "|---|---|---|---|---|"
+            for f in out/attestations/*.dsse.json; do
+              node -e '
+                const e = JSON.parse(require("fs").readFileSync(process.argv[1]));
+                const p = JSON.parse(Buffer.from(e.payload, "base64")).predicate;
+                console.log(`| ${p["x-code-tracer"].category} | ${p.result} | ${p.passedTests.length} | ${p.warnedTests.length} | ${p.failedTests.length} |`);
+              ' "$f"
+            done
+            echo
+            node -e 'const r = require("./out/gate-report.json"); console.log(`**Gate verdict:** ${r.verdict}`)'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-evidence
+          path: |
+            demo/out/attestations
+            demo/out/results
+            demo/out/vsa.dsse.json
+            demo/out/gate-report.json
+            demo/.keys/trust.json
+          if-no-files-found: error
+
+  github-attest:
+    needs: evidence
+    if: ${{ inputs.github-attest }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+      artifact-metadata: write
+    strategy:
+      matrix:
+        category: [unit, integration, contract, e2e, uat, accessibility, load, sast, secrets, sca, license, data-quality]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: test-evidence
+          path: evidence
+      - name: Extract predicate
+        run: |
+          node -e '
+            const e = JSON.parse(require("fs").readFileSync(process.argv[1]));
+            require("fs").writeFileSync("predicate.json", JSON.stringify(JSON.parse(Buffer.from(e.payload, "base64")).predicate));
+          ' "evidence/out/attestations/${{ matrix.category }}.dsse.json"
+      - uses: actions/attest@v2
+        with:
+          subject-name: fx-quote-demo/source
+          subject-digest: sha256:${{ needs.evidence.outputs.source-digest }}
+          predicate-type: https://in-toto.io/attestation/test-result/v0.1
+          predicate-path: predicate.json

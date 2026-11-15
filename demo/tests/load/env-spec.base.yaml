@@ -1,0 +1,16 @@
+# Declared part of the load-test environment spec. The runner adds the measured
+# part (CPU, memory, OS, runtime, product source digest) and writes the combined
+# spec next to the results. The gate refuses a load attestation whose spec is
+# missing any field listed under required_fields in gate/policy.yaml.
+environment_name: demo-local
+network:
+  topology: load generator and service on the same host, loopback interface
+  region: n/a (single host)
+dependencies:
+  - name: rates table
+    mode: local file (product/data/rates.json)
+data:
+  dataset: product/data/rates.json (5 pairs)
+load_generator:
+  tool: autocannon
+  location: same host, separate process from the service

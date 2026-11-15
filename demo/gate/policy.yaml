@@ -1,0 +1,52 @@
+# Bank ingestion gate policy for test evidence (demo).
+#
+# Signers are identity IDs from the trust store. In production these would be
+# Sigstore certificate identities: a workflow path pinned to a ref for automated
+# categories, a corporate email for named sign-offs.
+policy_version: 1
+
+product_types:
+  library:          [unit, sast, sca, secrets, license]
+  cli-tool:         [unit, integration, sast, sca, secrets, license]
+  backend-service:  [unit, integration, contract, sast, sca, secrets, license, load]
+  user-facing-app:  [unit, integration, contract, e2e, uat, accessibility, load, sast, sca, secrets, license, ux-signoff, uat-signoff]
+  data-pipeline:    [unit, integration, sast, sca, secrets, license, load, data-quality]
+
+categories:
+  unit:            { signers: [ci-pipeline] }
+  integration:     { signers: [ci-pipeline] }
+  contract:        { signers: [ci-pipeline] }
+  e2e:             { signers: [ci-pipeline] }
+  uat:             { signers: [ci-pipeline] }
+  accessibility:   { signers: [ci-pipeline] }
+  sast:            { signers: [ci-pipeline] }
+  secrets:         { signers: [ci-pipeline] }
+  sca:             { signers: [ci-pipeline], allow_warned: true }
+  license:         { signers: [ci-pipeline] }
+  data-quality:    { signers: [ci-pipeline] }
+  load:
+    signers: [perf-env]
+    # The bank accepts externally run load tests when the environment is specified.
+    environment_spec_required_fields:
+      - captured_at
+      - environment_name
+      - system_under_test.source_digest
+      - system_under_test.runtime
+      - compute.cpu_model
+      - compute.vcpu
+      - compute.memory_gb
+      - compute.os
+      - compute.instances
+      - network.topology
+      - data.dataset
+      - load_generator.tool
+      - load_generator.location
+      - profile.connections
+      - profile.duration_seconds
+      - thresholds
+  ux-signoff:      { signers: [alice.chen] }
+  uat-signoff:     { signers: [raj.patel] }
+
+# Categories outside the product type's required list are still verified if
+# present, and a failure in them refuses admission.
+verify_optional_categories: true

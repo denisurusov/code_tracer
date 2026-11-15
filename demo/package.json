@@ -1,0 +1,32 @@
+{
+  "name": "code-tracer-test-evidence-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Test evidence demo: tests in every category, CTRF/SARIF results, signed in-toto test-result attestations, and a gate.",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node product/server.mjs",
+    "keys": "node -e \"import('./evidence/lib/keys.mjs').then(m=>m.ensureKeys())\"",
+    "evidence": "node evidence/run.mjs all",
+    "signoff": "node evidence/signoff.mjs",
+    "signoffs": "node evidence/signoff.mjs --category ux-signoff --reviewer alice.chen --result PASSED --evidence tests/ux/findings.md && node evidence/signoff.mjs --category uat-signoff --reviewer raj.patel --result PASSED --evidence tests/uat/signoff-notes.md",
+    "gate": "node gate/verify.mjs",
+    "gate:negative": "node gate/negative.mjs",
+    "demo": "npm run evidence && npm run signoffs && npm run gate && npm run gate:negative"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@cucumber/cucumber": "^11.3.0",
+    "@cyclonedx/cyclonedx-npm": "^7.0.1",
+    "@playwright/test": "^1.65.1",
+    "autocannon": "^9.0.0",
+    "yaml": "^2.9.1"
+  }
+}

@@ -1,0 +1,19 @@
+# Load profile and pass thresholds for the quote endpoint.
+# The catalog IDs LOAD-001..003 are the threshold checks below.
+target:
+  path: /api/quote?pair=EURUSD&amount=1000&side=buy
+  method: GET
+profile:
+  connections: 20
+  duration_seconds: 10
+  pipelining: 1
+thresholds:
+  - id: LOAD-001
+    metric: latency_p99_ms
+    max: 250
+  - id: LOAD-002
+    metric: error_rate
+    max: 0
+  - id: LOAD-003
+    metric: requests_per_second_mean
+    min: 500

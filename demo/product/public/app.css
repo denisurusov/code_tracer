@@ -1,0 +1,11 @@
+body { font-family: system-ui, sans-serif; color: #1a1a1a; background: #fff; margin: 0; }
+main { max-width: 32rem; margin: 2rem auto; padding: 0 1rem; }
+label { display: block; margin-top: 1rem; font-weight: 600; }
+label.inline { display: inline; margin: 0 1rem 0 0.25rem; font-weight: 400; }
+input[type="number"], select { width: 100%; padding: 0.5rem; font-size: 1rem; border: 1px solid #595959; border-radius: 4px; }
+fieldset { margin-top: 1rem; border: 1px solid #595959; border-radius: 4px; }
+.hint { margin: 0.25rem 0 0; color: #4a4a4a; font-size: 0.9rem; }
+button { margin-top: 1.25rem; padding: 0.6rem 1.2rem; font-size: 1rem; color: #fff; background: #0b5394; border: 0; border-radius: 4px; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #f1a208; outline-offset: 2px; }
+#result { padding: 0.75rem; background: #f3f6f9; border-radius: 4px; }
+#error { color: #a4161a; margin-top: 0.5rem; }
