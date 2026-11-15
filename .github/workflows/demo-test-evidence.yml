@@ -1,8 +1,9 @@
 name: demo test evidence
 
-# Runs the demo end to end: every test category, conversion to CTRF/SARIF,
-# signed in-toto test-result attestations, named sign-offs, the gate, and the
-# gate's negative cases. Evidence is uploaded as a run artifact.
+# Runs the demo end to end: every test category, conversion to CTRF/SARIF/OSV,
+# signed in-toto test-result attestations bundled as .intoto.jsonl, named
+# sign-offs, the gate (structural checks + Rego policy), and the gate's negative
+# cases. Evidence is uploaded as a run artifact.
 #
 # Signing uses throwaway Ed25519 keys generated in the job, so the run shows the
 # mechanics; trust does not carry across runs. The optional github-attest job
@@ -52,12 +53,14 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
-      - name: Install scanners (gitleaks, semgrep)
+      - name: Install scanners and policy engine (gitleaks, semgrep, opa)
         run: |
           curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz \
             | sudo tar xz -C /usr/local/bin gitleaks
           pipx install semgrep==1.185.0
-          gitleaks version && semgrep --version
+          sudo curl -sSL -o /usr/local/bin/opa https://github.com/open-policy-agent/opa/releases/download/v1.4.2/opa_linux_amd64_static
+          sudo chmod +x /usr/local/bin/opa
+          gitleaks version && semgrep --version && opa version | head -1
 
       # Playwright uses the Google Chrome preinstalled on ubuntu-latest (channel "chrome").
       - name: Run all test categories and sign the evidence
@@ -65,6 +68,9 @@ jobs:
 
       - name: Named sign-offs (demo reviewers)
         run: npm run signoffs
+
+      - name: Gate policy tests (Rego)
+        run: npm run policy:test
 
       - name: Gate
         run: npm run gate
@@ -100,6 +106,7 @@ jobs:
         with:
           name: test-evidence
           path: |
+            demo/out/evidence.intoto.jsonl
             demo/out/attestations
             demo/out/results
             demo/out/vsa.dsse.json
@@ -132,7 +139,7 @@ jobs:
           ' "evidence/out/attestations/${{ matrix.category }}.dsse.json"
       - uses: actions/attest@v2
         with:
-          subject-name: fx-quote-demo/source
+          subject-name: pkg:npm/fx-quote-demo@0.1.0
           subject-digest: sha256:${{ needs.evidence.outputs.source-digest }}
           predicate-type: https://in-toto.io/attestation/test-result/v0.1
           predicate-path: predicate.json

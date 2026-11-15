@@ -11,7 +11,8 @@
 catalog_version: 1
 product:
   name: fx-quote-demo
-  type: user-facing-app          # selects the required categories in gate/policy.yaml
+  purl: pkg:npm/fx-quote-demo@0.1.0   # attestation subject identity; must match package.json and the SBOM
+  type: user-facing-app               # selects the required categories in gate/policy.yaml
 
 requirements:
   REQ-PRICE:  Quotes apply half the configured spread to the mid rate, against the client.
@@ -62,6 +63,12 @@ tests:
     requirement: REQ-VALID
     scenario: tests/unit/quote.test.mjs
     expected: RangeError
+  - id: UNIT-007
+    category: unit
+    objective: Request handling never compiles a schema; the only ajv schema is the static query schema. Proof for VEX not_affected claims on ajv schema-injection flaws.
+    requirement: REQ-DEPS
+    scenario: tests/unit/quote.test.mjs
+    expected: exactly one compile at module load, none per request
 
   # ---------- integration (Gherkin, HTTP against a running server) ----------
   - id: INT-001
@@ -248,10 +255,10 @@ tests:
     expected: 0 dependencies outside the allowlist
   - id: LIC-002
     category: license
-    objective: A CycloneDX SBOM is produced and lists every runtime dependency.
+    objective: A CycloneDX SBOM is produced, identifies the product by the catalog purl, and lists every runtime dependency.
     requirement: REQ-DEPS
     scenario: tests/license/allowlist.json
-    expected: SBOM components == installed runtime packages
+    expected: SBOM metadata.component.purl == product purl; SBOM components == installed runtime packages
 
   # ---------- data quality (rates table) ----------
   - id: DATA-001

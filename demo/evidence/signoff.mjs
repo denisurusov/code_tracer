@@ -12,6 +12,7 @@ import { descriptor } from "./lib/digest.mjs";
 import { buildStatement } from "./lib/statement.mjs";
 import { signEnvelope } from "./lib/dsse.mjs";
 import { IDENTITIES, privateKey } from "./lib/keys.mjs";
+import { writeBundle } from "./lib/bundle.mjs";
 
 const { values } = parseArgs({
   options: {
@@ -49,4 +50,5 @@ const envelope = signEnvelope(statement, privateKey(reviewer));
 const out = values.out ?? `out/attestations/${category}.dsse.json`;
 mkdirSync("out/attestations", { recursive: true });
 writeFileSync(out, JSON.stringify(envelope, null, 2));
+writeBundle();
 console.log(`${IDENTITIES[reviewer].name} signed ${category} (${ids.join(", ")}): ${result} -> ${out}`);

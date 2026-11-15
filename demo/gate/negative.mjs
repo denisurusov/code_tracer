@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-// Negative cases for the gate. Each case copies the demo (with its evidence) to a
-// temporary directory, applies one change, and runs the gate. A case passes when
-// the gate refuses and the refusal names the expected rule.
+// Negative cases for the gate, plus one positive VEX case. Each case copies the
+// demo (with its evidence) to a temporary directory, applies one change, rebuilds
+// the bundle and runs the gate. A negative case passes when the gate refuses and
+// the refusal names the expected rule; the positive case passes when it admits.
 //
 // Run after `npm run evidence` and the sign-offs, so out/ holds a full set.
 import { cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync, appendFileSync } from "node:fs";
@@ -10,6 +11,8 @@ import { join } from "node:path";
 import { verify, RULES } from "./verify.mjs";
 import { generateKey, signEnvelope } from "../evidence/lib/dsse.mjs";
 import { fileDigest } from "../evidence/lib/digest.mjs";
+import { writeBundle } from "../evidence/lib/bundle.mjs";
+import { spawnSync } from "node:child_process";
 
 const SRC = process.cwd();
 
@@ -24,6 +27,14 @@ const att = (dir, c) => join(dir, "out/attestations", `${c}.dsse.json`);
 const readStatement = (dir, c) => JSON.parse(Buffer.from(JSON.parse(readFileSync(att(dir, c), "utf8")).payload, "base64").toString());
 const resign = (dir, c, statement, signerId) =>
   writeFileSync(att(dir, c), JSON.stringify(signEnvelope(statement, readFileSync(join(dir, ".keys", `${signerId}.key`), "utf8")), null, 2));
+
+// Re-run the SCA category inside the copy against a recorded npm audit report and a VEX document.
+function rerunSca(dir, { audit, vex }) {
+  const env = { ...process.env, DEMO_AUDIT_FIXTURE: audit, ...(vex ? { DEMO_VEX: vex } : {}) };
+  const r = spawnSync(process.execPath, ["evidence/run.mjs", "sca"], { cwd: dir, env, encoding: "utf8" });
+  if (r.error) throw r.error;
+}
+const ADVISORY = "tests/sca/fixtures/audit-ajv-advisory.json";
 
 const CASES = [
   {
@@ -111,6 +122,33 @@ const CASES = [
     expect: "G12",
     apply: (d) => rmSync(att(d, "accessibility")),
   },
+  {
+    name: "high-severity advisory on a runtime dependency, no VEX",
+    expect: "G10",
+    apply: (d) => rerunSca(d, { audit: ADVISORY }),
+  },
+  {
+    name: "advisory suppressed by an OpenVEX not_affected statement that cites no proof",
+    expect: "G13",
+    apply: (d) => rerunSca(d, { audit: ADVISORY, vex: "tests/sca/fixtures/vex-ajv-no-proof.openvex.json" }),
+  },
+  {
+    name: "advisory suppressed by VEX citing a proof test that failed",
+    expect: "G13",
+    apply: (d) => {
+      rerunSca(d, { audit: ADVISORY, vex: "tests/sca/fixtures/vex-ajv-not-affected.openvex.json" });
+      const st = readStatement(d, "unit");
+      st.predicate.passedTests = st.predicate.passedTests.filter((id) => id !== "UNIT-007");
+      st.predicate.failedTests = ["UNIT-007"];
+      st.predicate.result = "FAILED";
+      resign(d, "unit", st, "ci-pipeline");
+    },
+  },
+  {
+    name: "POSITIVE: advisory suppressed by VEX citing a passed proof test (UNIT-007)",
+    expectVerdict: "ADMIT",
+    apply: (d) => rerunSca(d, { audit: ADVISORY, vex: "tests/sca/fixtures/vex-ajv-not-affected.openvex.json" }),
+  },
 ];
 
 const baseline = verify({ root: SRC });
@@ -125,11 +163,12 @@ for (const c of CASES) {
   const dir = copyDemo();
   try {
     c.apply(dir);
+    writeBundle(dir);
     const r = verify({ root: dir });
     const rules = [...new Set(r.failures.map((f) => f.rule))];
-    const ok = r.verdict === "REFUSE" && rules.includes(c.expect);
+    const ok = c.expectVerdict === "ADMIT" ? r.verdict === "ADMIT" : r.verdict === "REFUSE" && rules.includes(c.expect);
     const first = r.failures.find((f) => f.rule === c.expect) ?? r.failures[0];
-    rows.push({ case: c.name, expected: `${c.expect} ${RULES[c.expect]}`, verdict: r.verdict, "rules failed": rules.join(" "), ok: ok ? "✓" : "✗" });
+    rows.push({ case: c.name, expected: c.expect ? `${c.expect} ${RULES[c.expect]}` : "ADMIT", verdict: r.verdict, "rules failed": rules.join(" "), ok: ok ? "✓" : "✗" });
     if (first) console.log(`- ${c.name}\n    ${first.rule} ${first.name} [${first.category}]: ${first.detail}`);
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -137,5 +176,5 @@ for (const c of CASES) {
 }
 console.table(rows);
 const bad = rows.filter((r) => r.ok !== "✓").length;
-console.log(bad ? `${bad} case(s) did not behave as expected` : `All ${rows.length} negative cases refused by the expected rule.`);
+console.log(bad ? `${bad} case(s) did not behave as expected` : `All ${rows.length} cases behaved as expected (each refusal by the expected rule).`);
 process.exitCode = bad ? 1 : 0;

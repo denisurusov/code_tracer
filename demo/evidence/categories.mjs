@@ -4,7 +4,9 @@
 // evaluate() returns { tests: CTRF tests, reports: [paths], tool, idOf?, extra? }.
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { ID_RE, junitToCtrfTests, ctrfReport, npmAuditToSarif, axeToSarif, sarifResults, sarifLog } from "./lib/convert.mjs";
+import { loadCatalog } from "./lib/catalog.mjs";
+import { mkdirSync } from "node:fs";
+import { ID_RE, junitToCtrfTests, ctrfReport, npmAuditToSarif, npmAuditToOsv, applyVex, axeToSarif, sarifResults, sarifLog } from "./lib/convert.mjs";
 
 const raw = (c, f = "") => `out/raw/${c}${f ? "/" + f : ""}`;
 const version = (pkg) => JSON.parse(readFileSync(`node_modules/${pkg}/package.json`, "utf8")).version;
@@ -15,7 +17,7 @@ const ctrfFromJunit = (c, tool) => ({ tests: junitToCtrfTests(readFileSync(raw(c
 
 // Turn SARIF findings into one CTRF test per catalog ID, using `match(result, id)`.
 function checksFromSarif(ids, sarif, match, warnOnly = () => false) {
-  const results = sarifResults(sarif);
+  const results = sarifResults(sarif).filter((r) => !r.suppressions?.length);
   return ids.map((id) => {
     const hits = results.filter((r) => match(r, id));
     const warn = hits.length > 0 && hits.every((r) => warnOnly(r, id));
@@ -117,21 +119,34 @@ export const CATEGORIES = {
 
   sca: {
     signer: "ci-pipeline",
+    // DEMO_AUDIT_FIXTURE replaces the live npm audit with a recorded report (used by the gate's VEX cases).
     run: () => {
-      const r = spawnSync("npm", ["audit", "--omit=dev", "--json"], { encoding: "utf8" });
-      writeFileSync(raw("sca", "npm-audit.json"), r.stdout);
+      const fixture = process.env.DEMO_AUDIT_FIXTURE;
+      const out = fixture ? readFileSync(fixture, "utf8") : spawnSync("npm", ["audit", "--omit=dev", "--json"], { encoding: "utf8" }).stdout;
+      writeFileSync(raw("sca", "npm-audit.json"), out);
       return { status: 0 };
     },
     evaluate: ({ ids }) => {
       const policy = JSON.parse(readFileSync("tests/sca/policy.json", "utf8")).checks;
       const npmV = execFileSync("npm", ["--version"], { encoding: "utf8" }).trim();
-      const sarif = npmAuditToSarif(JSON.parse(readFileSync(raw("sca", "npm-audit.json"), "utf8")), npmV);
+      const audit = JSON.parse(readFileSync(raw("sca", "npm-audit.json"), "utf8"));
+
+      // OSV records, one file per advisory, kept as reports.
+      mkdirSync(raw("sca", "osv"), { recursive: true });
+      const osvFiles = npmAuditToOsv(audit).map((rec) => write(raw("sca", `osv/${rec.id}.json`), rec));
+
+      // SARIF findings with purls, then OpenVEX suppressions.
+      const sarif = npmAuditToSarif(audit, npmV);
+      const vexPath = process.env.DEMO_VEX ?? "tests/sca/vex.openvex.json";
+      const vexApplied = applyVex(sarif, JSON.parse(readFileSync(vexPath, "utf8")), loadCatalog().product.purl);
       const path = write(raw("sca", "npm-audit.sarif"), sarif);
+
       const sev = (r) => r.properties.severity;
       const tests = checksFromSarif(ids, sarif,
         (r, id) => (policy[id].fail_on ?? policy[id].warn_on).includes(sev(r)),
         (r, id) => (policy[id].warn_on ?? []).includes(sev(r)));
-      return { tests, tool: { name: "npm audit", version: npmV }, reports: [path, raw("sca", "npm-audit.json")] };
+      return { tests, tool: { name: "npm audit", version: npmV }, reports: [path, raw("sca", "npm-audit.json"), ...osvFiles],
+        vex: vexPath, extra: { vexApplied } };
     },
   },
 
@@ -162,14 +177,19 @@ export const CATEGORIES = {
       const sbom = JSON.parse(readFileSync(raw("license", "sbom.cdx.json"), "utf8"));
       const inSbom = new Set((sbom.components ?? []).map((c) => `${c.group ? c.group + "/" : ""}${c.name}@${c.version}`));
       const absent = [...pkgs.keys()].filter((k) => !inSbom.has(k));
+      const productPurl = loadCatalog().product.purl;
+      const sbomPurl = sbom.metadata?.component?.purl;
+      const purlProblem = sbomPurl === productPurl ? null : `SBOM identifies the product as ${sbomPurl}, catalog says ${productPurl}`;
       return {
         tool: { name: "cyclonedx-npm + license-allowlist", version: version("@cyclonedx/cyclonedx-npm") },
         reports: [sarifPath, raw("license", "sbom.cdx.json")],
         tests: [
           { name: `LIC-001 ${results.length} disallowed license(s)`, status: results.length ? "failed" : "passed", duration: 0,
             ...(results.length ? { message: results.map((r) => r.message.text).join("; ") } : {}), extra: { id: "LIC-001" } },
-          { name: `LIC-002 SBOM lists ${pkgs.size - absent.length}/${pkgs.size} runtime packages`, status: absent.length ? "failed" : "passed",
-            duration: 0, ...(absent.length ? { message: `missing from SBOM: ${absent.join(", ")}` } : {}), extra: { id: "LIC-002" } },
+          { name: `LIC-002 SBOM for ${sbomPurl} lists ${pkgs.size - absent.length}/${pkgs.size} runtime packages`,
+            status: absent.length || purlProblem ? "failed" : "passed", duration: 0,
+            ...(absent.length || purlProblem ? { message: [purlProblem, absent.length && `missing from SBOM: ${absent.join(", ")}`].filter(Boolean).join("; ") } : {}),
+            extra: { id: "LIC-002", sbomPurl } },
         ],
       };
     },

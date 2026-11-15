@@ -9,6 +9,7 @@
 import { execFileSync } from "node:child_process";
 import os from "node:os";
 import { sourceDigest } from "./digest.mjs";
+import { loadCatalog } from "./catalog.mjs";
 
 export const TEST_RESULT_TYPE = "https://in-toto.io/attestation/test-result/v0.1";
 export const STATEMENT_TYPE = "https://in-toto.io/Statement/v1";
@@ -31,7 +32,8 @@ export function runUrl() {
 export function subject() {
   const src = sourceDigest();
   const commit = gitCommit();
-  return [{ name: "fx-quote-demo/source", digest: { sha256: src.digest, ...(commit ? { gitCommit: commit } : {}) } }];
+  // Subject name is the product's purl (architecture §7: subjects are purl + digest).
+  return [{ name: loadCatalog().product.purl, digest: { sha256: src.digest, ...(commit ? { gitCommit: commit } : {}) } }];
 }
 
 /**

@@ -1,14 +1,18 @@
 #!/usr/bin/env node
 // Bank ingestion gate for test evidence. Runs offline over:
 //   - the cloned product source (to recompute the subject digest),
-//   - the scenario files and catalog in the clone,
-//   - the evidence directory (attestations + results) that came with it.
+//   - the scenario files, catalog and VEX document in the clone,
+//   - the evidence bundle (out/evidence.intoto.jsonl) and result files that came with it.
 //
-// Every refusal names the rule it failed. On success it signs a SLSA
-// Verification Summary Attestation (VSA) with the gate's own key.
+// Two layers, as in the architecture:
+//   structural  (this file)          signatures, signer identity, purl + digest binding, file digests
+//   semantic    (gate/policy/*.rego) coverage, results, environment spec, required categories, VEX
+//
+// Every refusal names the rule it failed. The gate signs a SLSA VSA either way.
 //
 //   node gate/verify.mjs [--root .] [--evidence out] [--policy gate/policy.yaml] [--trust .keys/trust.json]
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -16,6 +20,7 @@ import { parse } from "yaml";
 import { fileDigest, sha256, sourceDigest } from "../evidence/lib/digest.mjs";
 import { signEnvelope, verifyEnvelope } from "../evidence/lib/dsse.mjs";
 import { TEST_RESULT_TYPE, STATEMENT_TYPE } from "../evidence/lib/statement.mjs";
+import { BUNDLE_NAME, readBundle } from "../evidence/lib/bundle.mjs";
 
 export const RULES = {
   G01: "signature-valid",
@@ -30,115 +35,125 @@ export const RULES = {
   G10: "result-acceptable",
   G11: "environment-spec-complete",
   G12: "required-categories-present",
+  G13: "vex-backed-by-proof",
 };
+const SEMANTIC = ["G09", "G10", "G11", "G12", "G13"];
+const POLICY_DIR = fileURLToPath(new URL("./policy", import.meta.url));
 
-const get = (obj, path) => path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
+function evalRego(input) {
+  const out = execFileSync("opa", ["eval", "--v1-compatible", "--format", "json", "--data", POLICY_DIR, "--stdin-input", "data.codetracer.gate.deny"],
+    { input: JSON.stringify(input), encoding: "utf8" });
+  return JSON.parse(out).result?.[0]?.expressions?.[0]?.value ?? [];
+}
 
 export function verify({ root = ".", evidence = "out", policyPath = "gate/policy.yaml", trustPath = ".keys/trust.json" } = {}) {
   const policy = parse(readFileSync(join(root, policyPath), "utf8"));
   const trust = JSON.parse(readFileSync(join(root, trustPath), "utf8"));
   const catalog = parse(readFileSync(join(root, "tests/catalog.yaml"), "utf8"));
-  const productType = catalog.product.type;
-  const required = policy.product_types[productType] ?? [];
+  const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+  const productPurl = catalog.product.purl;
   const src = sourceDigest(root);
-  const attDir = join(root, evidence, "attestations");
-  const files = existsSync(attDir) ? readdirSync(attDir).filter((f) => f.endsWith(".dsse.json")).sort() : [];
+  const bundlePath = join(root, evidence, BUNDLE_NAME);
+  const envelopes = readBundle(bundlePath);
 
   const checks = [];
   const fail = (category, rule, detail) => checks.push({ category, rule, name: RULES[rule], ok: false, detail });
   const pass = (category, rule) => checks.push({ category, rule, name: RULES[rule], ok: true });
+  const admitted = []; // attestations that passed G01/G02, handed to the semantic layer
   const seen = new Map();
 
-  for (const f of files) {
-    const envelope = JSON.parse(readFileSync(join(attDir, f), "utf8"));
+  // The catalog's purl must name this package, or the subject binding means nothing.
+  const expectedPurl = `pkg:npm/${pkg.name}@${pkg.version}`;
+  if (productPurl !== expectedPurl) fail("*", "G05", `catalog purl ${productPurl} does not match package.json (${expectedPurl})`);
+
+  envelopes.forEach((envelope, i) => {
     const v = verifyEnvelope(envelope, trust);
     const st = v.statement ?? {};
-    const category = st.predicate?.["x-code-tracer"]?.category ?? f.replace(".dsse.json", "");
     const p = st.predicate ?? {};
+    const category = p["x-code-tracer"]?.category ?? `#${i}`;
 
-    if (v.trusted === false) { fail(category, "G02", v.reason); continue; }
+    if (v.trusted === false) return fail(category, "G02", v.reason);
     pass(category, "G02");
-    if (!v.ok) { fail(category, "G01", v.reason); continue; }
+    if (!v.ok) return fail(category, "G01", v.reason);
     pass(category, "G01");
 
     const catPolicy = policy.categories[category];
-    if (!catPolicy) { fail(category, "G03", `no policy for category ${category}`); continue; }
-    catPolicy.signers.includes(v.identity.id)
+    if (!catPolicy) fail(category, "G03", `no policy for category ${category}`);
+    else catPolicy.signers.includes(v.identity.id)
       ? pass(category, "G03")
       : fail(category, "G03", `${v.identity.id} (${v.identity.name}) may not sign ${category}; allowed: ${catPolicy.signers.join(", ")}`);
 
     st._type === STATEMENT_TYPE && st.predicateType === TEST_RESULT_TYPE
       ? pass(category, "G04") : fail(category, "G04", `predicateType ${st.predicateType}`);
 
-    const subj = st.subject?.[0]?.digest?.sha256;
-    subj === src.digest ? pass(category, "G05") : fail(category, "G05", `attested ${subj}, clone has ${src.digest}`);
+    const subj = st.subject?.[0];
+    const subjectProblems = [
+      subj?.name !== productPurl && `subject ${subj?.name} is not ${productPurl}`,
+      subj?.digest?.sha256 !== src.digest && `attested ${subj?.digest?.sha256}, clone has ${src.digest}`,
+    ].filter(Boolean);
+    subjectProblems.length ? fail(category, "G05", subjectProblems.join("; ")) : pass(category, "G05");
 
-    // Every configuration descriptor must match the file in the clone or evidence dir.
-    const byRole = (role) => (p.configuration ?? []).filter((d) => d.annotations?.role === role);
+    // Every configuration descriptor must match the file in the clone or the evidence dir.
+    const byRole = (...roles) => (p.configuration ?? []).filter((d) => roles.includes(d.annotations?.role));
     const mismatches = (ds) => ds.flatMap((d) => {
       const path = join(root, d.name);
       if (!existsSync(path)) return [`${d.name}: missing`];
-      const actual = fileDigest(path);
-      return actual === d.digest.sha256 ? [] : [`${d.name}: digest differs`];
+      return fileDigest(path) === d.digest.sha256 ? [] : [`${d.name}: digest differs`];
     });
     const catD = byRole("catalog");
     const catM = mismatches(catD);
     if (catD.length === 0) fail(category, "G06", "no catalog descriptor");
     else catM.length ? fail(category, "G06", catM.join("; ")) : pass(category, "G06");
-    const scM = mismatches(byRole("scenario"));
+    const scM = mismatches(byRole("scenario", "vex"));
     scM.length ? fail(category, "G07", scM.join("; ")) : pass(category, "G07");
-    const rpM = mismatches([...byRole("report"), ...byRole("environment-spec")]);
+    const rpM = mismatches(byRole("report", "environment-spec"));
     rpM.length ? fail(category, "G08", rpM.join("; ")) : pass(category, "G08");
 
-    const ids = catalog.tests.filter((t) => t.category === category).map((t) => t.id);
-    const reported = new Set([...(p.passedTests ?? []), ...(p.warnedTests ?? []), ...(p.failedTests ?? [])]);
-    const missing = ids.filter((id) => !reported.has(id));
-    missing.length ? fail(category, "G09", `not reported: ${missing.join(", ")}`) : pass(category, "G09");
+    // Hand the parsed environment spec and VEX document to the semantic layer only if their digests held.
+    const readIfMatching = (d) => (d && mismatches([d]).length === 0 ? JSON.parse(readFileSync(join(root, d.name), "utf8")) : null);
+    admitted.push({
+      category,
+      predicate: { passedTests: [], warnedTests: [], failedTests: [], ...p },
+      environment_spec: readIfMatching(byRole("environment-spec")[0]),
+      vex_document: readIfMatching(byRole("vex")[0]),
+    });
+    seen.set(category, { index: i, digest: sha256(JSON.stringify(envelope)), signer: v.identity });
+  });
 
-    const okResults = catPolicy.allow_warned ? ["PASSED", "WARNED"] : ["PASSED"];
-    const resultOk = okResults.includes(p.result) && (p.failedTests ?? []).length === 0 && (catPolicy.allow_warned || (p.warnedTests ?? []).length === 0);
-    resultOk ? pass(category, "G10") : fail(category, "G10", `result ${p.result}; failed: ${(p.failedTests ?? []).join(", ") || "none"}; warned: ${(p.warnedTests ?? []).join(", ") || "none"}`);
-
-    if (catPolicy.environment_spec_required_fields) {
-      const d = byRole("environment-spec")[0];
-      if (!d || !existsSync(join(root, d.name))) fail(category, "G11", "no environment spec");
-      else {
-        const spec = JSON.parse(readFileSync(join(root, d.name), "utf8"));
-        const absent = catPolicy.environment_spec_required_fields.filter((k) => { const x = get(spec, k); return x === undefined || x === null || x === ""; });
-        const wrongSut = spec.system_under_test?.source_digest !== `sha256:${src.digest}`;
-        absent.length || wrongSut
-          ? fail(category, "G11", [absent.length && `missing: ${absent.join(", ")}`, wrongSut && "spec describes a different source digest"].filter(Boolean).join("; "))
-          : pass(category, "G11");
-      }
-    }
-    seen.set(category, { file: f, digest: sha256(readFileSync(join(attDir, f))), signer: v.identity });
-  }
-
-  const absent = required.filter((c) => !seen.has(c));
-  absent.length ? fail("*", "G12", `missing for ${productType}: ${absent.join(", ")}`) : pass("*", "G12");
+  // Semantic layer: Rego.
+  const denies = evalRego({ policy, catalog, source_digest: src.digest, attestations: admitted });
+  for (const d of denies) fail(d.category, d.rule, d.detail);
+  const denied = new Set(denies.map((d) => `${d.rule}|${d.category}`));
+  for (const a of admitted) for (const r of SEMANTIC) if (r !== "G12" && !denied.has(`${r}|${a.category}`)) pass(a.category, r);
+  if (!denied.has("G12|*")) pass("*", "G12");
 
   const failures = checks.filter((c) => !c.ok);
   return {
     verdict: failures.length ? "REFUSE" : "ADMIT",
-    productType, required, sourceDigest: src.digest,
+    productType: catalog.product.type, productPurl, sourceDigest: src.digest,
+    bundle: { path: join(evidence, BUNDLE_NAME), digest: existsSync(bundlePath) ? fileDigest(bundlePath) : null },
     categories: [...seen.keys()], attestations: Object.fromEntries(seen), checks, failures,
   };
 }
 
-export function vsa(report, { root = ".", evidence = "out", policyPath = "gate/policy.yaml" } = {}) {
+export function vsa(report, { root = ".", policyPath = "gate/policy.yaml" } = {}) {
   return {
     _type: STATEMENT_TYPE,
-    subject: [{ name: "fx-quote-demo/source", digest: { sha256: report.sourceDigest } }],
+    subject: [{ name: report.productPurl, digest: { sha256: report.sourceDigest } }],
     predicateType: "https://slsa.dev/verification_summary/v1",
     predicate: {
       verifier: { id: "https://example.com/bank/ingestion-gate/demo" },
       timeVerified: new Date().toISOString(),
-      resourceUri: "git+https://github.com/denisurusov/code_tracer#demo/product",
+      resourceUri: report.productPurl,
       policy: { uri: policyPath, digest: { sha256: fileDigest(join(root, policyPath)) } },
-      inputAttestations: Object.values(report.attestations).map((a) => ({ uri: `${evidence}/attestations/${a.file}`, digest: { sha256: a.digest } })),
+      inputAttestations: [{ uri: report.bundle.path, digest: { sha256: report.bundle.digest } }],
       verificationResult: report.verdict === "ADMIT" ? "PASSED" : "FAILED",
       verifiedLevels: [],
-      "x-code-tracer": { productType: report.productType, categories: report.categories, failedRules: report.failures.map((f) => `${f.rule} ${f.name} [${f.category}]`) },
+      "x-code-tracer": {
+        productType: report.productType, categories: report.categories,
+        regoPolicyDigest: { sha256: fileDigest(join(POLICY_DIR, "gate.rego")) },
+        failedRules: report.failures.map((f) => `${f.rule} ${f.name} [${f.category}]`),
+      },
     },
   };
 }
@@ -153,7 +168,7 @@ export function printReport(r) {
   }
   console.table([...byCat.values()].map((x) => ({ category: x.category, checks: x.checks, result: x.failed.length ? "FAIL" : "ok", failed: x.failed.join(", ") })));
   for (const f of r.failures) console.log(`  ✗ ${f.rule} ${f.name} [${f.category}]: ${f.detail}`);
-  console.log(`\nVerdict for ${r.productType}: ${r.verdict}`);
+  console.log(`\nVerdict for ${r.productPurl} (${r.productType}): ${r.verdict}`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

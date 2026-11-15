@@ -61,7 +61,46 @@ export function sarifLog(toolName, toolVersion, rules, results) {
 
 const SEVERITY_LEVEL = { critical: "error", high: "error", moderate: "warning", low: "note", info: "note" };
 
-/** npm audit --json (v2) -> SARIF. One result per vulnerable package. */
+const advisoryId = (a) => a.url?.split("/").pop() ?? `npm-${a.source}`;
+
+/** Installed version of a package from npm audit's node path. */
+const installedVersion = (v) => {
+  try { return JSON.parse(readFileSync(`${v.nodes[0]}/package.json`, "utf8")).version; } catch { return undefined; }
+};
+
+function osvRanges(range) {
+  let m = range?.match(/^<\s*(\S+)$/);
+  if (m) return [{ type: "SEMVER", events: [{ introduced: "0" }, { fixed: m[1] }] }];
+  m = range?.match(/^>=\s*(\S+)\s+<\s*(\S+)$/);
+  if (m) return [{ type: "SEMVER", events: [{ introduced: m[1] }, { fixed: m[2] }] }];
+  return undefined;
+}
+
+/** npm audit --json (v2) -> OSV schema records, one per advisory. */
+export function npmAuditToOsv(audit, modified = new Date().toISOString()) {
+  const records = [];
+  for (const v of Object.values(audit.vulnerabilities ?? {})) {
+    for (const a of v.via.filter((x) => typeof x === "object")) {
+      const ranges = osvRanges(a.range);
+      records.push({
+        schema_version: "1.6.0",
+        id: advisoryId(a),
+        modified,
+        summary: a.title,
+        affected: [{
+          package: { ecosystem: "npm", name: a.name, purl: `pkg:npm/${a.name}` },
+          ...(ranges ? { ranges } : {}),
+          database_specific: { npm_range: a.range },
+        }],
+        references: [{ type: "ADVISORY", url: a.url }],
+        database_specific: { severity: a.severity, cwe: a.cwe, cvss: a.cvss, source: "npm audit" },
+      });
+    }
+  }
+  return records;
+}
+
+/** npm audit --json (v2) -> SARIF. One result per vulnerable package, carrying its purl and OSV IDs. */
 export function npmAuditToSarif(audit, npmVersion) {
   const rules = [];
   const results = [];
@@ -79,7 +118,11 @@ export function npmAuditToSarif(audit, npmVersion) {
       level: SEVERITY_LEVEL[v.severity] ?? "warning",
       message: { text: `${name} ${v.range}: ${advisories.map((a) => a.title).join("; ") || "via " + v.via.join(", ")}` },
       locations: [{ physicalLocation: { artifactLocation: { uri: "package-lock.json" } } }],
-      properties: { severity: v.severity, isDirect: v.isDirect },
+      properties: {
+        severity: v.severity, isDirect: v.isDirect,
+        purl: `pkg:npm/${name}@${installedVersion(v) ?? "unknown"}`,
+        vulnerabilities: advisories.map(advisoryId),
+      },
     });
   }
   return sarifLog("npm audit", npmVersion, rules, results);
@@ -105,6 +148,32 @@ export function axeToSarif(files, axeVersion) {
     }
   }
   return sarifLog("axe-core", axeVersion, [...rules.values()], results);
+}
+
+/**
+ * Apply an OpenVEX document to SARIF results. A result is suppressed (SARIF
+ * `suppressions`) only when every vulnerability on it has a statement for this
+ * product + subcomponent with status not_affected or fixed. Returns the list of
+ * statements applied, for the attestation; the gate decides whether each one is
+ * backed by proof.
+ */
+export function applyVex(sarif, vex, productPurl) {
+  const applied = [];
+  for (const r of sarifResults(sarif)) {
+    const purl = r.properties?.purl;
+    const matches = (r.properties?.vulnerabilities ?? []).map((vuln) => {
+      const s = (vex.statements ?? []).find((st) =>
+        st.vulnerability?.name === vuln && ["not_affected", "fixed"].includes(st.status) &&
+        (st.products ?? []).some((p) => p["@id"] === productPurl && (p.subcomponents ?? []).some((c) => c["@id"] === purl)));
+      return s && { vulnerability: vuln, subcomponent: purl, status: s.status, justification: s.justification };
+    });
+    if (matches.length && matches.every(Boolean)) {
+      r.suppressions = [{ kind: "external", status: "accepted",
+        justification: matches.map((m) => `${m.vulnerability}: ${m.status}${m.justification ? " / " + m.justification : ""} (OpenVEX ${vex["@id"]})`).join("; ") }];
+      applied.push(...matches);
+    }
+  }
+  return applied;
 }
 
 /** All results across the runs of a SARIF log. */

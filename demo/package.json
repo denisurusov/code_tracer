@@ -1,5 +1,5 @@
 {
-  "name": "code-tracer-test-evidence-demo",
+  "name": "fx-quote-demo",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -16,7 +16,8 @@
     "signoffs": "node evidence/signoff.mjs --category ux-signoff --reviewer alice.chen --result PASSED --evidence tests/ux/findings.md && node evidence/signoff.mjs --category uat-signoff --reviewer raj.patel --result PASSED --evidence tests/uat/signoff-notes.md",
     "gate": "node gate/verify.mjs",
     "gate:negative": "node gate/negative.mjs",
-    "demo": "npm run evidence && npm run signoffs && npm run gate && npm run gate:negative"
+    "demo": "npm run evidence && npm run signoffs && npm run policy:test && npm run gate && npm run gate:negative",
+    "policy:test": "opa test --v1-compatible gate/policy"
   },
   "dependencies": {
     "ajv": "^8.20.0"

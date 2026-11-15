@@ -10,13 +10,14 @@
 //   out/results/<category>/ctrf.json + native reports
 //   out/attestations/<category>.dsse.json
 import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { basename } from "node:path";
+import { basename, dirname } from "node:path";
 import { CATEGORIES, AUTOMATED, idFromName, ctrfReport } from "./categories.mjs";
 import { CATALOG_PATH, idsFor, loadCatalog, scenariosFor } from "./lib/catalog.mjs";
 import { descriptor } from "./lib/digest.mjs";
 import { buildStatement, classify } from "./lib/statement.mjs";
 import { signEnvelope } from "./lib/dsse.mjs";
 import { ensureKeys, privateKey } from "./lib/keys.mjs";
+import { writeBundle } from "./lib/bundle.mjs";
 
 const args = process.argv.slice(2);
 const selected = args.length === 0 || args.includes("all") ? AUTOMATED : args;
@@ -46,7 +47,8 @@ for (const category of selected) {
   const ctrfPath = `${resultsDir}/ctrf.json`;
   writeFileSync(ctrfPath, JSON.stringify(ctrfReport(ev.tool.name, ev.tool.version, ev.tests, started, finished), null, 2));
   const reportPaths = ev.reports.map((p) => {
-    const dest = `${resultsDir}/${basename(p)}`;
+    const dest = `${resultsDir}/${p.startsWith(`out/raw/${category}/`) ? p.slice(`out/raw/${category}/`.length) : basename(p)}`;
+    mkdirSync(dirname(dest), { recursive: true });
     cpSync(p, dest);
     return dest;
   });
@@ -60,19 +62,21 @@ for (const category of selected) {
     descriptor(CATALOG_PATH, { role: "catalog" }),
     ...scenariosFor(catalog, category).map((p) => descriptor(p, { role: "scenario" })),
     ...(ev.extraConfig ?? []).map((p) => descriptor(p, { role: "scenario" })),
+    ...(ev.vex ? [descriptor(ev.vex, { role: "vex", format: "OpenVEX" })] : []),
     ...(envSpecPath ? [descriptor(envSpecPath, { role: "environment-spec" })] : []),
     descriptor(ctrfPath, { role: "report", format: "CTRF" }),
     ...reportPaths.map((p) => descriptor(p, { role: "report", format: p.endsWith(".sarif") ? "SARIF" : "native" })),
   ];
 
   const classified = classify(ev.tests, ids, idFromName);
-  const statement = buildStatement({ category, classified, configuration, started, finished, tool: ev.tool });
+  const statement = buildStatement({ category, classified, configuration, started, finished, tool: ev.tool, extra: ev.extra });
   const envelope = signEnvelope(statement, privateKey(def.signer));
   writeFileSync(`out/attestations/${category}.dsse.json`, JSON.stringify(envelope, null, 2));
   rows.push({ category, result: statement.predicate.result, passed: classified.passed.length, warned: classified.warned.length,
     failed: classified.failed.length + classified.missing.length + classified.unknown.length, signer: def.signer });
 }
 
-console.log("\nEvidence written to out/attestations/:");
+const bundlePath = writeBundle();
+console.log(`\nEvidence written to out/attestations/ and bundled in ${bundlePath}:`);
 console.table(rows);
 process.exitCode = rows.some((r) => r.result === "FAILED") ? 1 : 0;
