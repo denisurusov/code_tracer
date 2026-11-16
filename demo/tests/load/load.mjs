@@ -16,7 +16,7 @@ const cfg = parse(readFileSync("tests/load/profile.yaml", "utf8"));
 const base = parse(readFileSync("tests/load/env-spec.base.yaml", "utf8"));
 mkdirSync(OUT, { recursive: true });
 
-const JAR = process.env.FXQUOTE_JAR ?? "out/artifacts/fx-quote-demo-0.1.0.jar";
+const JAR = process.env.FXQUOTE_JAR; // set by the evidence runner to the jar in out/artifacts/
 const server = spawn("java", ["-jar", JAR], { env: { ...process.env, PORT: String(PORT) }, stdio: "ignore" });
 const url = `http://127.0.0.1:${PORT}`;
 for (let i = 0; i < 100; i++) {

@@ -9,33 +9,60 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { verify, RULES } from "./verify.mjs";
-import { generateKeyPair, signStatement, statementOf } from "../evidence/lib/cosign.mjs";
+import { certificateIdentity, generateKeyPair, signStatement as signWithKey, statementOf } from "../evidence/lib/cosign.mjs";
+import { signStatement } from "../evidence/lib/signing.mjs";
+import { ensureKeys, IDENTITIES } from "../evidence/lib/keys.mjs";
+import { delivered } from "../evidence/lib/product.mjs";
+import { readdirSync } from "node:fs";
+
+process.env.DEMO_SIGNING = "key"; // re-signing in the cases below always uses the demo keys
 import { fileDigest } from "../evidence/lib/digest.mjs";
 import { writeBundle } from "../evidence/lib/bundle.mjs";
 import { spawnSync } from "node:child_process";
 
-const SRC = process.cwd();
+const CWD = process.cwd();
 
-function copyDemo() {
+function copyDemo(from) {
   const dir = mkdtempSync(join(tmpdir(), "gate-neg-"));
-  cpSync(SRC, dir, { recursive: true, filter: (p) => !p.startsWith(join(SRC, "node_modules")) && !p.startsWith(join(SRC, "out/cache")) });
-  symlinkSync(join(SRC, "node_modules"), join(dir, "node_modules"));
+  cpSync(from, dir, { recursive: true, filter: (p) => !p.startsWith(join(from, "node_modules")) && !p.startsWith(join(from, "out/cache")) });
+  symlinkSync(join(CWD, "node_modules"), join(dir, "node_modules"));
   return dir;
 }
+
+// The base every case starts from: a re-keyed copy of this run's evidence.
+const BASE = copyDemo(CWD);
+rekey(BASE);
 
 const att = (dir, c) => join(dir, "out/attestations", `${c}.sigstore.json`);
 const readStatement = (dir, c) => statementOf(JSON.parse(readFileSync(att(dir, c), "utf8")));
 const resign = (dir, c, statement, signerId) =>
-  signStatement(statement, join(dir, ".keys", `${signerId}.key`), att(dir, c), join(dir, ".keys/signing-config.offline.json"));
+  signStatement(statement, signerId, att(dir, c), { keyDir: join(dir, ".keys") });
 
 // Re-run the SCA category inside the copy against the fixture OSV snapshot (one
 // fictional high-severity advisory on jackson-databind) and an optional VEX document.
 function rerunSca(dir, { vex } = {}) {
-  const env = { ...process.env, DEMO_OSV_SNAPSHOT: "tests/sca/fixtures/osv-snapshot-demo", ...(vex ? { DEMO_VEX: vex } : {}) };
+  const env = { ...process.env, DEMO_SIGNING: "key", DEMO_OSV_SNAPSHOT: "tests/sca/fixtures/osv-snapshot-demo", ...(vex ? { DEMO_VEX: vex } : {}) };
   const r = spawnSync(process.execPath, ["evidence/run.mjs", "sca"], { cwd: dir, env, encoding: "utf8" });
   if (r.error) throw r.error;
 }
-const jarPath = (d) => join(d, "out/artifacts/fx-quote-demo-0.1.0.jar");
+const jarPath = (d) => delivered(d).path;
+
+// Re-sign every attestation in a copy with the demo keys of the identity that
+// signed it. Keyless CI bundles become key-signed, so the cases below can
+// re-sign tampered statements and still test the gate's rules (not Sigstore).
+function rekey(dir) {
+  ensureKeys(join(dir, ".keys"));
+  const attDir = join(dir, "out/attestations");
+  for (const f of readdirSync(attDir).filter((x) => x.endsWith(".sigstore.json"))) {
+    const bundle = JSON.parse(readFileSync(join(attDir, f), "utf8"));
+    const certId = certificateIdentity(bundle);
+    if (!certId) continue;
+    const id = Object.entries(IDENTITIES).find(([, x]) => x.keyless && new RegExp(x.keyless.identityRegexp).test(certId))?.[0];
+    if (!id) throw new Error(`no identity for certificate ${certId}`);
+    signStatement(statementOf(bundle), id, join(attDir, f), { keyDir: join(dir, ".keys") });
+  }
+  writeBundle(dir);
+}
 
 const CASES = [
   {
@@ -77,6 +104,27 @@ const CASES = [
     apply: (d) => resign(d, "build", readStatement(d, "build"), "ci-pipeline"),
   },
   {
+    name: "built in an image that is not on the policy's allowlist",
+    expect: "G16",
+    apply: (d) => {
+      const st = readStatement(d, "build");
+      st.predicate.buildDefinition.internalParameters.builder = "container";
+      st.predicate.buildDefinition.internalParameters.image = `docker.io/library/maven:latest@sha256:${"0".repeat(64)}`;
+      resign(d, "build", st, "build-service");
+    },
+  },
+  {
+    name: "built on the host, not in a pinned build image",
+    expect: "G16",
+    env: { DEMO_ALLOW_HOST_BUILD: "0" },
+    apply: (d) => {
+      const st = readStatement(d, "build");
+      st.predicate.buildDefinition.internalParameters.builder = "host";
+      delete st.predicate.buildDefinition.internalParameters.image;
+      resign(d, "build", st, "build-service");
+    },
+  },
+  {
     name: "build provenance missing",
     expect: "G12",
     apply: (d) => rmSync(att(d, "build")),
@@ -97,7 +145,7 @@ const CASES = [
     expect: "G02",
     apply: (d) => {
       const k = generateKeyPair(join(d, ".keys", "mallory"));
-      signStatement(readStatement(d, "e2e"), k.key, att(d, "e2e"), join(d, ".keys/signing-config.offline.json"));
+      signWithKey(readStatement(d, "e2e"), k.key, att(d, "e2e"), join(d, ".keys/signing-config.offline.json"));
     },
   },
   {
@@ -194,7 +242,7 @@ const CASES = [
 ];
 
 // One real rebuild for the baseline; cases reuse its digest unless they ask to rebuild.
-const baseline = verify({ root: SRC, rebuild: true });
+const baseline = verify({ root: BASE, rebuild: true });
 console.log(`baseline: ${baseline.verdict} (rebuilt jar ${baseline.rebuildDigest})`);
 if (baseline.verdict !== "ADMIT") {
   console.error("Baseline evidence is not admitted; run the full demo first.");
@@ -203,11 +251,14 @@ if (baseline.verdict !== "ADMIT") {
 
 const rows = [];
 for (const c of CASES) {
-  const dir = copyDemo();
+  const dir = copyDemo(BASE);
   try {
     c.apply(dir);
     writeBundle(dir);
+    const saved = Object.fromEntries(Object.keys(c.env ?? {}).map((k) => [k, process.env[k]]));
+    Object.assign(process.env, c.env ?? {});
     const r = verify({ root: dir, rebuild: c.rebuild ?? baseline.rebuildDigest });
+    for (const [k, v] of Object.entries(saved)) v === undefined ? delete process.env[k] : (process.env[k] = v);
     const rules = [...new Set(r.failures.map((f) => f.rule))];
     const ok = c.expectVerdict === "ADMIT" ? r.verdict === "ADMIT" : r.verdict === "REFUSE" && rules.includes(c.expect);
     const first = r.failures.find((f) => f.rule === c.expect) ?? r.failures[0];
@@ -218,6 +269,7 @@ for (const c of CASES) {
   }
 }
 console.table(rows);
+rmSync(BASE, { recursive: true, force: true });
 const bad = rows.filter((r) => r.ok !== "✓").length;
 console.log(bad ? `${bad} case(s) did not behave as expected` : `All ${rows.length} cases behaved as expected (each refusal by the expected rule).`);
 process.exitCode = bad ? 1 : 0;

@@ -9,10 +9,9 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { loadCatalog } from "./lib/catalog.mjs";
 import { ID_RE, junitToCtrfTests, ctrfReport, applyVex, axeToSarif, sarifResults, sarifLog } from "./lib/convert.mjs";
 import { osvScan } from "./lib/osv.mjs";
-import { ARTIFACT_PATH } from "./lib/statement.mjs";
+import { mavenRevisionArgs, purlMatches, requireDelivered } from "./lib/product.mjs";
 
 const raw = (c, f = "") => `out/raw/${c}${f ? "/" + f : ""}`;
 const npmVersion = (pkg) => JSON.parse(readFileSync(`node_modules/${pkg}/package.json`, "utf8")).version;
@@ -20,7 +19,9 @@ const run = (cmd, args, opts = {}) => spawnSync(cmd, args, { stdio: "inherit", .
 const idFromName = (t) => t.extra?.id ?? t.name?.match(ID_RE)?.[1];
 const write = (path, obj) => (writeFileSync(path, JSON.stringify(obj, null, 2)), path);
 const ctrfFromJunit = (c, tool) => ({ tests: junitToCtrfTests(readFileSync(raw(c, "junit.xml"), "utf8")), tool });
-const jar = () => resolve(ARTIFACT_PATH(loadCatalog()));
+const jar = () => resolve(requireDelivered().path);
+// Every Maven call builds/tests the delivered version, so the SBOM and test reports match the jar.
+const mvn = (...args) => run("mvn", ["-B", "-q", "-f", "product/pom.xml", ...mavenRevisionArgs(requireDelivered().version), ...args]);
 const pomVersion = (prop) => readFileSync("product/pom.xml", "utf8").match(new RegExp(`<${prop}>([^<]+)</${prop}>`))?.[1];
 const bin = (name) => `node_modules/.bin/${name}`;
 const node = process.execPath;
@@ -45,8 +46,8 @@ function checksFromSarif(ids, sarif, match, warnOnly = () => false) {
 // Cucumber-JVM suite against the delivered jar, writing JUnit XML + Cucumber Messages.
 function cucumberSuite(category, suite) {
   const out = resolve(raw(category));
-  return run("mvn", ["-B", "-q", "-f", "product/pom.xml", "test", `-Dtest=${suite}`, "-Dsurefire.failIfNoSpecifiedTests=false",
-    `-Dfxquote.jar=${jar()}`, `-Dcucumber.plugin=junit:${out}/junit.xml,message:${out}/messages.ndjson`]);
+  return mvn("test", `-Dtest=${suite}`, "-Dsurefire.failIfNoSpecifiedTests=false",
+    `-Dfxquote.jar=${jar()}`, `-Dcucumber.plugin=junit:${out}/junit.xml,message:${out}/messages.ndjson`);
 }
 const cucumberTool = () => ({ name: "cucumber-jvm", version: pomVersion("cucumber.version") });
 const stepFiles = ["product/src/test/java/demo/fxquote/steps/Service.java"];
@@ -55,7 +56,7 @@ export const CATEGORIES = {
   unit: {
     signer: "ci-pipeline",
     run: () => {
-      const r = run("mvn", ["-B", "-q", "-f", "product/pom.xml", "test"]);
+      const r = mvn("test");
       const dir = "product/target/surefire-reports";
       const xml = readdirSync(dir).filter((f) => /^TEST-.*\.xml$/.test(f) && !f.includes("Suite"))
         .map((f) => readFileSync(`${dir}/${f}`, "utf8")).join("\n");
@@ -148,13 +149,13 @@ export const CATEGORIES = {
   //   DEMO_VEX           OpenVEX document to use in place of tests/sca/vex.openvex.json
   sca: {
     signer: "ci-pipeline",
-    run: () => run("mvn", ["-B", "-q", "-f", "product/pom.xml", "org.cyclonedx:cyclonedx-maven-plugin:makeBom"]),
+    run: () => mvn("org.cyclonedx:cyclonedx-maven-plugin:makeBom"),
     evaluate: ({ ids }) => {
       const policy = JSON.parse(readFileSync("tests/sca/policy.json", "utf8")).checks;
       const sbom = JSON.parse(readFileSync("product/target/sbom.cdx.json", "utf8"));
       const scan = osvScan(sbom, { snapshot: process.env.DEMO_OSV_SNAPSHOT, outDir: raw("sca") });
       const vexPath = process.env.DEMO_VEX ?? "tests/sca/vex.openvex.json";
-      const vexApplied = scan.sarif ? applyVex(scan.sarif, JSON.parse(readFileSync(vexPath, "utf8")), loadCatalog().product.purl) : [];
+      const vexApplied = scan.sarif ? applyVex(scan.sarif, JSON.parse(readFileSync(vexPath, "utf8")), requireDelivered().purl, purlMatches) : [];
       const sarifPath = scan.sarif ? write(raw("sca", "osv.sarif"), scan.sarif) : null;
 
       const sev = (r) => r.properties.severity;
@@ -174,8 +175,8 @@ export const CATEGORIES = {
   license: {
     signer: "ci-pipeline",
     run: () => {
-      const r = run("mvn", ["-B", "-q", "-f", "product/pom.xml", "org.cyclonedx:cyclonedx-maven-plugin:makeBom",
-        "dependency:3.11.0:list", "-DincludeScope=runtime", `-DoutputFile=${resolve(raw("license", "dependency-list.txt"))}`]);
+      const r = mvn("org.cyclonedx:cyclonedx-maven-plugin:makeBom",
+        "dependency:3.11.0:list", "-DincludeScope=runtime", `-DoutputFile=${resolve(raw("license", "dependency-list.txt"))}`);
       writeFileSync(raw("license", "sbom.cdx.json"), readFileSync("product/target/sbom.cdx.json"));
       return r;
     },
@@ -202,7 +203,7 @@ export const CATEGORIES = {
         .map(([, g, a, v]) => `pkg:maven/${g}/${a}@${v}`);
       const inSbom = new Set((sbom.components ?? []).map((c) => purlKey(c.purl)));
       const absent = listed.filter((p) => !inSbom.has(p));
-      const productPurl = loadCatalog().product.purl;
+      const productPurl = requireDelivered().purl;
       const sbomPurl = purlKey(sbom.metadata?.component?.purl);
       const purlProblem = sbomPurl === productPurl ? null : `SBOM identifies the product as ${sbomPurl}, catalog says ${productPurl}`;
       const lic2Fail = absent.length > 0 || purlProblem || listed.length === 0;

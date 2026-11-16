@@ -1,0 +1,40 @@
+name: demo build
+
+# Reusable workflow: builds the demo product in the pinned Maven container and
+# signs SLSA provenance with cosign keyless. Its own file so the Fulcio
+# certificate names this workflow (the "build-service" identity in the gate).
+
+on:
+  workflow_call:
+    inputs:
+      ref: { type: string, required: true }
+      revision: { type: string, required: true }
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: demo
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/demo-setup
+      - name: Build in the pinned image and sign provenance (keyless)
+        env:
+          DEMO_REVISION: ${{ inputs.revision }}
+          DEMO_SIGNING: keyless
+        run: npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: demo-build
+          path: |
+            demo/out/artifacts
+            demo/out/attestations/build.sigstore.json
+          if-no-files-found: error
+          retention-days: 90

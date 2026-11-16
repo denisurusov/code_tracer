@@ -7,7 +7,7 @@
 // public log. Switching to keyless signing is a signing-config and verification
 // flag change; the bundle format stays the same.
 import { execFileSync, spawnSync } from "node:child_process";
-import { createHash, createPublicKey } from "node:crypto";
+import { createHash, createPublicKey, X509Certificate } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -61,6 +61,19 @@ export function signStatement(statement, keyPath, out, signingConfig) {
   }
 }
 
+/** The signing certificate's identity (SAN URI or email) for a keyless bundle, else null. */
+export function certificateIdentity(bundle) {
+  const vm = bundle.verificationMaterial ?? {};
+  const raw = vm.certificate?.rawBytes ?? vm.x509CertificateChain?.certificates?.[0]?.rawBytes;
+  if (!raw) return null;
+  const cert = new X509Certificate(Buffer.from(raw, "base64"));
+  const san = cert.subjectAltName ?? "";
+  return san.split(/,\s*/).map((s) => s.replace(/^(URI|email):/, "")).find(Boolean) ?? null;
+}
+
+/** Rekor log index of a keyless bundle, for linking to the transparency log. */
+export const rekorLogIndex = (bundle) => bundle.verificationMaterial?.tlogEntries?.[0]?.logIndex ?? null;
+
 /** Decode the statement carried in a Sigstore bundle (no verification). */
 export function statementOf(bundle) {
   try {
@@ -75,13 +88,21 @@ export function statementOf(bundle) {
  * for `publicKeyPem`, the predicate type is `type`, and `sha256` is one of the
  * statement's subjects. Returns { ok, reason }.
  */
-export function verifyBundle(bundlePath, publicKeyPem, type, sha256) {
+export function verifyBundle(bundlePath, publicKeyPem, type, sha256, keyless = null) {
   const dir = mkdtempSync(join(tmpdir(), "cosign-verify-"));
   try {
-    const pub = join(dir, "key.pub");
-    writeFileSync(pub, publicKeyPem);
-    const r = spawnSync("cosign", ["verify-blob-attestation", "--key", pub, "--bundle", bundlePath, "--type", type,
-      "--insecure-ignore-tlog", "--digest", sha256, "--digestAlg", "sha256"], { encoding: "utf8", env: ENV });
+    let auth;
+    if (keyless) {
+      // Keyless: the Fulcio certificate must be for this identity and issuer, and
+      // the Rekor entry and timestamp are checked against Sigstore's trusted root.
+      auth = ["--certificate-identity-regexp", keyless.identityRegexp, "--certificate-oidc-issuer", keyless.issuer];
+    } else {
+      const pub = join(dir, "key.pub");
+      writeFileSync(pub, publicKeyPem);
+      auth = ["--key", pub, "--insecure-ignore-tlog"];
+    }
+    const r = spawnSync("cosign", ["verify-blob-attestation", ...auth, "--bundle", bundlePath, "--type", type,
+      "--digest", sha256, "--digestAlg", "sha256"], { encoding: "utf8", env: ENV });
     if (r.status === 0) return { ok: true };
     const reason = (r.stderr || r.stdout).split("\n").filter((l) => l.startsWith("Error:") || l.includes("error during"))[0] ?? `exit ${r.status}`;
     return { ok: false, reason: reason.replace(/^Error:\s*/, "").trim() };

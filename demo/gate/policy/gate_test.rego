@@ -15,7 +15,7 @@ base_policy := {
 }
 
 base_catalog := {
-	"product": {"type": "library", "purl": "pkg:npm/x@1.0.0"},
+	"product": {"type": "library", "purl": "pkg:maven/g/x"},
 	"tests": [
 		{"id": "UNIT-001", "category": "unit"},
 		{"id": "UNIT-002", "category": "unit"},
@@ -34,7 +34,7 @@ att(category, passed, warned, failed, result) := {
 
 provenance := {"category": "build", "kind": "provenance", "predicate": {"passedTests": [], "warnedTests": [], "failedTests": []}}
 
-input_with(atts) := {"policy": base_policy, "catalog": base_catalog, "source_digest": "abc", "artifact_digest": null, "attestations": array.concat([provenance], atts)}
+input_with(atts) := {"policy": base_policy, "catalog": base_catalog, "source_digest": "abc", "artifact_digest": null, "product_purl": "pkg:maven/g/x@1.0.0", "attestations": array.concat([provenance], atts)}
 
 rules(denies) := {d.rule | some d in denies}
 
@@ -86,7 +86,7 @@ vex_doc(proof) := {"statements": [{
 	"vulnerability": {"name": "DEMO-1"},
 	"status": "not_affected",
 	"justification": "vulnerable_code_not_present",
-	"products": [{"@id": "pkg:npm/x@1.0.0", "subcomponents": [{"@id": "pkg:npm/dep@2.0.0"}]}],
+	"products": [{"@id": "pkg:maven/g/x", "subcomponents": [{"@id": "pkg:npm/dep@2.0.0"}]}],
 	"x-code-tracer-proof": proof,
 }]}
 
@@ -113,7 +113,7 @@ test_vex_with_unknown_proof_is_g13 if {
 }
 
 test_missing_build_provenance_is_g12 if {
-	denies := gate.deny with input as {"policy": base_policy, "catalog": base_catalog, "source_digest": "abc", "artifact_digest": null, "attestations": [
+	denies := gate.deny with input as {"policy": base_policy, "catalog": base_catalog, "source_digest": "abc", "artifact_digest": null, "product_purl": "pkg:maven/g/x@1.0.0", "attestations": [
 		att("unit", ["UNIT-001", "UNIT-002"], [], [], "PASSED"),
 		att("sca", ["SCA-001"], [], [], "PASSED"),
 	]}

@@ -8,6 +8,7 @@
 #   catalog         tests/catalog.yaml as JSON
 #   source_digest   sha256 of the clone's source manifest
 #   artifact_digest sha256 of the delivered jar
+#   product_purl    purl of the delivered package, with version
 #   attestations[]  { category, kind (test-result | provenance), predicate, environment_spec, vex_document }
 package codetracer.gate
 
@@ -127,12 +128,20 @@ vex_statement(a, v) := s if {
 	s.vulnerability.name == v.vulnerability
 	s.status == v.status
 	some p in s.products
-	p["@id"] == input.catalog.product.purl
+	product_matches(p["@id"])
 	some c in p.subcomponents
 	c["@id"] == v.subcomponent
 }
 
 proof(s) := object.get(s, "x-code-tracer-proof", [])
+
+# A VEX product identifier names the delivered package exactly, or by versionless purl (every version).
+product_matches(id) if id == input.product_purl
+
+product_matches(id) if {
+	id == input.catalog.product.purl
+	startswith(input.product_purl, concat("", [id, "@"]))
+}
 
 vex_issue contains [cat, v, "no matching statement in the attested OpenVEX document"] if {
 	some [cat, a, v] in applied

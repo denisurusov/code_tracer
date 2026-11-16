@@ -88,14 +88,14 @@ export function axeToSarif(files, axeVersion) {
  * statements applied, for the attestation; the gate decides whether each one is
  * backed by proof.
  */
-export function applyVex(sarif, vex, productPurl) {
+export function applyVex(sarif, vex, productPurl, purlMatches = (a, b) => a === b) {
   const applied = [];
   for (const r of sarifResults(sarif)) {
     const purl = r.properties?.purl;
     const matches = (r.properties?.vulnerabilities ?? []).map((vuln) => {
       const s = (vex.statements ?? []).find((st) =>
         st.vulnerability?.name === vuln && ["not_affected", "fixed"].includes(st.status) &&
-        (st.products ?? []).some((p) => p["@id"] === productPurl && (p.subcomponents ?? []).some((c) => c["@id"] === purl)));
+        (st.products ?? []).some((p) => purlMatches(p["@id"], productPurl) && (p.subcomponents ?? []).some((c) => c["@id"] === purl)));
       return s && { vulnerability: vuln, subcomponent: purl, status: s.status, justification: s.justification };
     });
     if (matches.length && matches.every(Boolean)) {

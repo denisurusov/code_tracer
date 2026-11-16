@@ -1,0 +1,46 @@
+name: demo load
+
+# Reusable workflow: runs the load test against the built jar and signs the
+# result with cosign keyless. Its own file so the Fulcio certificate names this
+# workflow (the "perf-env" identity in the gate; it stands for a separate
+# performance environment).
+
+on:
+  workflow_call:
+    inputs:
+      ref: { type: string, required: true }
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: demo
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/demo-setup
+        with:
+          java: "true"
+      - uses: actions/download-artifact@v8
+        with:
+          name: demo-build
+          path: demo/out
+      - name: Load test against the jar and sign (keyless)
+        env:
+          DEMO_SIGNING: keyless
+        run: node evidence/run.mjs load
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: demo-load
+          path: |
+            demo/out/attestations/load.sigstore.json
+            demo/out/results/load
+          if-no-files-found: error
+          retention-days: 90

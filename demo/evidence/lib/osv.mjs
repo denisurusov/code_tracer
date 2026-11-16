@@ -97,8 +97,10 @@ function loadSnapshot(snapshot) {
     const u = spawnSync("unzip", ["-o", "-q", zip, "-d", recordsDir], { encoding: "utf8" });
     if (u.status !== 0) return { error: `could not unzip OSV snapshot: ${u.stderr}` };
   }
-  return { dir: join(CACHE, "records"), descriptor: { name: zip, digest: { sha256: fileDigest(zip) },
-    annotations: { role: "advisory-snapshot", format: "OSV", uri: OSV_MAVEN_URL, retrievedOn: new Date(statSync(zip).mtimeMs).toISOString() } } };
+  // Recorded by hash and URL only: the snapshot is not retained with the evidence,
+  // and OSV republishes the export as advisories change.
+  return { dir: join(CACHE, "records"), descriptor: { name: OSV_MAVEN_URL, digest: { sha256: fileDigest(zip) },
+    annotations: { role: "advisory-snapshot", format: "OSV", uri: OSV_MAVEN_URL, retained: "false", retrievedOn: new Date(statSync(zip).mtimeMs).toISOString() } } };
 }
 
 /**

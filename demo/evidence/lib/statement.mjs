@@ -8,15 +8,13 @@
 //     carrying the category, time window, runner and coverage detail.
 import { execFileSync } from "node:child_process";
 import os from "node:os";
-import { existsSync } from "node:fs";
 import { fileDigest, sourceDigest } from "./digest.mjs";
-import { loadCatalog } from "./catalog.mjs";
+import { requireDelivered } from "./product.mjs";
 
 export const TEST_RESULT_TYPE = "https://in-toto.io/attestation/test-result/v0.1";
 export const STATEMENT_TYPE = "https://in-toto.io/Statement/v1";
 
 export const SOURCE_URI = "git+https://github.com/denisurusov/code_tracer#demo/product";
-export const ARTIFACT_PATH = (catalog) => `out/artifacts/${catalog.product.artifact.split("/").pop()}`;
 
 export function gitCommit() {
   try {
@@ -38,13 +36,11 @@ export function runUrl() {
  * purl + digest), and the product source it was built from.
  */
 export function subject() {
-  const catalog = loadCatalog();
-  const jar = ARTIFACT_PATH(catalog);
-  if (!existsSync(jar)) throw new Error(`${jar} not found; run \`npm run build\` first`);
+  const jar = requireDelivered();
   const src = sourceDigest();
   const commit = gitCommit();
   return [
-    { name: `${catalog.product.purl}?type=jar`, digest: { sha256: fileDigest(jar) } },
+    { name: jar.jarPurl, digest: { sha256: fileDigest(jar.path) } },
     { name: SOURCE_URI, digest: { sha256: src.digest, ...(commit ? { gitCommit: commit } : {}) } },
   ];
 }

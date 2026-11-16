@@ -14,7 +14,13 @@ product_types:
 
 categories:
   # SLSA provenance for the delivered jar, from an isolated build identity.
-  build:           { signers: [build-service], predicate_type: "https://slsa.dev/provenance/v1" }
+  build:
+    signers: [build-service]
+    predicate_type: "https://slsa.dev/provenance/v1"
+    # G16: the build (and the gate's rebuild) must run in one of these images, pinned by digest.
+    # Host builds are refused unless DEMO_ALLOW_HOST_BUILD=1 (local runs without Docker).
+    allowed_images:
+      - docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320
   unit:            { signers: [ci-pipeline] }
   integration:     { signers: [ci-pipeline] }
   contract:        { signers: [ci-pipeline] }

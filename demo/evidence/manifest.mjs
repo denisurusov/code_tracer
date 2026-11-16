@@ -10,7 +10,9 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { BUNDLE_NAME, readBundle } from "./lib/bundle.mjs";
-import { cosignVersion, statementOf } from "./lib/cosign.mjs";
+import { certificateIdentity, cosignVersion, rekorLogIndex, statementOf } from "./lib/cosign.mjs";
+import { IDENTITIES } from "./lib/keys.mjs";
+import { delivered } from "./lib/product.mjs";
 import { fileDigest } from "./lib/digest.mjs";
 import { loadCatalog } from "./lib/catalog.mjs";
 import { SOURCE_URI } from "./lib/statement.mjs";
@@ -20,8 +22,9 @@ const catalog = loadCatalog();
 const trust = JSON.parse(readFileSync(".keys/trust.json", "utf8"));
 const bundles = readBundle(`out/${BUNDLE_NAME}`);
 const gate = existsSync("out/gate-report.json") ? JSON.parse(readFileSync("out/gate-report.json", "utf8")) : null;
-const jarPurl = `${catalog.product.purl}?type=jar`;
-const jarPath = `out/artifacts/${catalog.product.artifact.split("/").pop()}`;
+const jar = delivered();
+const jarPurl = jar.jarPurl;
+const jarPath = jar.path;
 const short = (h) => (h ? `\`sha256:${h}\`` : "—");
 const code = (s) => `\`${s}\``;
 const order = ["build", "unit", "integration", "contract", "uat", "e2e", "accessibility", "load", "sast", "secrets", "sca",
@@ -63,9 +66,18 @@ for (const bundle of bundles) {
   const p = st.predicate;
   const isProv = st.predicateType === "https://slsa.dev/provenance/v1";
   const category = isProv ? "build" : p["x-code-tracer"].category;
-  const t = trust[bundle.verificationMaterial?.publicKey?.hint];
-  const signer = t ? `${t.identity.id} (${t.identity.name})` : `unknown key ${bundle.verificationMaterial?.publicKey?.hint}`;
-  if (t) signers.set(t.identity.id, { ...t, hint: bundle.verificationMaterial.publicKey.hint });
+  const certId = certificateIdentity(bundle);
+  const logIndex = rekorLogIndex(bundle);
+  let signer;
+  if (certId) {
+    const id = Object.entries(IDENTITIES).find(([, x]) => x.keyless && new RegExp(x.keyless.identityRegexp).test(certId))?.[0] ?? "untrusted";
+    signer = `${id} — keyless, certificate for ${code(certId)}${logIndex ? `, [Rekor entry ${logIndex}](https://search.sigstore.dev/?logIndex=${logIndex})` : ""}`;
+    signers.set(id, { keyless: true, identity: { id, name: certId }, issuer: IDENTITIES[id]?.keyless?.issuer, identityRegexp: IDENTITIES[id]?.keyless?.identityRegexp });
+  } else {
+    const t = trust[bundle.verificationMaterial?.publicKey?.hint];
+    signer = t ? `${t.identity.id} (${t.identity.name}) — cosign key` : `unknown key ${bundle.verificationMaterial?.publicKey?.hint}`;
+    if (t) signers.set(t.identity.id, { ...t, hint: bundle.verificationMaterial.publicKey.hint });
+  }
   const bundlePath = bundleFiles[category];
   const bundleSha = existsSync(bundlePath) ? fileDigest(bundlePath) : null;
   const jar = st.subject.find((s) => s.name === jarPurl)?.digest?.sha256;
@@ -76,7 +88,9 @@ for (const bundle of bundles) {
     const dep = p.buildDefinition.resolvedDependencies.find((d) => d.uri === SOURCE_URI)?.digest ?? {};
     lines.push(`built ${code(jarPath)} ${short(jar)}`);
     lines.push(`from source ${short(dep.sha256)}${dep.gitCommit ? ` (git ${dep.gitCommit.slice(0, 12)})` : ""}`);
-    lines.push(`command ${code(p.buildDefinition.externalParameters.command)}; ${p.buildDefinition.internalParameters.javac}; ${p.buildDefinition.internalParameters.maven.split(" (")[0]}`);
+    const ip = p.buildDefinition.internalParameters;
+    lines.push(ip.builder === "container" ? `in container ${code(ip.image)}` : `on the host (${ip.os})`);
+    lines.push(`version ${p.buildDefinition.externalParameters.revision}; ${ip.javac}; ${ip.maven}`);
     lines.push(`builder ${p.runDetails.builder.id}`);
   } else {
     lines.push(`**${p.result}** — ${p.passedTests.length} passed, ${p.warnedTests.length} warned, ${p.failedTests.length} failed`);
@@ -86,8 +100,10 @@ for (const bundle of bundles) {
     if (reviewer) lines.push(`reviewer ${reviewer.name}, ${reviewer.role}`);
     for (const d of p.configuration ?? []) {
       addFile(d.name, d.digest.sha256, d.annotations?.role, category);
-      if (["report", "environment-spec", "advisory-snapshot"].includes(d.annotations?.role)) {
-        lines.push(`${d.annotations.role}${d.annotations.format ? ` (${d.annotations.format})` : ""}: ${code(d.name)} ${short(d.digest.sha256)}${d.annotations.uri ? ` from ${d.annotations.uri}` : ""}`);
+      if (d.annotations?.role === "advisory-snapshot") {
+        lines.push(`advisory snapshot (OSV): ${d.annotations.uri ?? code(d.name)} ${short(d.digest.sha256)}${d.annotations.retrievedOn ? `, retrieved ${d.annotations.retrievedOn}` : ""} — not retained; recorded by hash and URL`);
+      } else if (["report", "environment-spec"].includes(d.annotations?.role)) {
+        lines.push(`${d.annotations.role}${d.annotations.format ? ` (${d.annotations.format})` : ""}: ${code(d.name)} ${short(d.digest.sha256)}`);
       }
     }
     const vex = p["x-code-tracer"].vexApplied ?? [];
@@ -105,14 +121,19 @@ const jarSha = existsSync(jarPath) ? fileDigest(jarPath) : null;
 const anyTest = bundles.map(statementOf).find((s) => s.predicateType !== "https://slsa.dev/provenance/v1");
 const srcSubject = anyTest?.subject.find((s) => s.name === SOURCE_URI)?.digest ?? {};
 const runUrl = anyTest?.predicate.url ?? "—";
-const ciArtifact = process.env.GITHUB_RUN_ID
-  ? `GitHub Actions artifact \`test-evidence\` of [run ${process.env.GITHUB_RUN_ID}](${runUrl}), with the same paths under \`out/\`; kept for the repository's artifact retention period`
-  : "local run: `demo/out/` on the machine that ran it (not committed)";
+const repo = process.env.DEMO_MAVEN_REPO_URL;
+const gavPath = repo ? `${repo}/${jar.groupId.replaceAll(".", "/")}/${jar.artifactId}/${jar.version}/${jar.artifactId}-${jar.version}` : null;
+const ciArtifact = [
+  repo ? `Maven repository ${code(repo)} as ${code(`${jar.groupId}:${jar.artifactId}:${jar.version}`)}: [jar](${gavPath}.jar), [evidence sidecar](${gavPath}-evidence.intoto.jsonl) (classifier \`evidence\`), [this record](${gavPath}-evidence-record.md) (classifier \`evidence-record\`); reading needs a GitHub token with \`read:packages\`` : null,
+  process.env.GITHUB_RUN_ID
+    ? `GitHub Actions artifact \`test-evidence\` of [run ${process.env.GITHUB_RUN_ID}](${runUrl}) with every file under \`out/\`, kept 90 days`
+    : "local run: `demo/out/` on the machine that ran it (not committed)",
+].filter(Boolean).join("<br>");
 
 const md = [];
 md.push("# Test evidence record");
 md.push("");
-md.push(`Generated by \`npm run manifest\` from \`out/${BUNDLE_NAME}\` on ${new Date().toISOString()}. Every attestation is a Sigstore bundle made with cosign ${cosignVersion()} (key-based, offline signing config: no Fulcio certificate, no Rekor entry, no timestamp authority). Paths are relative to \`demo/\`.`);
+md.push(`Generated by \`npm run manifest\` from \`out/${BUNDLE_NAME}\` on ${new Date().toISOString()}. Every attestation is a Sigstore bundle made with cosign ${cosignVersion()}: ${[...signers.values()].some((t) => t.keyless) ? "workflow identities signed keyless (Fulcio certificate, Rekor entry); named reviewers and the gate signed with cosign keys" : "signed with cosign keys and an offline signing config (no Fulcio certificate, no Rekor entry)"}. Paths are relative to \`demo/\`.`);
 md.push("");
 md.push("## Product");
 md.push("");
@@ -148,13 +169,17 @@ md.push("## Signers");
 md.push("");
 md.push("Public keys of the identities that signed this run. The key hint is the one cosign writes into each bundle (`verificationMaterial.publicKey.hint`).");
 md.push("");
-md.push("| Identity | Stands for | Key hint |");
+md.push("| Identity | Signed as | How to verify |");
 md.push("|---|---|---|");
-for (const [id, t] of signers) md.push(`| ${id} | ${t.identity.name} | \`${t.hint}\` |`);
+for (const [id, t] of signers) {
+  md.push(t.keyless
+    ? `| ${id} | ${code(t.identity.name)} | keyless: \`--certificate-identity-regexp '${t.identityRegexp}' --certificate-oidc-issuer ${t.issuer}\` |`
+    : `| ${id} | ${t.identity.name} | cosign key, hint \`${t.hint}\` (public key below) |`);
+}
 const gateT = Object.entries(trust).find(([, t]) => t.identity.id === "bank-gate");
 if (gateT) md.push(`| bank-gate | ${gateT[1].identity.name} | \`${gateT[0]}\` |`);
 md.push("");
-for (const [id, t] of [...signers, ...(gateT ? [["bank-gate", gateT[1]]] : [])]) {
+for (const [id, t] of [...signers, ...(gateT ? [["bank-gate", gateT[1]]] : [])].filter(([, t]) => !t.keyless)) {
   md.push(`<details><summary>${id} public key</summary>`);
   md.push("");
   md.push("```");
@@ -166,15 +191,18 @@ for (const [id, t] of [...signers, ...(gateT ? [["bank-gate", gateT[1]]] : [])])
 }
 md.push("## How to check this record");
 md.push("");
-md.push("With the binaries from the location above, save a signer's public key from the section above as `<id>.pub`, then:");
+md.push("With the binaries from the location above:");
 md.push("");
 md.push("```sh");
 md.push(`sha256sum ${jarPath}                     # must equal the delivered jar hash above`);
-md.push(`cosign verify-blob-attestation --key ci-pipeline.pub --insecure-ignore-tlog \\`);
-md.push(`  --type https://in-toto.io/attestation/test-result/v0.1 \\`);
-md.push(`  --bundle out/attestations/unit.sigstore.json ${jarPath}`);
-md.push(`cosign verify-blob-attestation --key build-service.pub --insecure-ignore-tlog \\`);
-md.push(`  --type https://slsa.dev/provenance/v1 --bundle out/attestations/build.sigstore.json ${jarPath}`);
+const verifyCmd = (id, type, file) => {
+  const t = signers.get(id);
+  const auth = t?.keyless ? `--certificate-identity-regexp '${t.identityRegexp}' --certificate-oidc-issuer ${t.issuer}` : `--key ${id}.pub --insecure-ignore-tlog`;
+  md.push(`cosign verify-blob-attestation ${auth} \\`);
+  md.push(`  --type ${type} --bundle out/attestations/${file} ${jarPath}`);
+};
+verifyCmd("ci-pipeline", "https://in-toto.io/attestation/test-result/v0.1", "unit.sigstore.json");
+verifyCmd("build-service", "https://slsa.dev/provenance/v1", "build.sigstore.json");
 md.push("npm run gate                           # every rule, including the rebuild");
 md.push("```");
 md.push("");

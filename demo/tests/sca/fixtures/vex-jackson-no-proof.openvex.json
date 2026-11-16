@@ -1,6 +1,6 @@
 {
   "@context": "https://openvex.dev/ns/v0.2.0",
-  "@id": "https://example.com/vex/fx-quote-demo/0.1.0/DEMO-2026-0001-unproven",
+  "@id": "https://example.com/vex/fx-quote-demo/DEMO-2026-0001-unproven",
   "author": "fx-quote-demo maintainers",
   "timestamp": "2026-11-15T00:00:00Z",
   "version": 1,
@@ -11,7 +11,7 @@
       },
       "products": [
         {
-          "@id": "pkg:maven/demo.codetracer/fx-quote-demo@0.1.0",
+          "@id": "pkg:maven/demo.codetracer/fx-quote-demo",
           "subcomponents": [
             {
               "@id": "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.23.0"

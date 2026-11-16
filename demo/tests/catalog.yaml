@@ -11,9 +11,8 @@
 catalog_version: 1
 product:
   name: fx-quote-demo
-  purl: pkg:maven/demo.codetracer/fx-quote-demo@0.1.0   # must match product/pom.xml and the SBOM
-  artifact: product/target/fx-quote-demo-0.1.0.jar        # the delivered artifact (shaded, runnable)
-  type: user-facing-app                                   # selects the required categories in gate/policy.yaml
+  purl: pkg:maven/demo.codetracer/fx-quote-demo   # versionless; the version comes from each build's jar
+  type: user-facing-app                           # selects the required categories in gate/policy.yaml
 
 requirements:
   REQ-PRICE:  Quotes apply half the configured spread to the mid rate, against the client.

@@ -20,7 +20,11 @@ import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { fileDigest, sha256, sourceDigest } from "../evidence/lib/digest.mjs";
-import { signStatement, statementOf, verifyBundle } from "../evidence/lib/cosign.mjs";
+import { certificateIdentity, statementOf, verifyBundle } from "../evidence/lib/cosign.mjs";
+import { signStatement } from "../evidence/lib/signing.mjs";
+import { IDENTITIES } from "../evidence/lib/keys.mjs";
+import { delivered } from "../evidence/lib/product.mjs";
+import { mavenBuild } from "../evidence/lib/maven-build.mjs";
 import { TEST_RESULT_TYPE, STATEMENT_TYPE, SOURCE_URI } from "../evidence/lib/statement.mjs";
 
 const PROVENANCE_TYPE = "https://slsa.dev/provenance/v1";
@@ -42,6 +46,7 @@ export const RULES = {
   G13: "vex-backed-by-proof",
   G14: "provenance-consistent",
   G15: "rebuild-matches",
+  G16: "toolchain-pinned",
 };
 const SEMANTIC = ["G09", "G10", "G11", "G12", "G13"];
 const POLICY_DIR = fileURLToPath(new URL("./policy", import.meta.url));
@@ -54,17 +59,21 @@ function evalRego(input) {
 
 /**
  * Rebuild the jar from the clone's product/ (excluding target/) in a scratch
- * directory, offline against the local Maven repository, and return its sha256.
- * The bank's own rebuild: digest equality is what makes the provider's build
- * claim checkable (Reproducible Builds).
+ * directory, with the version and build image the provenance names, offline
+ * against the local Maven repository (the bank's own mirror), and return its
+ * sha256. Digest equality is what makes the provider's build claim checkable
+ * (Reproducible Builds).
  */
-export function rebuildJar(root, artifactName) {
+export function rebuildJar(root, { revision, image, artifactId }) {
   const work = mkdtempSync(join(tmpdir(), "gate-rebuild-"));
   try {
     cpSync(join(root, "product"), join(work, "product"), { recursive: true, filter: (p) => !p.includes(`${join(root, "product", "target")}`) });
-    const r = spawnSync("mvn", ["-B", "-q", "-o", "-f", join(work, "product/pom.xml"), "clean", "package", "-DskipTests"], { encoding: "utf8" });
-    if (r.status !== 0) return { error: `rebuild failed: ${(r.stdout + r.stderr).split("\n").filter((l) => l.includes("ERROR")).slice(0, 3).join(" ") || `exit ${r.status}`}` };
-    return { digest: fileDigest(join(work, "product/target", artifactName)) };
+    // Offline against the local repository by default (the bank's own mirror). CI
+    // sets DEMO_REBUILD_OFFLINE=0: there Maven Central stands in for the mirror.
+    const offline = process.env.DEMO_REBUILD_OFFLINE !== "0";
+    const b = mavenBuild({ root: work, revision, image, offline, allowHost: !image, artifactId });
+    if (b.error) return { error: `rebuild failed: ${b.error}` };
+    return { digest: fileDigest(b.jar), builder: b.builder };
   } finally {
     rmSync(work, { recursive: true, force: true });
   }
@@ -81,11 +90,11 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
   const trust = JSON.parse(readFileSync(join(root, trustPath), "utf8"));
   const catalog = parse(readFileSync(join(root, "tests/catalog.yaml"), "utf8"));
   const coords = pomCoordinates(readFileSync(join(root, "product/pom.xml"), "utf8"));
-  const productPurl = catalog.product.purl;
-  const jarPurl = `${productPurl}?type=jar`;
-  const artifactName = catalog.product.artifact.split("/").pop();
-  const deliveredPath = join(root, evidence, "artifacts", artifactName);
-  const deliveredDigest = existsSync(deliveredPath) ? fileDigest(deliveredPath) : null;
+  const jar = delivered(root);
+  const productPurl = jar?.purl ?? `${catalog.product.purl}@unknown`;
+  const jarPurl = jar?.jarPurl ?? `${productPurl}?type=jar`;
+  const deliveredDigest = jar ? fileDigest(jar.path) : null;
+  const allowHost = process.env.DEMO_ALLOW_HOST_BUILD === "1";
   const src = sourceDigest(root);
   const bundlePath = join(root, evidence, BUNDLE_NAME);
   const bundles = readBundle(bundlePath);
@@ -97,9 +106,9 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
   const seen = new Map();
 
   // The catalog's purl must name this Maven project, or the subject binding means nothing.
-  const expectedPurl = `pkg:maven/${coords.groupId}/${coords.artifactId}@${coords.version}`;
-  if (productPurl !== expectedPurl) fail("*", "G05", `catalog purl ${productPurl} does not match product/pom.xml (${expectedPurl})`);
-  if (!deliveredDigest) fail("*", "G05", `delivered artifact ${join(evidence, "artifacts", artifactName)} is missing`);
+  const expectedPurl = `pkg:maven/${coords.groupId}/${coords.artifactId}`;
+  if (catalog.product.purl !== expectedPurl) fail("*", "G05", `catalog purl ${catalog.product.purl} does not match product/pom.xml (${expectedPurl})`);
+  if (!deliveredDigest) fail("*", "G05", `no delivered jar in ${join(evidence, "artifacts")}`);
   let provenance = null;
   let report_rebuild = null;
   const testJarDigests = [];
@@ -110,10 +119,19 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
     const isProvenance = st.predicateType === PROVENANCE_TYPE;
     const category = isProvenance ? "build" : p["x-code-tracer"]?.category ?? `#${i}`;
 
-    // G02: the bundle's key hint must be in the trust store.
-    const hint = bundle.verificationMaterial?.publicKey?.hint;
-    const trusted = hint && trust[hint];
-    if (!trusted) return fail(category, "G02", `unknown key ${hint ?? "(no key hint)"}`);
+    // G02: a keyless bundle's certificate identity must match a trusted workflow
+    // identity; a key-signed bundle's key hint must be in the trust store.
+    const certId = certificateIdentity(bundle);
+    let trusted;
+    if (certId) {
+      const id = Object.entries(IDENTITIES).find(([, x]) => x.keyless && new RegExp(x.keyless.identityRegexp).test(certId));
+      if (!id) return fail(category, "G02", `certificate identity ${certId} is not a trusted identity`);
+      trusted = { identity: { id: id[0], ...id[1], certificateIdentity: certId }, keyless: id[1].keyless };
+    } else {
+      const hint = bundle.verificationMaterial?.publicKey?.hint;
+      trusted = hint && trust[hint];
+      if (!trusted) return fail(category, "G02", `unknown key ${hint ?? "(no key hint)"}`);
+    }
     pass(category, "G02");
     const v = { identity: trusted.identity };
 
@@ -123,7 +141,7 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
     const tmp = mkdtempSync(join(tmpdir(), "gate-bundle-"));
     const bundleFile = join(tmp, "bundle.sigstore.json");
     writeFileSync(bundleFile, JSON.stringify(bundle));
-    const cv = subjectDigest ? verifyBundle(bundleFile, trusted.publicKeyPem, st.predicateType, subjectDigest) : { ok: false, reason: "statement has no subject" };
+    const cv = subjectDigest ? verifyBundle(bundleFile, trusted.publicKeyPem, st.predicateType, subjectDigest, trusted.keyless) : { ok: false, reason: "statement has no subject" };
     rmSync(tmp, { recursive: true, force: true });
     if (!cv.ok) return fail(category, "G01", `cosign verify-blob-attestation: ${cv.reason}`);
     pass(category, "G01");
@@ -150,7 +168,14 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
     subjectProblems.length ? fail(category, "G05", subjectProblems.join("; ")) : pass(category, "G05");
 
     if (isProvenance) {
-      provenance = { jar: jarSubj?.digest?.sha256, source: (p.buildDefinition?.resolvedDependencies ?? []).find((d) => d.uri === SOURCE_URI)?.digest?.sha256 };
+      provenance = {
+        jar: jarSubj?.digest?.sha256,
+        source: (p.buildDefinition?.resolvedDependencies ?? []).find((d) => d.uri === SOURCE_URI)?.digest?.sha256,
+        revision: p.buildDefinition?.externalParameters?.revision,
+        builder: p.buildDefinition?.internalParameters?.builder,
+        image: p.buildDefinition?.internalParameters?.image ?? null,
+        allowedImages: catPolicy?.allowed_images ?? [],
+      };
       admitted.push({ category, kind: "provenance", predicate: { passedTests: [], warnedTests: [], failedTests: [] } });
       seen.set(category, { index: i, digest: sha256(JSON.stringify(bundle)), signer: v.identity });
       return;
@@ -194,15 +219,25 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
     ].filter(Boolean);
     problems.length ? fail("build", "G14", problems.join("; ")) : pass("build", "G14");
 
-    // The bank's rebuild. `rebuild` may be a precomputed digest (the negative cases reuse one rebuild).
-    const rb = typeof rebuild === "string" ? { digest: rebuild } : rebuild ? rebuildJar(root, artifactName) : null;
+    // G16: the build ran in a container image the bank accepts (pinned by digest).
+    const pinned = provenance.builder === "container" && provenance.allowedImages.includes(provenance.image);
+    if (pinned) pass("build", "G16");
+    else if (provenance.builder === "host" && allowHost) pass("build", "G16");
+    else fail("build", "G16", provenance.builder === "container"
+      ? `build image ${provenance.image} is not in the policy's allowed_images`
+      : "built on the host, not in a pinned build image");
+
+    // The bank's rebuild, with the provenance's version and image. `rebuild` may be
+    // a precomputed digest (the negative cases reuse one rebuild).
+    const rb = typeof rebuild === "string" ? { digest: rebuild }
+      : rebuild ? rebuildJar(root, { revision: provenance.revision, image: provenance.image, artifactId: coords.artifactId }) : null;
     report_rebuild = rb?.digest ?? null;
     if (rb?.error) fail("build", "G15", rb.error);
     else if (rb) rb.digest === provenance.jar ? pass("build", "G15") : fail("build", "G15", `rebuilt jar ${rb.digest}, provenance says ${provenance.jar}`);
   }
 
   // Semantic layer: Rego.
-  const denies = evalRego({ policy, catalog, source_digest: src.digest, artifact_digest: deliveredDigest, attestations: admitted });
+  const denies = evalRego({ policy, catalog, source_digest: src.digest, artifact_digest: deliveredDigest, product_purl: productPurl, attestations: admitted });
   for (const d of denies) fail(d.category, d.rule, d.detail);
   const denied = new Set(denies.map((d) => `${d.rule}|${d.category}`));
   for (const a of admitted) for (const r of SEMANTIC) if (a.kind === "test-result" && r !== "G12" && !denied.has(`${r}|${a.category}`)) pass(a.category, r);
@@ -211,7 +246,7 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
   const failures = checks.filter((c) => !c.ok);
   return {
     verdict: failures.length ? "REFUSE" : "ADMIT",
-    productType: catalog.product.type, productPurl, jarPurl, sourceDigest: src.digest, artifactDigest: deliveredDigest, rebuildDigest: report_rebuild,
+    productType: catalog.product.type, productPurl, jarPurl, version: jar?.version, sourceDigest: src.digest, artifactDigest: deliveredDigest, rebuildDigest: report_rebuild,
     bundle: { path: join(evidence, BUNDLE_NAME), digest: existsSync(bundlePath) ? fileDigest(bundlePath) : null },
     categories: [...seen.keys()], attestations: Object.fromEntries(seen), checks, failures,
   };
@@ -263,7 +298,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const report = verify(opts);
   printReport(report);
   const out = join(values.root, values.evidence, "vsa.sigstore.json");
-  signStatement(vsa(report, opts), join(values.root, ".keys/bank-gate.key"), out, join(values.root, ".keys/signing-config.offline.json"));
+  signStatement(vsa(report, opts), "bank-gate", out, { keyDir: join(values.root, ".keys") });
   writeFileSync(join(values.root, values.evidence, "gate-report.json"), JSON.stringify(report, null, 2));
   console.log(`Signed VSA (${report.verdict === "ADMIT" ? "PASSED" : "FAILED"}) -> ${out}`);
   process.exitCode = report.verdict === "ADMIT" ? 0 : 1;

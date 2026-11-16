@@ -1,74 +1,78 @@
 #!/usr/bin/env node
-// Build step: `mvn package` the product into a reproducible jar, deliver it to
-// out/artifacts/, and sign SLSA provenance v1 for it as the build-service identity.
+// Build step: build the product into a reproducible jar inside the pinned build
+// container, deliver it to out/artifacts/, and sign SLSA provenance v1 for it as
+// the build-service identity.
 //
-// The test categories then run against out/artifacts/<jar> and name it as a
-// subject, so the test results are bound to the artifact the bank receives.
-import { execFileSync, spawnSync } from "node:child_process";
-import { copyFileSync, mkdirSync } from "node:fs";
-import { basename } from "node:path";
+//   DEMO_REVISION=0.1.0-ci.42 node evidence/build.mjs
+//
+// The version (Maven ${revision}) is set per build so every build can be
+// published to a Maven repository. The test categories then run against
+// out/artifacts/<jar> and name it as a subject.
+import { copyFileSync, mkdirSync, readdirSync, rmSync } from "node:fs";
+import { basename, join } from "node:path";
 import os from "node:os";
 import { fileDigest, sourceDigest } from "./lib/digest.mjs";
-import { signStatement } from "./lib/cosign.mjs";
-import { ensureKeys, keyPath, signingConfig } from "./lib/keys.mjs";
-import { loadCatalog } from "./lib/catalog.mjs";
+import { signStatement } from "./lib/signing.mjs";
+import { ensureKeys } from "./lib/keys.mjs";
 import { runUrl, STATEMENT_TYPE, SOURCE_URI, gitCommit } from "./lib/statement.mjs";
 import { writeBundle } from "./lib/bundle.mjs";
+import { ARTIFACT_DIR, buildRevision, coordinates, delivered } from "./lib/product.mjs";
+import { BUILD_IMAGE, mavenBuild, toolchain } from "./lib/maven-build.mjs";
 
 export const PROVENANCE_TYPE = "https://slsa.dev/provenance/v1";
-export const BUILD_TYPE = "https://example.com/code-tracer-demo/maven-package/v1";
-export const BUILD_COMMAND = ["mvn", "-B", "-q", "-f", "product/pom.xml", "clean", "package", "-DskipTests"];
-export const ARTIFACT_DIR = "out/artifacts";
+export const BUILD_TYPE = "https://example.com/code-tracer-demo/maven-container-build/v1";
 
-const tool = (cmd, args) => {
-  try { return execFileSync(cmd, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).split("\n")[0].trim(); } catch { return "unknown"; }
+ensureKeys();
+const { artifactId } = coordinates();
+const revision = buildRevision();
+const started = new Date();
+const b = mavenBuild({ revision, artifactId, allowHost: process.env.DEMO_ALLOW_HOST_BUILD === "1" });
+if (b.error) {
+  console.error(b.error);
+  process.exit(1);
+}
+const finished = new Date();
+
+mkdirSync(ARTIFACT_DIR, { recursive: true });
+for (const f of readdirSync(ARTIFACT_DIR)) rmSync(join(ARTIFACT_DIR, f));
+copyFileSync(b.jar, join(ARTIFACT_DIR, basename(b.jar)));
+const jar = delivered();
+const src = sourceDigest();
+const commit = gitCommit();
+const tools = toolchain(b.builder, b.image);
+const [imageName, imageDigest] = (b.image ?? "").split("@sha256:");
+
+const statement = {
+  _type: STATEMENT_TYPE,
+  subject: [{ name: jar.jarPurl, digest: { sha256: fileDigest(jar.path) } }],
+  predicateType: PROVENANCE_TYPE,
+  predicate: {
+    buildDefinition: {
+      buildType: BUILD_TYPE,
+      externalParameters: { source: SOURCE_URI, pom: "product/pom.xml", revision, command: b.command },
+      internalParameters: {
+        builder: b.builder,
+        ...(b.image ? { image: b.image } : { os: `${os.type()} ${os.release()} ${os.arch()}` }),
+        javac: tools.javac,
+        maven: tools.maven,
+        reproducible: "project.build.outputTimestamp is fixed in product/pom.xml",
+      },
+      resolvedDependencies: [
+        { uri: SOURCE_URI, digest: { sha256: src.digest, ...(commit ? { gitCommit: commit } : {}) } },
+        ...(b.image ? [{ uri: `docker://${imageName}`, digest: { sha256: imageDigest } }] : []),
+      ],
+    },
+    runDetails: {
+      builder: { id: "https://example.com/code-tracer-demo/builders/build-service" },
+      metadata: { invocationId: runUrl(), startedOn: started.toISOString(), finishedOn: finished.toISOString() },
+    },
+  },
 };
 
-export function mavenBuild(cwd = ".") {
-  const r = spawnSync(BUILD_COMMAND[0], BUILD_COMMAND.slice(1), { cwd, stdio: "inherit" });
-  if (r.status !== 0) throw new Error(`build failed (exit ${r.status})`);
-}
-
-if (process.argv[1] && import.meta.url.endsWith(basename(process.argv[1]))) {
-  ensureKeys();
-  const catalog = loadCatalog();
-  const started = new Date();
-  mavenBuild();
-  const finished = new Date();
-
-  mkdirSync(ARTIFACT_DIR, { recursive: true });
-  const delivered = `${ARTIFACT_DIR}/${basename(catalog.product.artifact)}`;
-  copyFileSync(catalog.product.artifact, delivered);
-  const src = sourceDigest();
-  const commit = gitCommit();
-
-  const statement = {
-    _type: STATEMENT_TYPE,
-    subject: [{ name: `${catalog.product.purl}?type=jar`, digest: { sha256: fileDigest(delivered) } }],
-    predicateType: PROVENANCE_TYPE,
-    predicate: {
-      buildDefinition: {
-        buildType: BUILD_TYPE,
-        externalParameters: { command: BUILD_COMMAND.join(" "), pom: "product/pom.xml" },
-        internalParameters: {
-          javac: tool("javac", ["-version"]),
-          maven: tool("mvn", ["-v"]),
-          os: `${os.type()} ${os.release()} ${os.arch()}`,
-          reproducible: { outputTimestamp: "product/pom.xml project.build.outputTimestamp" },
-        },
-        resolvedDependencies: [
-          { uri: SOURCE_URI, digest: { sha256: src.digest, ...(commit ? { gitCommit: commit } : {}) } },
-        ],
-      },
-      runDetails: {
-        builder: { id: "https://example.com/code-tracer-demo/builders/build-service" },
-        metadata: { invocationId: runUrl(), startedOn: started.toISOString(), finishedOn: finished.toISOString() },
-      },
-    },
-  };
-
-  mkdirSync("out/attestations", { recursive: true });
-  signStatement(statement, keyPath("build-service"), "out/attestations/build.sigstore.json", signingConfig());
-  writeBundle();
-  console.log(`built ${delivered}\n  sha256 ${statement.subject[0].digest.sha256}\n  source ${src.digest}\nprovenance -> out/attestations/build.sigstore.json (cosign, signed by build-service)`);
-}
+mkdirSync("out/attestations", { recursive: true });
+signStatement(statement, "build-service", "out/attestations/build.sigstore.json");
+writeBundle();
+console.log(`built ${jar.path} (${jar.jarPurl}) ${b.builder === "container" ? `in ${BUILD_IMAGE.split("@")[0]}` : "on the host"}
+  sha256 ${statement.subject[0].digest.sha256}
+  source ${src.digest}
+provenance -> out/attestations/build.sigstore.json (signed by build-service)`);

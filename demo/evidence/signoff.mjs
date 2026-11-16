@@ -10,8 +10,8 @@ import { parseArgs } from "node:util";
 import { CATALOG_PATH, idsFor, loadCatalog, scenariosFor } from "./lib/catalog.mjs";
 import { descriptor } from "./lib/digest.mjs";
 import { buildStatement } from "./lib/statement.mjs";
-import { signStatement } from "./lib/cosign.mjs";
-import { IDENTITIES, keyPath, signingConfig } from "./lib/keys.mjs";
+import { signStatement } from "./lib/signing.mjs";
+import { IDENTITIES } from "./lib/keys.mjs";
 import { writeBundle } from "./lib/bundle.mjs";
 
 const { values } = parseArgs({
@@ -48,6 +48,6 @@ statement.predicate.url = `signoff://${reviewer}/${new Date(now).toISOString()}`
 
 const out = values.out ?? `out/attestations/${category}.sigstore.json`;
 mkdirSync("out/attestations", { recursive: true });
-signStatement(statement, keyPath(reviewer), out, signingConfig());
+signStatement(statement, reviewer, out);
 writeBundle();
 console.log(`${IDENTITIES[reviewer].name} signed ${category} (${ids.join(", ")}): ${result} -> ${out}`);

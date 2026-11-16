@@ -17,8 +17,8 @@ import { CATEGORIES, AUTOMATED, idFromName, ctrfReport } from "./categories.mjs"
 import { CATALOG_PATH, idsFor, loadCatalog, scenariosFor } from "./lib/catalog.mjs";
 import { descriptor } from "./lib/digest.mjs";
 import { buildStatement, classify } from "./lib/statement.mjs";
-import { signStatement } from "./lib/cosign.mjs";
-import { ensureKeys, keyPath, signingConfig } from "./lib/keys.mjs";
+import { signStatement } from "./lib/signing.mjs";
+import { ensureKeys } from "./lib/keys.mjs";
 import { writeBundle } from "./lib/bundle.mjs";
 
 const args = process.argv.slice(2);
@@ -73,7 +73,7 @@ for (const category of selected) {
 
   const classified = classify(ev.tests, ids, idFromName);
   const statement = buildStatement({ category, classified, configuration, started, finished, tool: ev.tool, extra: ev.extra });
-  signStatement(statement, keyPath(def.signer), `out/attestations/${category}.sigstore.json`, signingConfig());
+  signStatement(statement, def.signer, `out/attestations/${category}.sigstore.json`);
   rows.push({ category, result: statement.predicate.result, passed: classified.passed.length, warned: classified.warned.length,
     failed: classified.failed.length + classified.missing.length + classified.unknown.length, signer: def.signer });
 }

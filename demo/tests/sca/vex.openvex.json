@@ -1,6 +1,6 @@
 {
   "@context": "https://openvex.dev/ns/v0.2.0",
-  "@id": "https://example.com/vex/fx-quote-demo/0.1.0",
+  "@id": "https://example.com/vex/fx-quote-demo",
   "author": "fx-quote-demo maintainers",
   "timestamp": "2026-11-15T00:00:00Z",
   "version": 1,

@@ -1,36 +1,25 @@
 name: demo test evidence
 
-# Runs the demo end to end: a reproducible Maven build of the Java product with
-# signed SLSA provenance, every test category against the built jar, conversion
-# to CTRF/SARIF/OSV (against a freshly downloaded, digest-pinned OSV Maven
-# snapshot), signed in-toto test-result attestations bundled as .intoto.jsonl,
-# named sign-offs, the gate (structural checks, a rebuild of the jar, and the
-# Rego policy), and the gate's negative cases. Every attestation is a Sigstore
-# bundle made with cosign. The binaries are uploaded as a run artifact, and the
-# text evidence record (demo/EVIDENCE.md) is committed back to the branch.
+# Runs the test-evidence demo end to end, one build per run:
 #
-# Signing uses cosign key pairs generated in the job and an offline signing
-# config (no Fulcio, no Rekor), so nothing about this private repository goes to
-# the public transparency log; trust does not carry across runs, so the record
-# includes each run's public keys. The optional github-attest job
-# additionally publishes each predicate through GitHub artifact attestations
-# (Sigstore keyless, identity = this workflow). That needs a public repository or
-# GitHub Enterprise Cloud, so it is off by default.
+#   build  (demo-build.yml)  reproducible jar in the pinned Maven image + SLSA provenance
+#   tests  (demo-tests.yml)  every automated category except load, against the jar
+#   load   (demo-load.yml)   load test, against the jar
+#   gate   (this file)       named sign-offs, the gate (cosign verification, rebuild in the
+#                            pinned image, Rego policy), the text evidence record, the gate's
+#                            negative cases, publishing the jar with its evidence sidecars to
+#                            GitHub Packages, and committing demo/EVIDENCE.md to the branch
+#
+# build, tests and load are separate reusable workflows so that cosign keyless
+# signing gives each one its own certificate identity (Fulcio names the
+# reusable workflow file). Each signature is recorded in the public Rekor log.
+# The named sign-offs and the gate's VSA are signed with cosign keys: a workflow
+# cannot sign as a person.
 
 on:
   workflow_dispatch:
-    inputs:
-      github-attest:
-        description: "Also publish predicates with actions/attest (public repo or GHEC only)"
-        type: boolean
-        default: false
-  workflow_call:
-    inputs:
-      github-attest:
-        type: boolean
-        default: false
   pull_request:
-    paths: ["demo/**", ".github/workflows/demo-test-evidence.yml"]
+    paths: ["demo/**", ".github/workflows/demo-*.yml", ".github/actions/demo-setup/**", "!demo/EVIDENCE.md"]
 
 permissions:
   contents: read
@@ -40,55 +29,67 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  evidence:
+  vars:
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.v.outputs.ref }}
+      revision: ${{ steps.v.outputs.revision }}
+    steps:
+      - id: v
+        run: |
+          echo "ref=${{ github.head_ref || github.ref_name }}" >> "$GITHUB_OUTPUT"
+          echo "revision=0.1.0-ci.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: vars
+    permissions: { contents: read, id-token: write }
+    uses: ./.github/workflows/demo-build.yml
+    with:
+      ref: ${{ needs.vars.outputs.ref }}
+      revision: ${{ needs.vars.outputs.revision }}
+
+  tests:
+    needs: [vars, build]
+    permissions: { contents: read, id-token: write }
+    uses: ./.github/workflows/demo-tests.yml
+    with:
+      ref: ${{ needs.vars.outputs.ref }}
+
+  load:
+    needs: [vars, build]
+    permissions: { contents: read, id-token: write }
+    uses: ./.github/workflows/demo-load.yml
+    with:
+      ref: ${{ needs.vars.outputs.ref }}
+
+  gate:
+    needs: [vars, tests, load]
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # to commit demo/EVIDENCE.md back to the branch
+      contents: write   # commit demo/EVIDENCE.md to the branch
+      packages: write   # publish to GitHub Packages
     defaults:
       run:
         working-directory: demo
-    outputs:
-      jar-digest: ${{ steps.digest.outputs.sha256 }}
+    env:
+      DEMO_MAVEN_REPO_URL: https://maven.pkg.github.com/${{ github.repository }}
+      DEMO_REBUILD_OFFLINE: "0"   # Maven Central stands in for the bank's dependency mirror
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.head_ref || github.ref_name }}   # the branch itself, so the record can be committed to it
-
-      - uses: actions/setup-java@v6
+          ref: ${{ needs.vars.outputs.ref }}
+      - uses: ./.github/actions/demo-setup
         with:
-          distribution: temurin
-          java-version: 21
-          cache: maven
-          cache-dependency-path: demo/product/pom.xml
-
-      - uses: actions/setup-node@v7
+          java: "true"
+          scanners: "true"
+          maven-server: "true"
+      - uses: actions/download-artifact@v8
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: demo/package-lock.json
+          pattern: demo-*
+          merge-multiple: true
+          path: demo/out
 
-      - name: Install dependencies
-        run: npm ci --no-audit --no-fund
-
-      - name: Install scanners and policy engine (gitleaks, semgrep, opa)
-        run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz \
-            | sudo tar xz -C /usr/local/bin gitleaks
-          pipx install semgrep==1.185.0
-          sudo curl -sSL -o /usr/local/bin/opa https://github.com/open-policy-agent/opa/releases/download/v1.4.2/opa_linux_amd64_static
-          sudo chmod +x /usr/local/bin/opa
-          sudo curl -sSL -o /usr/local/bin/cosign https://github.com/sigstore/cosign/releases/download/v3.1.4/cosign-linux-amd64
-          sudo chmod +x /usr/local/bin/cosign
-          gitleaks version && semgrep --version && opa version | head -1 && cosign version | grep GitVersion
-
-      - name: Build the jar and sign SLSA provenance
-        run: npm run build
-
-      # Playwright (JS and Java) uses the Google Chrome preinstalled on ubuntu-latest (channel "chrome").
-      - name: Run all test categories against the jar and sign the evidence
-        run: npm run evidence
-
-      - name: Named sign-offs (demo reviewers)
+      - name: Named sign-offs (demo reviewers, cosign keys)
         run: npm run signoffs
 
       - name: Gate policy tests (Rego)
@@ -103,9 +104,10 @@ jobs:
       - name: Gate negative cases
         run: npm run gate:negative
 
-      - id: digest
-        name: Jar digest
-        run: echo "sha256=$(sha256sum out/artifacts/fx-quote-demo-0.1.0.jar | cut -c1-64)" >> "$GITHUB_OUTPUT"
+      - name: Publish the jar and evidence sidecars to GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run publish:maven
 
       - name: Summary
         if: always()
@@ -113,19 +115,20 @@ jobs:
           {
             echo "### Test evidence"
             echo
-            echo "| category | result | passed | warned | failed |"
-            echo "|---|---|---|---|---|"
+            echo "| category | result | signer |"
+            echo "|---|---|---|"
             for f in out/attestations/*.sigstore.json; do
               node -e '
                 const b = JSON.parse(require("fs").readFileSync(process.argv[1]));
                 const s = JSON.parse(Buffer.from(b.dsseEnvelope.payload, "base64"));
-                const p = s.predicate;
-                if (s.predicateType === "https://slsa.dev/provenance/v1") console.log(`| build (SLSA provenance) | ${s.subject[0].digest.sha256.slice(0, 12)}… | | | |`);
-                else console.log(`| ${p["x-code-tracer"].category} | ${p.result} | ${p.passedTests.length} | ${p.warnedTests.length} | ${p.failedTests.length} |`);
+                const vm = b.verificationMaterial;
+                const keyless = !!(vm.certificate || vm.x509CertificateChain);
+                const cat = s.predicateType === "https://slsa.dev/provenance/v1" ? "build (SLSA provenance)" : s.predicate["x-code-tracer"].category;
+                console.log(`| ${cat} | ${s.predicate.result ?? "—"} | ${keyless ? "keyless, Rekor " + (vm.tlogEntries?.[0]?.logIndex ?? "?") : "cosign key"} |`);
               ' "$f"
             done
             echo
-            node -e 'const r = require("./out/gate-report.json"); console.log(`**Gate verdict:** ${r.verdict}`)'
+            [ -f out/gate-report.json ] && node -e 'const r = require("./out/gate-report.json"); console.log(`**Gate verdict:** ${r.verdict} for ${r.productPurl}`)'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v7
@@ -153,34 +156,5 @@ jobs:
           git add EVIDENCE.md
           if git diff --cached --quiet; then echo "record unchanged"; exit 0; fi
           git commit -m "Record test evidence from run ${GITHUB_RUN_ID} [skip ci]"
-          git push origin "HEAD:${{ github.head_ref || github.ref_name }}"
-
-  github-attest:
-    needs: evidence
-    if: ${{ inputs.github-attest }}
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      attestations: write
-      contents: read
-      artifact-metadata: write
-    strategy:
-      matrix:
-        category: [unit, integration, contract, e2e, uat, accessibility, load, sast, secrets, sca, license, data-quality]
-    steps:
-      - uses: actions/download-artifact@v8
-        with:
-          name: test-evidence
-          path: evidence
-      - name: Extract predicate
-        run: |
-          node -e '
-            const b = JSON.parse(require("fs").readFileSync(process.argv[1]));
-            require("fs").writeFileSync("predicate.json", JSON.stringify(JSON.parse(Buffer.from(b.dsseEnvelope.payload, "base64")).predicate));
-          ' "evidence/out/attestations/${{ matrix.category }}.sigstore.json"
-      - uses: actions/attest@v4
-        with:
-          subject-name: pkg:maven/demo.codetracer/fx-quote-demo@0.1.0?type=jar
-          subject-digest: sha256:${{ needs.evidence.outputs.jar-digest }}
-          predicate-type: https://in-toto.io/attestation/test-result/v0.1
-          predicate-path: predicate.json
+          git pull --rebase origin "${{ needs.vars.outputs.ref }}"
+          git push origin "HEAD:${{ needs.vars.outputs.ref }}"

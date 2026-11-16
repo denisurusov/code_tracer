@@ -3,8 +3,10 @@
 A small Java product, a reproducible build, tests in every category, and the
 full path from "tests ran" to "the bank admits it":
 
-1. **Build.** Maven builds a reproducible jar. The build service signs SLSA
-   provenance for it: this jar digest came from this source digest.
+1. **Build.** Maven builds a reproducible jar inside a build image pinned by
+   digest, with a version unique to the build. The build service signs SLSA
+   provenance for it: this jar digest came from this source digest in this
+   image.
 2. **Scenarios** say what each test is meant to verify: a catalog keyed by
    stable test IDs, Gherkin features, and per-category config.
 3. **Results** are recorded in standard formats: CTRF for pass/fail, SARIF for
@@ -14,10 +16,15 @@ full path from "tests ran" to "the bank admits it":
    [test-result](https://github.com/in-toto/attestation/blob/main/spec/predicates/test-result.md)
    statement per category, signed with **cosign** (`cosign attest-blob
    --statement`) into a Sigstore bundle, all carried in one `.intoto.jsonl`
-   file with the provenance.
-5. **The record.** [`EVIDENCE.md`](EVIDENCE.md) is a text version of the
-   evidence, committed to the repository by CI: per category, the format, the
-   result, the signer, and the hash and path of every binary and report.
+   file with the provenance. In CI the build, tests and load test sign
+   **keyless**: each runs in its own reusable workflow, so each gets its own
+   Fulcio certificate identity, and every signature is in the public Rekor log.
+5. **The record and the sidecar.** [`EVIDENCE.md`](EVIDENCE.md) is a text
+   version of the evidence, committed to the repository by CI after every
+   build: per category, the format, the result, the signer, and the hash and
+   path of every binary and report. The jar is published to GitHub Packages
+   (Maven) with the evidence bundle and the record as sidecars under the same
+   coordinates.
 6. **The gate** verifies every bundle with `cosign verify-blob-attestation`,
    checks the evidence against its own clone, rebuilds the jar itself and
    compares digests, then evaluates the semantic rules in Rego (OPA).
@@ -53,6 +60,11 @@ npm run manifest                 # write EVIDENCE.md from the bundle, the gate r
 npm run gate:negative            # 21 tampered copies refused by a named rule, 1 VEX case admitted
 ```
 
+The build runs in Docker (`maven:3.9.16-eclipse-temurin-21`, pinned by digest).
+Without Docker, set `DEMO_ALLOW_HOST_BUILD=1` to build on the host; the gate's
+G16 then accepts the host build for that run only. The version defaults to
+`0.1.0`; `DEMO_REVISION` sets it (CI uses `0.1.0-ci.<run number>`).
+
 Without network access to OSV, the SCA category fails closed ("advisory source
 unavailable") and the gate refuses. `DEMO_OSV_SNAPSHOT=<dir of OSV records>`
 substitutes a local snapshot; the gate's VEX cases use
@@ -60,7 +72,8 @@ substitutes a local snapshot; the gate's VEX cases use
 
 ## The product
 
-`product/` is a Maven project (`pkg:maven/demo.codetracer/fx-quote-demo@0.1.0`):
+`product/` is a Maven project (`pkg:maven/demo.codetracer/fx-quote-demo`, version
+`${revision}`, set per build):
 an FX quote service on the JDK's HTTP server, with a JSON API (`/api/quote`,
 `/api/pairs`, `/api/health`) described by `src/main/resources/openapi.json`, one
 web page, and a rates table in `src/main/resources/data/rates.json`. Its one
@@ -68,14 +81,22 @@ runtime dependency is Jackson, so the dependency and license checks have
 something to look at. The build produces one runnable shaded jar.
 
 **Reproducible build.** `project.build.outputTimestamp` in the POM fixes every
-archive timestamp, so the same source and toolchain give the same jar digest.
-The gate relies on this: it rebuilds from its clone and compares (G15).
+archive timestamp, and the build image fixes the JDK and Maven, so the same
+source, version and image give the same jar digest. The gate relies on this: it
+rebuilds from its clone with the version and image the provenance names and
+compares (G15). Without the image, a jar built on a different JDK build differs
+even from identical source.
+
+**Versions.** Each build gets its own version, because a Maven repository
+accepts a version only once. The version is read back from the jar's own
+`pom.properties`, so the catalog and VEX documents name the product by
+versionless purl, which in purl and OpenVEX terms covers every version.
 
 ## Categories and formats
 
 | Category | Scenario format | Tool | Runs against | Result format | Signer |
 |---|---|---|---|---|---|
-| build | `product/pom.xml` | Maven | source | SLSA provenance v1 | build-service |
+| build | `product/pom.xml` | Maven in the pinned image | source | SLSA provenance v1 | build-service |
 | unit | catalog + JUnit 5 test class | JUnit Jupiter (surefire) | classes | JUnit XML → CTRF | ci-pipeline |
 | integration | Gherkin `.feature` + Java steps | Cucumber-JVM | jar | JUnit XML → CTRF, Cucumber Messages | ci-pipeline |
 | contract | Gherkin + `openapi.json` | Cucumber-JVM + json-schema-validator | jar | JUnit XML → CTRF, Cucumber Messages | ci-pipeline |
@@ -104,18 +125,18 @@ demo uses the ones that apply:
 
 | Standard | In the register | In this demo |
 |---|---|---|
-| **purl** | subject identity for all attestations | The jar is `pkg:maven/demo.codetracer/fx-quote-demo@0.1.0?type=jar` in the provenance, every test attestation and the VSA. The gate checks the catalog purl against the POM coordinates (G05); LIC-002 checks the SBOM names the same purl; SARIF findings and VEX statements identify dependencies by purl. |
+| **purl** | subject identity for all attestations | The jar is `pkg:maven/demo.codetracer/fx-quote-demo@<version>?type=jar` in the provenance, every test attestation and the VSA. The gate checks the catalog purl against the POM coordinates (G05); LIC-002 checks the SBOM names the same purl; SARIF findings and VEX statements identify dependencies by purl. |
 | **SLSA provenance** | L3 build | `out/attestations/build.sigstore.json`: jar digest from source digest, build command, toolchain, builder identity. |
-| **Reproducible Builds** | L8 rebuild, digest equality | Fixed `outputTimestamp`; the gate rebuilds offline and compares (G15). |
+| **Reproducible Builds** | L8 rebuild, digest equality | Fixed `outputTimestamp` and a build image pinned by digest; the gate rebuilds in that image and compares (G15), and refuses builds from other images (G16). |
 | **in-toto** Attestation Framework | the framework the chain compiles to | One test-result statement per category. |
 | **DSSE** | the signing envelope | Inside every Sigstore bundle: attestations, sign-offs and the VSA. |
 | **SLSA VSA** | L8, the verifier's attestation | The gate's signed output, with the bundle and policy digests as inputs. |
 | **Rego / OPA** | the semantic gate | `gate/policy/gate.rego` holds G09–G13; `gate_test.rego` tests it with `opa test`. Structural checks, provenance and the rebuild (G01–G08, G14, G15) stay in JavaScript, as the architecture splits them. |
 | **CycloneDX** (authoritative) / **SPDX** | L6 SBOM; SPDX license IDs inside CycloneDX | CycloneDX SBOM for runtime dependencies from `cyclonedx-maven-plugin`; licenses are SPDX IDs. No SPDX projection is emitted. |
-| **OSV schema** | vuln records keyed by purl; pinned snapshot | SCA matches SBOM components against OSV's Maven export. The snapshot's sha256 and URI are in the SCA attestation; each matched record is kept by digest. VEX names vulnerabilities by OSV ID. |
+| **OSV schema** | vuln records keyed by purl; pinned snapshot | SCA matches SBOM components against OSV's Maven export. The snapshot is recorded by its sha256 and URL only (not retained); each matched record is kept by digest. VEX names vulnerabilities by OSV ID. |
 | **OpenVEX** | L7 exploitability, must reference proof | `tests/sca/vex.openvex.json`. A statement can suppress a finding (SARIF `suppressions`), but the gate admits it only if it cites a proof test from the catalog that passed (G13). The citation is an `x-code-tracer-proof` field on the statement. |
-| **`.intoto.jsonl` sidecar** | distribution where OCI referrers aren't available | `out/evidence.intoto.jsonl` is what the gate reads. |
-| **Sigstore** (cosign) | keyless signing, transparency log | cosign 3.x signs every statement into a Sigstore bundle (v0.3) and the gate verifies with cosign. Signing is key-based with an offline signing config, so there is no Fulcio certificate and no Rekor entry (see below); the workflow's optional `github-attest` job publishes through Sigstore for real. |
+| **`.intoto.jsonl` sidecar** | distribution where OCI referrers aren't available | `out/evidence.intoto.jsonl` is what the gate reads, and is published to GitHub Packages next to the jar as `<artifactId>-<version>-evidence.intoto.jsonl`. |
+| **Sigstore** (cosign) | keyless signing, transparency log | cosign 3.x signs every statement into a Sigstore bundle (v0.3) and the gate verifies with cosign. In CI the workflow identities sign keyless (Fulcio certificate, Rekor entry); locally, and for named sign-offs, signing uses cosign keys. |
 
 Not used here: **CSAF** (the regulator-facing VEX variant), **TUF** (trust root;
 `.keys/trust.json` stands in for it), **OCI Referrers**, and **CPE**, which the
@@ -195,8 +216,8 @@ additions. in-toto and OpenVEX consumers ignore fields they don't recognize.
 
 | Rule | Layer | Name | Refuses when |
 |---|---|---|---|
-| G01 | cosign | signature-valid | `cosign verify-blob-attestation` rejects the bundle (bad signature, wrong predicate type, or the jar is not a subject) |
-| G02 | JS | signer-trusted | the bundle's key hint is not in the trust store |
+| G01 | cosign | signature-valid | `cosign verify-blob-attestation` rejects the bundle (bad signature, certificate or Rekor entry, wrong predicate type, or the jar is not a subject) |
+| G02 | JS | signer-trusted | a keyless bundle's certificate identity matches no trusted workflow, or a key-signed bundle's key hint is not in the trust store |
 | G03 | JS | signer-authorized-for-category | the signer is trusted but not allowed for that category (e.g. CI signing the provenance or the load results, the wrong person signing UX) |
 | G04 | JS | statement-is-test-result | the statement's predicate type is not the one the category requires |
 | G05 | JS | subject-matches-source | a subject's jar or source digest differs from the delivered jar or the clone, or the catalog purl doesn't match the POM |
@@ -209,31 +230,35 @@ additions. in-toto and OpenVEX consumers ignore fields they don't recognize.
 | G12 | Rego | required-categories-present | a category the product type requires (including `build`) has no valid attestation |
 | G13 | Rego | vex-backed-by-proof | a VEX statement suppressed a finding without a valid justification and a passed proof test |
 | G14 | JS | provenance-consistent | the provenance's source or jar differs from the clone or the delivered jar, or a test attestation names a different jar |
-| G15 | JS | rebuild-matches | the gate's own rebuild of the clone does not produce the jar the provenance names |
+| G15 | JS | rebuild-matches | the gate's own rebuild of the clone (same version, same image) does not produce the jar the provenance names |
+| G16 | JS | toolchain-pinned | the provenance names a build image that is not in the policy's `allowed_images`, or a host build |
 
 Required categories per product type, the allowed signers per category and the
 environment spec's required fields are in [`gate/policy.yaml`](gate/policy.yaml).
 
 ## What is simulated
 
-- **Identities.** Signing is real cosign, but with one cosign key pair per
-  identity in `.keys/` (gitignored, generated on first run) in place of
-  keyless certificates: `build-service` for an isolated build workflow,
-  `ci-pipeline` for the central test workflow, `perf-env` for the performance
-  environment, and `alice.chen` / `raj.patel` for named reviewers' corporate
-  identities. The trust store maps each key hint to an identity the way the
-  gate would match a certificate's identity and OIDC issuer under keyless
-  signing. The signing config is empty, so no transparency log entry or
-  timestamp is made; verification uses `--insecure-ignore-tlog`.
+- **Identities.** In CI, `build-service`, `ci-pipeline` and `perf-env` are
+  real keyless identities: the reusable workflows `demo-build.yml`,
+  `demo-tests.yml` and `demo-load.yml`, matched by certificate identity and
+  the GitHub Actions OIDC issuer (`IDENTITIES` in `evidence/lib/keys.mjs`).
+  Locally they sign with cosign keys in `.keys/` (gitignored) and an offline
+  signing config. `alice.chen` / `raj.patel` (named reviewers) and `bank-gate`
+  always sign with keys; in production they would sign keyless with their own
+  corporate identity. `perf-env` runs on the same kind of hosted runner as the
+  tests; it stands for a separate performance environment.
+- **Negative cases.** `npm run gate:negative` re-signs a copy of the run's
+  evidence with keys before tampering with it, so the cases test the gate's
+  rules, not Sigstore.
 - **Human sign-offs.** The UX findings and UAT notes are sample documents; no
   study was run.
 - **Load environment.** The load test runs on the same host as everything else.
   The environment spec records that, and the gate checks the spec is complete
   and describes the delivered jar and its source.
-- **The bank's rebuild** runs on the same machine and toolchain as the build,
-  offline against the local Maven repository. A real bank would rebuild on its
-  own infrastructure from its own dependency mirror, with the toolchain the
-  provenance names.
+- **The bank's rebuild** runs in the same pinned image the provenance names.
+  Locally it runs offline against the local Maven repository (standing in for
+  the bank's mirror); in CI it fetches from Maven Central
+  (`DEMO_REBUILD_OFFLINE=0`).
 
 ## The evidence record
 
@@ -250,20 +275,33 @@ the branch by CI after each run. It has:
 - the signers' key hints and public keys, so the record can be checked with
   plain `cosign verify-blob-attestation` against the binaries.
 
-The binaries themselves (jar, bundles, reports) are not committed. In CI they
-are the run artifact `test-evidence`, kept for 90 days.
+The binaries themselves (jar, bundles, reports) are not committed. Each build
+publishes them to GitHub Packages:
+
+```
+demo.codetracer:fx-quote-demo:0.1.0-ci.<n>
+  fx-quote-demo-0.1.0-ci.<n>.jar                       the jar
+  fx-quote-demo-0.1.0-ci.<n>-evidence.intoto.jsonl     classifier evidence: every Sigstore bundle
+  fx-quote-demo-0.1.0-ci.<n>-evidence-record.md        classifier evidence-record: EVIDENCE.md
+```
+
+GitHub Packages requires a token with `read:packages` to download, even from a
+public repository. The full `out/` directory is also kept as the run artifact
+`test-evidence` for 90 days.
 
 ## CI
 
-[`.github/workflows/demo-test-evidence.yml`](../.github/workflows/demo-test-evidence.yml)
-runs the whole demo on pull requests that touch `demo/` and on manual dispatch,
-with Java 21 (Temurin), cosign 3.1.4 and a fresh OSV snapshot. It writes a
-results table to the run summary, uploads the jar and the evidence (90-day
-retention), and commits `EVIDENCE.md` back to the branch. Commits made with the
-workflow token do not start another run. Its optional
-`github-attest` job publishes each predicate through `actions/attest`
-(Sigstore keyless, identity = the workflow); that needs a public repository or
-GitHub Enterprise Cloud.
+[`demo-test-evidence.yml`](../.github/workflows/demo-test-evidence.yml) runs on
+pull requests that touch the demo and on manual dispatch. One run is one build:
+
+| Job | Workflow | Signs as | Does |
+|---|---|---|---|
+| build | `demo-build.yml` | build-service (keyless) | builds in the pinned image, signs provenance |
+| tests | `demo-tests.yml` | ci-pipeline (keyless) | every automated category except load, against the jar |
+| load | `demo-load.yml` | perf-env (keyless) | load test against the jar |
+| gate | `demo-test-evidence.yml` | reviewers, bank-gate (keys) | sign-offs, policy tests, gate, record, negative cases, publish to GitHub Packages, commit `EVIDENCE.md` |
+
+Commits made with the workflow token do not start another run.
 
 ## Layout
 

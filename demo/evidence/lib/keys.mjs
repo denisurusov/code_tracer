@@ -8,21 +8,31 @@ import { generateKeyPair, keyHint, offlineSigningConfig } from "./cosign.mjs";
 export const KEY_DIR = ".keys";
 export const TRUST_PATH = `${KEY_DIR}/trust.json`;
 
+// Workflow identities carry the certificate identity that keyless signing
+// produces: the GitHub Actions OIDC issuer and the reusable workflow's path
+// (Fulcio puts job_workflow_ref in the certificate's SAN). Under key signing the
+// same identities sign with demo keys.
+const OIDC_GITHUB = "https://token.actions.githubusercontent.com";
+const wf = (file) => `^https://github\\.com/denisurusov/code_tracer/\\.github/workflows/${file.replace(".", "\\.")}@refs/`;
+
 export const IDENTITIES = {
   "build-service": {
     kind: "workflow",
-    name: "org/test-evidence/.github/workflows/build.yml@refs/tags/v1",
-    note: "Stands for an isolated build workflow's Sigstore identity; signs SLSA provenance only.",
+    name: "denisurusov/code_tracer/.github/workflows/demo-build.yml",
+    note: "Isolated build workflow; signs SLSA provenance only.",
+    keyless: { issuer: OIDC_GITHUB, identityRegexp: wf("demo-build.yml") },
   },
   "ci-pipeline": {
     kind: "workflow",
-    name: "org/test-evidence/.github/workflows/evidence.yml@refs/tags/v1",
-    note: "Stands for the central reusable workflow's Sigstore identity.",
+    name: "denisurusov/code_tracer/.github/workflows/demo-tests.yml",
+    note: "Test workflow; signs every automated test category except load.",
+    keyless: { issuer: OIDC_GITHUB, identityRegexp: wf("demo-tests.yml") },
   },
   "perf-env": {
     kind: "workflow",
-    name: "org/test-evidence/.github/workflows/load.yml@refs/tags/v1 (self-hosted perf runner)",
-    note: "Load tests run in a separate performance environment with its own identity.",
+    name: "denisurusov/code_tracer/.github/workflows/demo-load.yml",
+    note: "Load-test workflow (stands for a separate performance environment).",
+    keyless: { issuer: OIDC_GITHUB, identityRegexp: wf("demo-load.yml") },
   },
   "alice.chen": { kind: "person", name: "Alice Chen", role: "UX lead", email: "alice.chen@example.com" },
   "raj.patel": { kind: "person", name: "Raj Patel", role: "Business owner, FX e-trading", email: "raj.patel@example.com" },
