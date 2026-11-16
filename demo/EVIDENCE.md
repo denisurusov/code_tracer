@@ -4,4 +4,5 @@ One record per build, newest first. Each is written by the bank-side gate job af
 
 | Version | Built | Gate profile | Verdict | Record | Release |
 |---|---|---|---|---|---|
+| 0.1.0-ci.8 | 2026-11-16 | development | ADMIT | [records/0.1.0-ci.8.md](records/0.1.0-ci.8.md) | — |
 | 0.1.0-ci.7 | 2026-11-16 | — | ADMIT | [records/0.1.0-ci.7.md](records/0.1.0-ci.7.md) | — |
