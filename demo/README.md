@@ -51,13 +51,13 @@ npm run demo     # build -> evidence -> sign-offs -> policy tests -> gate -> rec
 Or step by step:
 
 ```sh
-npm run build                    # mvn package -> out/artifacts/fx-quote-demo-0.1.0.jar + signed SLSA provenance
+npm run build                    # build in the pinned image -> out/artifacts/fx-quote-demo-<version>.jar + signed SLSA provenance
 npm run evidence                 # all test categories against that jar; or: node evidence/run.mjs unit load
 npm run signoffs                 # the two named human sign-offs (demo reviewers)
 npm run policy:test              # opa test over the Rego gate policy
 npm run gate                     # verdict + out/vsa.sigstore.json (rebuilds the jar; --no-rebuild to skip)
 npm run manifest                 # write EVIDENCE.md from the bundle, the gate report and the VSA
-npm run gate:negative            # 21 tampered copies refused by a named rule, 1 VEX case admitted
+npm run gate:negative            # 23 tampered copies refused by a named rule, 1 VEX case admitted
 ```
 
 The build runs in Docker (`maven:3.9.16-eclipse-temurin-21`, pinned by digest).
@@ -179,7 +179,7 @@ objective after the run, the gate refuses (G06).
 {
   "_type": "https://in-toto.io/Statement/v1",
   "subject": [
-    { "name": "pkg:maven/demo.codetracer/fx-quote-demo@0.1.0?type=jar", "digest": { "sha256": "<jar>" } },
+    { "name": "pkg:maven/demo.codetracer/fx-quote-demo@0.1.0-ci.42?type=jar", "digest": { "sha256": "<jar>" } },
     { "name": "git+https://github.com/denisurusov/code_tracer#demo/product",
       "digest": { "sha256": "<source manifest>", "gitCommit": "<sha, when product/ is clean>" } }
   ],

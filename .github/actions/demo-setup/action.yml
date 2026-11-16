@@ -15,16 +15,27 @@ inputs:
 runs:
   using: composite
   steps:
-    - if: inputs.java == 'true'
+    # Two variants: passing server inputs at all (even empty) makes setup-java
+    # write a settings.xml server entry, and an empty one breaks Maven.
+    - if: inputs.java == 'true' && inputs.maven-server != 'true'
       uses: actions/setup-java@v6
       with:
         distribution: temurin
         java-version: 21
         cache: maven
         cache-dependency-path: demo/product/pom.xml
-        server-id: ${{ inputs.maven-server == 'true' && 'github' || '' }}
-        server-username: ${{ inputs.maven-server == 'true' && 'GITHUB_ACTOR' || '' }}
-        server-password: ${{ inputs.maven-server == 'true' && 'GITHUB_TOKEN' || '' }}
+        overwrite-settings: false
+
+    - if: inputs.java == 'true' && inputs.maven-server == 'true'
+      uses: actions/setup-java@v6
+      with:
+        distribution: temurin
+        java-version: 21
+        cache: maven
+        cache-dependency-path: demo/product/pom.xml
+        server-id: github
+        server-username: GITHUB_ACTOR
+        server-password: GITHUB_TOKEN
 
     - uses: actions/setup-node@v7
       with:
