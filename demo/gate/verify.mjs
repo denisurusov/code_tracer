@@ -20,7 +20,7 @@ import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { fileDigest, sha256, sourceDigest } from "../evidence/lib/digest.mjs";
-import { signEnvelope, verifyEnvelope } from "../evidence/lib/dsse.mjs";
+import { signStatement, statementOf, verifyBundle } from "../evidence/lib/cosign.mjs";
 import { TEST_RESULT_TYPE, STATEMENT_TYPE, SOURCE_URI } from "../evidence/lib/statement.mjs";
 
 const PROVENANCE_TYPE = "https://slsa.dev/provenance/v1";
@@ -88,7 +88,7 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
   const deliveredDigest = existsSync(deliveredPath) ? fileDigest(deliveredPath) : null;
   const src = sourceDigest(root);
   const bundlePath = join(root, evidence, BUNDLE_NAME);
-  const envelopes = readBundle(bundlePath);
+  const bundles = readBundle(bundlePath);
 
   const checks = [];
   const fail = (category, rule, detail) => checks.push({ category, rule, name: RULES[rule], ok: false, detail });
@@ -104,16 +104,28 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
   let report_rebuild = null;
   const testJarDigests = [];
 
-  envelopes.forEach((envelope, i) => {
-    const v = verifyEnvelope(envelope, trust);
-    const st = v.statement ?? {};
+  bundles.forEach((bundle, i) => {
+    const st = statementOf(bundle) ?? {};
     const p = st.predicate ?? {};
     const isProvenance = st.predicateType === PROVENANCE_TYPE;
     const category = isProvenance ? "build" : p["x-code-tracer"]?.category ?? `#${i}`;
 
-    if (v.trusted === false) return fail(category, "G02", v.reason);
+    // G02: the bundle's key hint must be in the trust store.
+    const hint = bundle.verificationMaterial?.publicKey?.hint;
+    const trusted = hint && trust[hint];
+    if (!trusted) return fail(category, "G02", `unknown key ${hint ?? "(no key hint)"}`);
     pass(category, "G02");
-    if (!v.ok) return fail(category, "G01", v.reason);
+    const v = { identity: trusted.identity };
+
+    // G01: cosign verifies the signature over the statement, its predicate type,
+    // and that the jar digest the statement names is one of its subjects.
+    const subjectDigest = (st.subject ?? []).find((x) => x.name === jarPurl)?.digest?.sha256 ?? st.subject?.[0]?.digest?.sha256;
+    const tmp = mkdtempSync(join(tmpdir(), "gate-bundle-"));
+    const bundleFile = join(tmp, "bundle.sigstore.json");
+    writeFileSync(bundleFile, JSON.stringify(bundle));
+    const cv = subjectDigest ? verifyBundle(bundleFile, trusted.publicKeyPem, st.predicateType, subjectDigest) : { ok: false, reason: "statement has no subject" };
+    rmSync(tmp, { recursive: true, force: true });
+    if (!cv.ok) return fail(category, "G01", `cosign verify-blob-attestation: ${cv.reason}`);
     pass(category, "G01");
 
     const catPolicy = policy.categories[category];
@@ -140,7 +152,7 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
     if (isProvenance) {
       provenance = { jar: jarSubj?.digest?.sha256, source: (p.buildDefinition?.resolvedDependencies ?? []).find((d) => d.uri === SOURCE_URI)?.digest?.sha256 };
       admitted.push({ category, kind: "provenance", predicate: { passedTests: [], warnedTests: [], failedTests: [] } });
-      seen.set(category, { index: i, digest: sha256(JSON.stringify(envelope)), signer: v.identity });
+      seen.set(category, { index: i, digest: sha256(JSON.stringify(bundle)), signer: v.identity });
       return;
     }
     if (jarSubj) testJarDigests.push({ category, digest: jarSubj.digest?.sha256 });
@@ -170,7 +182,7 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
       environment_spec: readIfMatching(byRole("environment-spec")[0]),
       vex_document: readIfMatching(byRole("vex")[0]),
     });
-    seen.set(category, { index: i, digest: sha256(JSON.stringify(envelope)), signer: v.identity });
+    seen.set(category, { index: i, digest: sha256(JSON.stringify(bundle)), signer: v.identity });
   });
 
   // Build provenance: links the delivered jar, the source, and every test attestation.
@@ -250,9 +262,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const opts = { root: values.root, evidence: values.evidence, policyPath: values.policy, trustPath: values.trust, rebuild: !values["no-rebuild"] };
   const report = verify(opts);
   printReport(report);
-  const gateKey = readFileSync(join(values.root, ".keys/bank-gate.key"), "utf8");
-  const out = join(values.root, values.evidence, "vsa.dsse.json");
-  writeFileSync(out, JSON.stringify(signEnvelope(vsa(report, opts), gateKey), null, 2));
+  const out = join(values.root, values.evidence, "vsa.sigstore.json");
+  signStatement(vsa(report, opts), join(values.root, ".keys/bank-gate.key"), out, join(values.root, ".keys/signing-config.offline.json"));
   writeFileSync(join(values.root, values.evidence, "gate-report.json"), JSON.stringify(report, null, 2));
   console.log(`Signed VSA (${report.verdict === "ADMIT" ? "PASSED" : "FAILED"}) -> ${out}`);
   process.exitCode = report.verdict === "ADMIT" ? 0 : 1;

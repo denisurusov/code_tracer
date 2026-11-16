@@ -5,12 +5,12 @@
 // The test categories then run against out/artifacts/<jar> and name it as a
 // subject, so the test results are bound to the artifact the bank receives.
 import { execFileSync, spawnSync } from "node:child_process";
-import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync } from "node:fs";
 import { basename } from "node:path";
 import os from "node:os";
 import { fileDigest, sourceDigest } from "./lib/digest.mjs";
-import { signEnvelope } from "./lib/dsse.mjs";
-import { ensureKeys, privateKey } from "./lib/keys.mjs";
+import { signStatement } from "./lib/cosign.mjs";
+import { ensureKeys, keyPath, signingConfig } from "./lib/keys.mjs";
 import { loadCatalog } from "./lib/catalog.mjs";
 import { runUrl, STATEMENT_TYPE, SOURCE_URI, gitCommit } from "./lib/statement.mjs";
 import { writeBundle } from "./lib/bundle.mjs";
@@ -68,7 +68,7 @@ if (process.argv[1] && import.meta.url.endsWith(basename(process.argv[1]))) {
   };
 
   mkdirSync("out/attestations", { recursive: true });
-  writeFileSync("out/attestations/build.dsse.json", JSON.stringify(signEnvelope(statement, privateKey("build-service")), null, 2));
+  signStatement(statement, keyPath("build-service"), "out/attestations/build.sigstore.json", signingConfig());
   writeBundle();
-  console.log(`built ${delivered}\n  sha256 ${statement.subject[0].digest.sha256}\n  source ${src.digest}\nprovenance -> out/attestations/build.dsse.json (signed by build-service)`);
+  console.log(`built ${delivered}\n  sha256 ${statement.subject[0].digest.sha256}\n  source ${src.digest}\nprovenance -> out/attestations/build.sigstore.json (cosign, signed by build-service)`);
 }

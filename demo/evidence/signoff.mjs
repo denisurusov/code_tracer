@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 // Named human sign-off. The reviewer signs a test-result statement with their own
-// key (in production: Sigstore keyless with their corporate identity), so the
-// record proves who accepted, not which workflow ran.
+// cosign key (in production: cosign keyless with their corporate identity), so
+// the record proves who accepted, not which workflow ran.
 //
 //   node evidence/signoff.mjs --category ux-signoff --reviewer alice.chen \
 //     --result PASSED --evidence tests/ux/findings.md
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { CATALOG_PATH, idsFor, loadCatalog, scenariosFor } from "./lib/catalog.mjs";
 import { descriptor } from "./lib/digest.mjs";
 import { buildStatement } from "./lib/statement.mjs";
-import { signEnvelope } from "./lib/dsse.mjs";
-import { IDENTITIES, privateKey } from "./lib/keys.mjs";
+import { signStatement } from "./lib/cosign.mjs";
+import { IDENTITIES, keyPath, signingConfig } from "./lib/keys.mjs";
 import { writeBundle } from "./lib/bundle.mjs";
 
 const { values } = parseArgs({
@@ -46,9 +46,8 @@ const statement = buildStatement({
 });
 statement.predicate.url = `signoff://${reviewer}/${new Date(now).toISOString()}`;
 
-const envelope = signEnvelope(statement, privateKey(reviewer));
-const out = values.out ?? `out/attestations/${category}.dsse.json`;
+const out = values.out ?? `out/attestations/${category}.sigstore.json`;
 mkdirSync("out/attestations", { recursive: true });
-writeFileSync(out, JSON.stringify(envelope, null, 2));
+signStatement(statement, keyPath(reviewer), out, signingConfig());
 writeBundle();
 console.log(`${IDENTITIES[reviewer].name} signed ${category} (${ids.join(", ")}): ${result} -> ${out}`);

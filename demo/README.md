@@ -10,30 +10,35 @@ full path from "tests ran" to "the bank admits it":
 3. **Results** are recorded in standard formats: CTRF for pass/fail, SARIF for
    scanner findings, OSV for advisories, plus each tool's native report.
 4. **Attestations** bind both to the delivered jar (by purl and digest) and to
-   its source: one signed in-toto
+   its source: one in-toto
    [test-result](https://github.com/in-toto/attestation/blob/main/spec/predicates/test-result.md)
-   statement per category, in a DSSE envelope, all carried in one
-   `.intoto.jsonl` bundle with the provenance.
-5. **The gate** checks the bundle against its own clone, rebuilds the jar
-   itself and compares digests, then evaluates the semantic rules in Rego (OPA).
+   statement per category, signed with **cosign** (`cosign attest-blob
+   --statement`) into a Sigstore bundle, all carried in one `.intoto.jsonl`
+   file with the provenance.
+5. **The record.** [`EVIDENCE.md`](EVIDENCE.md) is a text version of the
+   evidence, committed to the repository by CI: per category, the format, the
+   result, the signer, and the hash and path of every binary and report.
+6. **The gate** verifies every bundle with `cosign verify-blob-attestation`,
+   checks the evidence against its own clone, rebuilds the jar itself and
+   compares digests, then evaluates the semantic rules in Rego (OPA).
    It refuses with a named rule and signs a SLSA
    [Verification Summary Attestation](https://slsa.dev/spec/v1.0/verification_summary).
 
 In the code_tracer chain, step 1 is the provider's **L3 build provenance**,
-steps 2–4 are **L4 test results** split by category, and step 5 is the bank's
+steps 2–4 are **L4 test results** split by category, and step 6 is the bank's
 **L8 VSA**, including its own rebuild.
 
 ## Run it
 
 Needs Java 21, Maven, Node 20+, Google Chrome (both Playwright for Java and
-Playwright for JS use `channel: "chrome"`), and `gitleaks`, `semgrep` and `opa`
-on `PATH`. The dependency scan downloads OSV's Maven export, so it needs access
+Playwright for JS use `channel: "chrome"`), and `cosign` (3.x), `gitleaks`,
+`semgrep` and `opa` on `PATH`. The dependency scan downloads OSV's Maven export, so it needs access
 to `osv-vulnerabilities.storage.googleapis.com`.
 
 ```sh
 cd demo
 npm ci
-npm run demo     # build -> evidence -> sign-offs -> policy tests -> gate -> negative cases
+npm run demo     # build -> evidence -> sign-offs -> policy tests -> gate -> record -> negative cases
 ```
 
 Or step by step:
@@ -43,7 +48,8 @@ npm run build                    # mvn package -> out/artifacts/fx-quote-demo-0.
 npm run evidence                 # all test categories against that jar; or: node evidence/run.mjs unit load
 npm run signoffs                 # the two named human sign-offs (demo reviewers)
 npm run policy:test              # opa test over the Rego gate policy
-npm run gate                     # verdict + out/vsa.dsse.json (rebuilds the jar; --no-rebuild to skip)
+npm run gate                     # verdict + out/vsa.sigstore.json (rebuilds the jar; --no-rebuild to skip)
+npm run manifest                 # write EVIDENCE.md from the bundle, the gate report and the VSA
 npm run gate:negative            # 21 tampered copies refused by a named rule, 1 VEX case admitted
 ```
 
@@ -99,17 +105,17 @@ demo uses the ones that apply:
 | Standard | In the register | In this demo |
 |---|---|---|
 | **purl** | subject identity for all attestations | The jar is `pkg:maven/demo.codetracer/fx-quote-demo@0.1.0?type=jar` in the provenance, every test attestation and the VSA. The gate checks the catalog purl against the POM coordinates (G05); LIC-002 checks the SBOM names the same purl; SARIF findings and VEX statements identify dependencies by purl. |
-| **SLSA provenance** | L3 build | `out/attestations/build.dsse.json`: jar digest from source digest, build command, toolchain, builder identity. |
+| **SLSA provenance** | L3 build | `out/attestations/build.sigstore.json`: jar digest from source digest, build command, toolchain, builder identity. |
 | **Reproducible Builds** | L8 rebuild, digest equality | Fixed `outputTimestamp`; the gate rebuilds offline and compares (G15). |
 | **in-toto** Attestation Framework | the framework the chain compiles to | One test-result statement per category. |
-| **DSSE** | the signing envelope | Every attestation, sign-off and the VSA. |
+| **DSSE** | the signing envelope | Inside every Sigstore bundle: attestations, sign-offs and the VSA. |
 | **SLSA VSA** | L8, the verifier's attestation | The gate's signed output, with the bundle and policy digests as inputs. |
 | **Rego / OPA** | the semantic gate | `gate/policy/gate.rego` holds G09–G13; `gate_test.rego` tests it with `opa test`. Structural checks, provenance and the rebuild (G01–G08, G14, G15) stay in JavaScript, as the architecture splits them. |
 | **CycloneDX** (authoritative) / **SPDX** | L6 SBOM; SPDX license IDs inside CycloneDX | CycloneDX SBOM for runtime dependencies from `cyclonedx-maven-plugin`; licenses are SPDX IDs. No SPDX projection is emitted. |
 | **OSV schema** | vuln records keyed by purl; pinned snapshot | SCA matches SBOM components against OSV's Maven export. The snapshot's sha256 and URI are in the SCA attestation; each matched record is kept by digest. VEX names vulnerabilities by OSV ID. |
 | **OpenVEX** | L7 exploitability, must reference proof | `tests/sca/vex.openvex.json`. A statement can suppress a finding (SARIF `suppressions`), but the gate admits it only if it cites a proof test from the catalog that passed (G13). The citation is an `x-code-tracer-proof` field on the statement. |
 | **`.intoto.jsonl` sidecar** | distribution where OCI referrers aren't available | `out/evidence.intoto.jsonl` is what the gate reads. |
-| **Sigstore** | keyless signing, transparency log | Simulated with local keys (see below); the workflow's optional `github-attest` job uses it for real. |
+| **Sigstore** (cosign) | keyless signing, transparency log | cosign 3.x signs every statement into a Sigstore bundle (v0.3) and the gate verifies with cosign. Signing is key-based with an offline signing config, so there is no Fulcio certificate and no Rekor entry (see below); the workflow's optional `github-attest` job publishes through Sigstore for real. |
 
 Not used here: **CSAF** (the regulator-facing VEX variant), **TUF** (trust root;
 `.keys/trust.json` stands in for it), **OCI Referrers**, and **CPE**, which the
@@ -189,8 +195,8 @@ additions. in-toto and OpenVEX consumers ignore fields they don't recognize.
 
 | Rule | Layer | Name | Refuses when |
 |---|---|---|---|
-| G01 | JS | signature-valid | the DSSE signature does not verify |
-| G02 | JS | signer-trusted | the key is not in the trust store |
+| G01 | cosign | signature-valid | `cosign verify-blob-attestation` rejects the bundle (bad signature, wrong predicate type, or the jar is not a subject) |
+| G02 | JS | signer-trusted | the bundle's key hint is not in the trust store |
 | G03 | JS | signer-authorized-for-category | the signer is trusted but not allowed for that category (e.g. CI signing the provenance or the load results, the wrong person signing UX) |
 | G04 | JS | statement-is-test-result | the statement's predicate type is not the one the category requires |
 | G05 | JS | subject-matches-source | a subject's jar or source digest differs from the delivered jar or the clone, or the catalog purl doesn't match the POM |
@@ -210,12 +216,15 @@ environment spec's required fields are in [`gate/policy.yaml`](gate/policy.yaml)
 
 ## What is simulated
 
-- **Signing.** Local Ed25519 keys in `.keys/` (gitignored), generated on first
-  run. They stand in for Sigstore keyless signing: `build-service` for an
-  isolated build workflow, `ci-pipeline` for the central test workflow,
-  `perf-env` for the performance environment, and `alice.chen` / `raj.patel`
-  for named reviewers' corporate identities. The trust store maps key IDs to
-  identities the way the gate would map certificate identities.
+- **Identities.** Signing is real cosign, but with one cosign key pair per
+  identity in `.keys/` (gitignored, generated on first run) in place of
+  keyless certificates: `build-service` for an isolated build workflow,
+  `ci-pipeline` for the central test workflow, `perf-env` for the performance
+  environment, and `alice.chen` / `raj.patel` for named reviewers' corporate
+  identities. The trust store maps each key hint to an identity the way the
+  gate would match a certificate's identity and OIDC issuer under keyless
+  signing. The signing config is empty, so no transparency log entry or
+  timestamp is made; verification uses `--insecure-ignore-tlog`.
 - **Human sign-offs.** The UX findings and UAT notes are sample documents; no
   study was run.
 - **Load environment.** The load test runs on the same host as everything else.
@@ -226,12 +235,32 @@ environment spec's required fields are in [`gate/policy.yaml`](gate/policy.yaml)
   own infrastructure from its own dependency mirror, with the toolchain the
   provenance names.
 
+## The evidence record
+
+[`EVIDENCE.md`](EVIDENCE.md) is generated by `npm run manifest` and committed to
+the branch by CI after each run. It has:
+
+- the product: purl, delivered jar hash, source digest and git commit, run
+  URL, where the binaries are stored, the gate verdict, the rebuild digest and
+  the VSA hash;
+- one row per **evidence category | format | evidence**, where the evidence is
+  the result, the signer, the bundle's path and hash, the tested jar and
+  source, and the path and hash of each report;
+- every file the attestations reference, with its hash and role;
+- the signers' key hints and public keys, so the record can be checked with
+  plain `cosign verify-blob-attestation` against the binaries.
+
+The binaries themselves (jar, bundles, reports) are not committed. In CI they
+are the run artifact `test-evidence`, kept for 90 days.
+
 ## CI
 
 [`.github/workflows/demo-test-evidence.yml`](../.github/workflows/demo-test-evidence.yml)
 runs the whole demo on pull requests that touch `demo/` and on manual dispatch,
-with Java 21 (Temurin) and a fresh OSV snapshot. It writes a results table to
-the run summary and uploads the jar and the evidence. Its optional
+with Java 21 (Temurin), cosign 3.1.4 and a fresh OSV snapshot. It writes a
+results table to the run summary, uploads the jar and the evidence (90-day
+retention), and commits `EVIDENCE.md` back to the branch. Commits made with the
+workflow token do not start another run. Its optional
 `github-attest` job publishes each predicate through `actions/attest`
 (Sigstore keyless, identity = the workflow); that needs a public repository or
 GitHub Enterprise Cloud.
@@ -242,7 +271,8 @@ GitHub Enterprise Cloud.
 product/            the product under test (Maven): src/main, src/test (JUnit, Cucumber steps, suites)
 tests/catalog.yaml  scenario catalog: what each test is meant to verify
 tests/<category>/   Gherkin features, scenarios and config per category
-evidence/           build + provenance, runner, converters, OSV matcher, DSSE signing, sign-off tool
+evidence/           build + provenance, runner, converters, OSV matcher, cosign signing, sign-off tool, record generator
 gate/               policy.yaml, verifier (structural + rebuild), policy/*.rego (semantic), negative cases
-out/                generated: artifacts/, raw/, results/, attestations/, evidence.intoto.jsonl, vsa.dsse.json (gitignored)
+EVIDENCE.md         text evidence record of the latest CI run (committed by CI)
+out/                generated: artifacts/, raw/, results/, attestations/*.sigstore.json, evidence.intoto.jsonl, vsa.sigstore.json (gitignored)
 ```

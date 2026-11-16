@@ -17,7 +17,8 @@
     "policy:test": "opa test --v1-compatible gate/policy",
     "gate": "node gate/verify.mjs",
     "gate:negative": "node gate/negative.mjs",
-    "demo": "npm run build && npm run evidence && npm run signoffs && npm run policy:test && npm run gate && npm run gate:negative"
+    "demo": "npm run build && npm run evidence && npm run signoffs && npm run policy:test && npm run gate && npm run manifest && npm run gate:negative",
+    "manifest": "node evidence/manifest.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",

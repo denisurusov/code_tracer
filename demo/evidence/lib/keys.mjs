@@ -1,8 +1,9 @@
-// Demo identities and their keys. Private keys live in demo/.keys/ (gitignored);
-// the trust store maps each key ID to an identity, the way a bank's gate would
-// map a Sigstore certificate identity (workflow path or corporate email).
+// Demo identities and their cosign key pairs. Keys live in demo/.keys/
+// (gitignored). The trust store maps each key's hint (as cosign writes it into a
+// bundle) to an identity, the way a bank's gate would map a Sigstore certificate
+// identity (workflow path or corporate email) under keyless signing.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { generateKey, keyId } from "./dsse.mjs";
+import { generateKeyPair, keyHint, offlineSigningConfig } from "./cosign.mjs";
 
 export const KEY_DIR = ".keys";
 export const TRUST_PATH = `${KEY_DIR}/trust.json`;
@@ -28,27 +29,24 @@ export const IDENTITIES = {
   "bank-gate": { kind: "service", name: "bank ingestion gate (demo)", note: "Signs the verification summary (VSA)." },
 };
 
-export function ensureKeys() {
-  mkdirSync(KEY_DIR, { recursive: true });
-  const trust = existsSync(TRUST_PATH) ? JSON.parse(readFileSync(TRUST_PATH, "utf8")) : {};
+export function ensureKeys(dir = KEY_DIR) {
+  mkdirSync(dir, { recursive: true });
+  const trustPath = `${dir}/trust.json`;
+  const trust = existsSync(trustPath) ? JSON.parse(readFileSync(trustPath, "utf8")) : {};
+  let changed = !existsSync(trustPath);
   for (const [id, identity] of Object.entries(IDENTITIES)) {
-    const path = `${KEY_DIR}/${id}.key`;
-    if (!existsSync(path)) {
-      const k = generateKey();
-      writeFileSync(path, k.privatePem, { mode: 0o600 });
-      writeFileSync(`${KEY_DIR}/${id}.pub`, k.publicPem);
-    }
-    const publicKeyPem = readFileSync(`${KEY_DIR}/${id}.pub`, "utf8");
-    trust[keyId(publicKeyPem)] = { identity: { id, ...identity }, publicKeyPem };
+    if (!existsSync(`${dir}/${id}.key`)) { generateKeyPair(`${dir}/${id}`); changed = true; }
+    const publicKeyPem = readFileSync(`${dir}/${id}.pub`, "utf8");
+    const hint = keyHint(publicKeyPem);
+    if (!trust[hint]) { trust[hint] = { identity: { id, ...identity }, publicKeyPem }; changed = true; }
   }
-  writeFileSync(TRUST_PATH, JSON.stringify(trust, null, 2));
+  if (changed) writeFileSync(trustPath, JSON.stringify(trust, null, 2));
+  offlineSigningConfig(dir);
   return trust;
 }
 
-export function privateKey(id) {
-  ensureKeys();
-  return readFileSync(`${KEY_DIR}/${id}.key`, "utf8");
-}
+export const keyPath = (id, dir = KEY_DIR) => (ensureKeys(dir), `${dir}/${id}.key`);
+export const signingConfig = (dir = KEY_DIR) => offlineSigningConfig(dir);
 
 export function loadTrust(path = TRUST_PATH) {
   return JSON.parse(readFileSync(path, "utf8"));

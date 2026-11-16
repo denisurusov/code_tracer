@@ -9,7 +9,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { verify, RULES } from "./verify.mjs";
-import { generateKey, signEnvelope } from "../evidence/lib/dsse.mjs";
+import { generateKeyPair, signStatement, statementOf } from "../evidence/lib/cosign.mjs";
 import { fileDigest } from "../evidence/lib/digest.mjs";
 import { writeBundle } from "../evidence/lib/bundle.mjs";
 import { spawnSync } from "node:child_process";
@@ -23,10 +23,10 @@ function copyDemo() {
   return dir;
 }
 
-const att = (dir, c) => join(dir, "out/attestations", `${c}.dsse.json`);
-const readStatement = (dir, c) => JSON.parse(Buffer.from(JSON.parse(readFileSync(att(dir, c), "utf8")).payload, "base64").toString());
+const att = (dir, c) => join(dir, "out/attestations", `${c}.sigstore.json`);
+const readStatement = (dir, c) => statementOf(JSON.parse(readFileSync(att(dir, c), "utf8")));
 const resign = (dir, c, statement, signerId) =>
-  writeFileSync(att(dir, c), JSON.stringify(signEnvelope(statement, readFileSync(join(dir, ".keys", `${signerId}.key`), "utf8")), null, 2));
+  signStatement(statement, join(dir, ".keys", `${signerId}.key`), att(dir, c), join(dir, ".keys/signing-config.offline.json"));
 
 // Re-run the SCA category inside the copy against the fixture OSV snapshot (one
 // fictional high-severity advisory on jackson-databind) and an optional VEX document.
@@ -85,17 +85,20 @@ const CASES = [
     name: "attestation payload edited without re-signing",
     expect: "G01",
     apply: (d) => {
-      const env = JSON.parse(readFileSync(att(d, "unit"), "utf8"));
-      const st = JSON.parse(Buffer.from(env.payload, "base64").toString());
+      const bundle = JSON.parse(readFileSync(att(d, "unit"), "utf8"));
+      const st = statementOf(bundle);
       st.predicate.url = "https://example.com/a-different-run";
-      env.payload = Buffer.from(JSON.stringify(st)).toString("base64");
-      writeFileSync(att(d, "unit"), JSON.stringify(env));
+      bundle.dsseEnvelope.payload = Buffer.from(JSON.stringify(st)).toString("base64");
+      writeFileSync(att(d, "unit"), JSON.stringify(bundle));
     },
   },
   {
     name: "attestation signed by an unknown key",
     expect: "G02",
-    apply: (d) => writeFileSync(att(d, "e2e"), JSON.stringify(signEnvelope(readStatement(d, "e2e"), generateKey().privatePem))),
+    apply: (d) => {
+      const k = generateKeyPair(join(d, ".keys", "mallory"));
+      signStatement(readStatement(d, "e2e"), k.key, att(d, "e2e"), join(d, ".keys/signing-config.offline.json"));
+    },
   },
   {
     name: "UX sign-off signed by a trusted person not authorized for UX",
