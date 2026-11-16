@@ -57,7 +57,7 @@ function rekey(dir) {
     const bundle = JSON.parse(readFileSync(join(attDir, f), "utf8"));
     const certId = certificateIdentity(bundle);
     if (!certId) continue;
-    const id = Object.entries(IDENTITIES).find(([, x]) => x.keyless && new RegExp(x.keyless.identityRegexp).test(certId))?.[0];
+    const id = Object.entries(IDENTITIES).find(([, x]) => x.keyless && certId.startsWith(`${x.keyless.workflow}@`))?.[0];
     if (!id) throw new Error(`no identity for certificate ${certId}`);
     signStatement(statementOf(bundle), id, join(attDir, f), { keyDir: join(dir, ".keys") });
   }

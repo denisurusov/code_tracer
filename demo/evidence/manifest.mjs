@@ -1,13 +1,16 @@
 #!/usr/bin/env node
-// Text evidence record. Reads the evidence bundle (out/evidence.intoto.jsonl),
-// the gate report and the VSA, and writes EVIDENCE.md: one row per evidence
-// category with its format and a text version of the evidence (result, signer,
-// hashes, paths to the binaries), followed by every referenced file and the
-// signers' public keys, so the record can be checked against the binaries
-// without the gate's own state.
+// Text evidence record for one build. Reads the evidence bundle
+// (out/evidence.intoto.jsonl), the gate report and the VSA, and writes
+// records/<version>.md: one row per evidence category with its format and a text
+// version of the evidence (result, signer, hashes, paths to the binaries),
+// followed by every referenced file and the signers' public keys, so the record
+// can be checked against the binaries without the gate's own state. Then
+// regenerates the index, EVIDENCE.md.
 //
-//   node evidence/manifest.mjs [--out EVIDENCE.md]
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+//   node evidence/manifest.mjs [--out records/<version>.md]
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
+import { writeIndex } from "./lib/records-index.mjs";
 import { parseArgs } from "node:util";
 import { BUNDLE_NAME, readBundle } from "./lib/bundle.mjs";
 import { certificateIdentity, cosignVersion, rekorLogIndex, statementOf } from "./lib/cosign.mjs";
@@ -17,12 +20,13 @@ import { fileDigest } from "./lib/digest.mjs";
 import { loadCatalog } from "./lib/catalog.mjs";
 import { SOURCE_URI } from "./lib/statement.mjs";
 
-const { values } = parseArgs({ options: { out: { type: "string", default: "EVIDENCE.md" } } });
+const { values } = parseArgs({ options: { out: { type: "string" } } });
 const catalog = loadCatalog();
 const trust = JSON.parse(readFileSync(".keys/trust.json", "utf8"));
 const bundles = readBundle(`out/${BUNDLE_NAME}`);
 const gate = existsSync("out/gate-report.json") ? JSON.parse(readFileSync("out/gate-report.json", "utf8")) : null;
 const jar = delivered();
+values.out ??= `records/${jar.version}.md`;
 const jarPurl = jar.jarPurl;
 const jarPath = jar.path;
 const short = (h) => (h ? `\`sha256:${h}\`` : "—");
@@ -70,9 +74,11 @@ for (const bundle of bundles) {
   const logIndex = rekorLogIndex(bundle);
   let signer;
   if (certId) {
-    const id = Object.entries(IDENTITIES).find(([, x]) => x.keyless && new RegExp(x.keyless.identityRegexp).test(certId))?.[0] ?? "untrusted";
+    const id = Object.entries(IDENTITIES).find(([, x]) => x.keyless && certId.startsWith(`${x.keyless.workflow}@`))?.[0] ?? "untrusted";
     signer = `${id} — keyless, certificate for ${code(certId)}${logIndex ? `, [Rekor entry ${logIndex}](https://search.sigstore.dev/?logIndex=${logIndex})` : ""}`;
-    signers.set(id, { keyless: true, identity: { id, name: certId }, issuer: IDENTITIES[id]?.keyless?.issuer, identityRegexp: IDENTITIES[id]?.keyless?.identityRegexp });
+    const ref = certId.slice(certId.lastIndexOf("@") + 1);
+    signers.set(id, { keyless: true, identity: { id, name: certId }, issuer: IDENTITIES[id]?.keyless?.issuer,
+      identityRegexp: `^${certId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, ref });
   } else {
     const t = trust[bundle.verificationMaterial?.publicKey?.hint];
     signer = t ? `${t.identity.id} (${t.identity.name}) — cosign key` : `unknown key ${bundle.verificationMaterial?.publicKey?.hint}`;
@@ -123,15 +129,17 @@ const srcSubject = anyTest?.subject.find((s) => s.name === SOURCE_URI)?.digest ?
 const runUrl = anyTest?.predicate.url ?? "—";
 const repo = process.env.DEMO_MAVEN_REPO_URL;
 const gavPath = repo ? `${repo}/${jar.groupId.replaceAll(".", "/")}/${jar.artifactId}/${jar.version}/${jar.artifactId}-${jar.version}` : null;
+const release = process.env.DEMO_RELEASE_URL;
 const ciArtifact = [
-  repo ? `Maven repository ${code(repo)} as ${code(`${jar.groupId}:${jar.artifactId}:${jar.version}`)}: [jar](${gavPath}.jar), [evidence sidecar](${gavPath}-evidence.intoto.jsonl) (classifier \`evidence\`), [this record](${gavPath}-evidence-record.md) (classifier \`evidence-record\`); reading needs a GitHub token with \`read:packages\`` : null,
+  repo ? `Maven repository ${code(repo)} as ${code(`${jar.groupId}:${jar.artifactId}:${jar.version}`)}: [jar](${gavPath}.jar), [evidence](${gavPath}-evidence.intoto.jsonl) (classifier \`evidence\`), [reports](${gavPath}-evidence-files.tar.gz) (classifier \`evidence-files\`); reading needs a GitHub token with \`read:packages\`` : null,
+  release ? `GitHub Release ${release} with the jar, the evidence, the reports, the VSA and this record` : null,
   process.env.GITHUB_RUN_ID
     ? `GitHub Actions artifact \`test-evidence\` of [run ${process.env.GITHUB_RUN_ID}](${runUrl}) with every file under \`out/\`, kept 90 days`
     : "local run: `demo/out/` on the machine that ran it (not committed)",
 ].filter(Boolean).join("<br>");
 
 const md = [];
-md.push("# Test evidence record");
+md.push(`# Test evidence record — ${jar.version}`);
 md.push("");
 md.push(`Generated by \`npm run manifest\` from \`out/${BUNDLE_NAME}\` on ${new Date().toISOString()}. Every attestation is a Sigstore bundle made with cosign ${cosignVersion()}: ${[...signers.values()].some((t) => t.keyless) ? "workflow identities signed keyless (Fulcio certificate, Rekor entry); named reviewers and the gate signed with cosign keys" : "signed with cosign keys and an offline signing config (no Fulcio certificate, no Rekor entry)"}. Paths are relative to \`demo/\`.`);
 md.push("");
@@ -145,7 +153,10 @@ md.push(`| Source | ${code(SOURCE_URI)} ${short(srcSubject.sha256)}${srcSubject.
 md.push(`| Run | ${runUrl} |`);
 md.push(`| Where the binaries are | ${ciArtifact} |`);
 md.push(`| Evidence bundle | ${code(`out/${BUNDLE_NAME}`)} ${short(existsSync(`out/${BUNDLE_NAME}`) ? fileDigest(`out/${BUNDLE_NAME}`) : null)} (${bundles.length} Sigstore bundles, one per line) |`);
+const fetched = existsSync("out/fetched.json") ? JSON.parse(readFileSync("out/fetched.json", "utf8")) : null;
+if (fetched) md.push(`| Gate input | fetched from the Maven repository by coordinates ${code(fetched.coordinates)}: ${fetched.files.map((f) => `${code(f.url.split("/").pop())} ${short(f.sha256)}`).join(", ")} |`);
 if (gate) {
+  md.push(`| Gate profile | ${gate.profile} — trusted refs: ${(gate.trustedRefs ?? []).map(code).join(", ")} |`);
   md.push(`| Gate verdict | **${gate.verdict}** for ${gate.productType}${gate.failures.length ? ` — failed: ${gate.failures.map((f) => `${f.rule} ${f.name} [${f.category}]`).join("; ")}` : ""} |`);
   md.push(`| Gate rebuild | ${gate.rebuildDigest ? `${short(gate.rebuildDigest)} (${gate.rebuildDigest === jarSha ? "matches the delivered jar" : "differs from the delivered jar"})` : "not run"} |`);
   md.push(`| VSA | ${code(vsaPath)} ${short(existsSync(vsaPath) ? fileDigest(vsaPath) : null)}, signed by bank-gate |`);
@@ -207,5 +218,7 @@ md.push("npm run gate                           # every rule, including the rebu
 md.push("```");
 md.push("");
 
+mkdirSync(dirname(values.out), { recursive: true });
 writeFileSync(values.out, md.join("\n"));
 console.log(`wrote ${values.out}: ${rows.length} evidence categories, ${files.size} referenced files, ${signers.size} signers`);
+writeIndex();

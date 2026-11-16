@@ -22,7 +22,7 @@ import { parse } from "yaml";
 import { fileDigest, sha256, sourceDigest } from "../evidence/lib/digest.mjs";
 import { certificateIdentity, statementOf, verifyBundle } from "../evidence/lib/cosign.mjs";
 import { signStatement } from "../evidence/lib/signing.mjs";
-import { IDENTITIES } from "../evidence/lib/keys.mjs";
+import { ensureKeys, IDENTITIES, identityRegexp } from "../evidence/lib/keys.mjs";
 import { delivered } from "../evidence/lib/product.mjs";
 import { mavenBuild } from "../evidence/lib/maven-build.mjs";
 import { TEST_RESULT_TYPE, STATEMENT_TYPE, SOURCE_URI } from "../evidence/lib/statement.mjs";
@@ -95,6 +95,11 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
   const jarPurl = jar?.jarPurl ?? `${productPurl}?type=jar`;
   const deliveredDigest = jar ? fileDigest(jar.path) : null;
   const allowHost = process.env.DEMO_ALLOW_HOST_BUILD === "1";
+  const profile = process.env.DEMO_GATE_PROFILE ?? "release";
+  const trustedRefs = policy.trusted_refs?.[profile];
+  if (!trustedRefs) throw new Error(`no trusted_refs for gate profile ${profile}`);
+  // Which workflow a certificate is for (any ref), and whether its ref is trusted.
+  const workflowOf = (certId) => Object.entries(IDENTITIES).find(([, x]) => x.keyless && certId.startsWith(`${x.keyless.workflow}@`));
   const src = sourceDigest(root);
   const bundlePath = join(root, evidence, BUNDLE_NAME);
   const bundles = readBundle(bundlePath);
@@ -124,9 +129,14 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
     const certId = certificateIdentity(bundle);
     let trusted;
     if (certId) {
-      const id = Object.entries(IDENTITIES).find(([, x]) => x.keyless && new RegExp(x.keyless.identityRegexp).test(certId));
-      if (!id) return fail(category, "G02", `certificate identity ${certId} is not a trusted identity`);
-      trusted = { identity: { id: id[0], ...id[1], certificateIdentity: certId }, keyless: id[1].keyless };
+      const id = workflowOf(certId);
+      if (!id) return fail(category, "G02", `certificate identity ${certId} is not a trusted workflow`);
+      const re = identityRegexp(id[1].keyless, trustedRefs);
+      if (!new RegExp(re).test(certId)) {
+        return fail(category, "G02", `${certId} ran from a ref the ${profile} profile does not trust (${trustedRefs.join(", ")})`);
+      }
+      trusted = { identity: { id: id[0], ...id[1], certificateIdentity: certId },
+        keyless: { issuer: id[1].keyless.issuer, identityRegexp: re } };
     } else {
       const hint = bundle.verificationMaterial?.publicKey?.hint;
       trusted = hint && trust[hint];
@@ -246,7 +256,7 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
   const failures = checks.filter((c) => !c.ok);
   return {
     verdict: failures.length ? "REFUSE" : "ADMIT",
-    productType: catalog.product.type, productPurl, jarPurl, version: jar?.version, sourceDigest: src.digest, artifactDigest: deliveredDigest, rebuildDigest: report_rebuild,
+    productType: catalog.product.type, profile, trustedRefs, productPurl, jarPurl, version: jar?.version, sourceDigest: src.digest, artifactDigest: deliveredDigest, rebuildDigest: report_rebuild,
     bundle: { path: join(evidence, BUNDLE_NAME), digest: existsSync(bundlePath) ? fileDigest(bundlePath) : null },
     categories: [...seen.keys()], attestations: Object.fromEntries(seen), checks, failures,
   };
@@ -287,16 +297,18 @@ export function printReport(r) {
   }
   console.table([...byCat.values()].map((x) => ({ category: x.category, checks: x.checks, result: x.failed.length ? "FAIL" : "ok", failed: x.failed.join(", ") })));
   for (const f of r.failures) console.log(`  ✗ ${f.rule} ${f.name} [${f.category}]: ${f.detail}`);
-  console.log(`\nVerdict for ${r.productPurl} (${r.productType}): ${r.verdict}`);
+  console.log(`\nVerdict for ${r.productPurl} (${r.productType}, ${r.profile} profile): ${r.verdict}`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { values } = parseArgs({ options: { root: { type: "string", default: "." }, evidence: { type: "string", default: "out" },
     policy: { type: "string", default: "gate/policy.yaml" }, trust: { type: "string", default: ".keys/trust.json" },
-    "no-rebuild": { type: "boolean", default: false } } });
+    "no-rebuild": { type: "boolean", default: false }, "no-write": { type: "boolean", default: false } } });
   const opts = { root: values.root, evidence: values.evidence, policyPath: values.policy, trustPath: values.trust, rebuild: !values["no-rebuild"] };
   const report = verify(opts);
   printReport(report);
+  if (values["no-write"]) { process.exitCode = report.verdict === "ADMIT" ? 0 : 1; process.exit(); }
+  ensureKeys(join(values.root, ".keys"), ["bank-gate"]); // the gate's own key; trusts nothing new
   const out = join(values.root, values.evidence, "vsa.sigstore.json");
   signStatement(vsa(report, opts), "bank-gate", out, { keyDir: join(values.root, ".keys") });
   writeFileSync(join(values.root, values.evidence, "gate-report.json"), JSON.stringify(report, null, 2));

@@ -1,25 +1,15 @@
 name: demo test evidence
 
-# Runs the test-evidence demo end to end, one build per run:
-#
-#   build  (demo-build.yml)  reproducible jar in the pinned Maven image + SLSA provenance
-#   tests  (demo-tests.yml)  every automated category except load, against the jar
-#   load   (demo-load.yml)   load test, against the jar
-#   gate   (this file)       named sign-offs, the gate (cosign verification, rebuild in the
-#                            pinned image, Rego policy), the text evidence record, the gate's
-#                            negative cases, publishing the jar with its evidence sidecars to
-#                            GitHub Packages, and committing demo/EVIDENCE.md to the branch
-#
-# build, tests and load are separate reusable workflows so that cosign keyless
-# signing gives each one its own certificate identity (Fulcio names the
-# reusable workflow file). Each signature is recorded in the public Rekor log.
-# The named sign-offs and the gate's VSA are signed with cosign keys: a workflow
-# cannot sign as a person.
+# Development builds of the test-evidence demo: every pull request that touches
+# the demo, and manual dispatch. Each run is one build with its own version
+# (0.1.0-ci.<run number>), gated under the development profile; the gate job
+# also checks that the same evidence is refused under the release profile.
+# Bank-bound builds are releases: see demo-release.yml.
 
 on:
   workflow_dispatch:
   pull_request:
-    paths: ["demo/**", ".github/workflows/demo-*.yml", ".github/actions/demo-setup/**", "!demo/EVIDENCE.md"]
+    paths: ["demo/**", ".github/workflows/demo-*.yml", ".github/actions/demo-setup/**", "!demo/EVIDENCE.md", "!demo/records/**"]
 
 permissions:
   contents: read
@@ -40,121 +30,11 @@ jobs:
           echo "ref=${{ github.head_ref || github.ref_name }}" >> "$GITHUB_OUTPUT"
           echo "revision=0.1.0-ci.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
-  build:
+  pipeline:
     needs: vars
-    permissions: { contents: read, id-token: write }
-    uses: ./.github/workflows/demo-build.yml
+    permissions: { contents: write, packages: write, id-token: write }
+    uses: ./.github/workflows/demo-pipeline.yml
     with:
       ref: ${{ needs.vars.outputs.ref }}
       revision: ${{ needs.vars.outputs.revision }}
-
-  tests:
-    needs: [vars, build]
-    permissions: { contents: read, id-token: write }
-    uses: ./.github/workflows/demo-tests.yml
-    with:
-      ref: ${{ needs.vars.outputs.ref }}
-
-  load:
-    needs: [vars, build]
-    permissions: { contents: read, id-token: write }
-    uses: ./.github/workflows/demo-load.yml
-    with:
-      ref: ${{ needs.vars.outputs.ref }}
-
-  gate:
-    needs: [vars, tests, load]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write   # commit demo/EVIDENCE.md to the branch
-      packages: write   # publish to GitHub Packages
-    defaults:
-      run:
-        working-directory: demo
-    env:
-      DEMO_MAVEN_REPO_URL: https://maven.pkg.github.com/${{ github.repository }}
-      DEMO_REBUILD_OFFLINE: "0"   # Maven Central stands in for the bank's dependency mirror
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.vars.outputs.ref }}
-      - uses: ./.github/actions/demo-setup
-        with:
-          java: "true"
-          scanners: "true"
-          maven-server: "true"
-      - uses: actions/download-artifact@v8
-        with:
-          pattern: demo-*
-          merge-multiple: true
-          path: demo/out
-
-      - name: Named sign-offs (demo reviewers, cosign keys)
-        run: npm run signoffs
-
-      - name: Gate policy tests (Rego)
-        run: npm run policy:test
-
-      - name: Gate
-        run: npm run gate
-
-      - name: Text evidence record
-        run: npm run manifest
-
-      - name: Gate negative cases
-        run: npm run gate:negative
-
-      - name: Publish the jar and evidence sidecars to GitHub Packages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run publish:maven
-
-      - name: Summary
-        if: always()
-        run: |
-          {
-            echo "### Test evidence"
-            echo
-            echo "| category | result | signer |"
-            echo "|---|---|---|"
-            for f in out/attestations/*.sigstore.json; do
-              node -e '
-                const b = JSON.parse(require("fs").readFileSync(process.argv[1]));
-                const s = JSON.parse(Buffer.from(b.dsseEnvelope.payload, "base64"));
-                const vm = b.verificationMaterial;
-                const keyless = !!(vm.certificate || vm.x509CertificateChain);
-                const cat = s.predicateType === "https://slsa.dev/provenance/v1" ? "build (SLSA provenance)" : s.predicate["x-code-tracer"].category;
-                console.log(`| ${cat} | ${s.predicate.result ?? "—"} | ${keyless ? "keyless, Rekor " + (vm.tlogEntries?.[0]?.logIndex ?? "?") : "cosign key"} |`);
-              ' "$f"
-            done
-            echo
-            [ -f out/gate-report.json ] && node -e 'const r = require("./out/gate-report.json"); console.log(`**Gate verdict:** ${r.verdict} for ${r.productPurl}`)'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: test-evidence
-          path: |
-            demo/out/evidence.intoto.jsonl
-            demo/out/artifacts
-            demo/out/attestations
-            demo/out/results
-            demo/out/vsa.sigstore.json
-            demo/out/gate-report.json
-            demo/EVIDENCE.md
-            demo/.keys/trust.json
-            demo/.keys/*.pub
-          if-no-files-found: error
-          retention-days: 90
-
-      - name: Commit the evidence record to the branch
-        if: success() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add EVIDENCE.md
-          if git diff --cached --quiet; then echo "record unchanged"; exit 0; fi
-          git commit -m "Record test evidence from run ${GITHUB_RUN_ID} [skip ci]"
-          git pull --rebase origin "${{ needs.vars.outputs.ref }}"
-          git push origin "HEAD:${{ needs.vars.outputs.ref }}"
+      profile: development

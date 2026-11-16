@@ -5,6 +5,17 @@
 # categories, a corporate email for named sign-offs.
 policy_version: 1
 
+# Git refs a keyless workflow identity may have run from (the part of the
+# certificate identity after "@"). DEMO_GATE_PROFILE selects the profile; the
+# default is release. Bank-bound builds are releases: tags demo-v<version>.
+trusted_refs:
+  release:
+    - refs/tags/demo-v[0-9][^/]*
+  development:
+    - refs/tags/demo-v[0-9][^/]*
+    - refs/heads/.+
+    - refs/pull/[0-9]+/merge
+
 product_types:
   library:          [build, unit, sast, sca, secrets, license]
   cli-tool:         [build, unit, integration, sast, sca, secrets, license]

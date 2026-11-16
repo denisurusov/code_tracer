@@ -1,0 +1,37 @@
+name: demo release
+
+# A bank-bound build. Push a tag demo-v<version> (e.g. demo-v0.1.1): the build
+# runs on the tag, so every keyless certificate names refs/tags/demo-v<version>,
+# which is the only ref the gate's release profile trusts. The build is
+# published to GitHub Packages as <version>, gated from there under the release
+# profile, and attached to a GitHub Release with its evidence record.
+
+on:
+  push:
+    tags: ["demo-v[0-9]*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  vars:
+    runs-on: ubuntu-latest
+    outputs:
+      revision: ${{ steps.v.outputs.revision }}
+    steps:
+      - id: v
+        run: echo "revision=${GITHUB_REF_NAME#demo-v}" >> "$GITHUB_OUTPUT"
+
+  pipeline:
+    needs: vars
+    permissions: { contents: write, packages: write, id-token: write }
+    uses: ./.github/workflows/demo-pipeline.yml
+    with:
+      ref: ${{ github.ref_name }}
+      revision: ${{ needs.vars.outputs.revision }}
+      profile: release
+      release: true
