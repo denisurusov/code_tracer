@@ -1,0 +1,7 @@
+[
+  { "pair": "EURUSD", "mid": 1.0842, "spreadBps": 12, "dp": 5, "asOf": "2026-11-13T21:00:00Z" },
+  { "pair": "GBPUSD", "mid": 1.2731, "spreadBps": 14, "dp": 5, "asOf": "2026-11-13T21:00:00Z" },
+  { "pair": "USDJPY", "mid": 151.42, "spreadBps": 10, "dp": 3, "asOf": "2026-11-13T21:00:00Z" },
+  { "pair": "USDCHF", "mid": 0.8815, "spreadBps": 16, "dp": 5, "asOf": "2026-11-13T21:00:00Z" },
+  { "pair": "AUDUSD", "mid": 0.6523, "spreadBps": 18, "dp": 5, "asOf": "2026-11-13T21:00:00Z" }
+]

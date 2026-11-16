@@ -5,22 +5,14 @@ disagree.
 
 ## The dividing line
 
-If it has an id, a review state and edges, it is a **record** and lives in
-`.konspekt/instance/`. If it is written for a reader, it is a **publication** and
-lives here.
+The design records (goals, decisions, artifacts and the edges between them) were
+kept as a konspekt instance under `.konspekt/instance/` until commit
+[`9217e03`](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c). The instance has since been removed from the tree. The links
+below point at that commit, so the records stay readable exactly as they were
+accepted; they are no longer maintained or validated in CI.
 
-| | `docs/` (this directory) | `.konspekt/instance/` |
-|---|---|---|
-| Nature | publications — written to be read | the project's design record |
-| Identity | a filename | an id, with provenance and edges |
-| Status | current unless filed under `historical/` | explicit `review:` state on every entity |
-| Maintained | revised in place | append-only, under `.konspekt/OPERATING.md` |
-| Validated in CI | no | yes — `node lib/validate.mjs` |
-
-**The records are canonical.** Where a publication and a record disagree, the
-record is current. Records are deliberately *not* copied here: a second copy
-drifts, and only the instance is checked by the conformance workflow. Follow the
-links.
+Everything still in the tree is a **publication**: written to be read, revised in
+place, current unless filed under `historical/`.
 
 ## Layout
 
@@ -44,7 +36,7 @@ matters because a rebuild overwrites derived files without asking.
 ## Vocabulary
 
 Fixed by
-[`noteworthy-lifecycle-nouns`](../.konspekt/instance/noteworthy/noteworthy-lifecycle-nouns.md)
+[`noteworthy-lifecycle-nouns`](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/noteworthy/noteworthy-lifecycle-nouns.md)
 and applied across the records, the publications here, and the figures:
 
 | Term | Means | Identity |
@@ -69,7 +61,7 @@ carried (`noteworthy-solo-distribution`). The identifier renames that followed:
 figures and the paper sources. Two things deliberately still carry the old
 terms, and both should stay that way:
 
-- **`.konspekt/instance/sources/`** — verbatim content-addressed excerpts whose
+- **`.konspekt/instance/sources/`** (at commit `9217e03`) — verbatim content-addressed excerpts whose
   filenames are their blob hashes. Rewriting them would change every hash and
   orphan every `provenance.contentHash` citing them.
 - **Amendment notes and `noteworthy-candidate-key`** — documents that *state* a
@@ -93,20 +85,20 @@ operating layer above them all. Read them in this order.
 
 | Artifact | Covers | Review |
 |---|---|---|
-| [Architecture & Design](../.konspekt/instance/artifacts/artifact-architecture.md) | The integrating overview, and home of the **evidence axis**: the L-1…L9 attestation chain, the anchor problem, who verifies, the 16 admission rules, the gate, the ledger, and the component register. Start here. | accepted |
-| [Project lifecycle](../.konspekt/instance/artifacts/artifact-contract-lifecycle.md) | The **project axis**, issuer-side: Drafted through Fulfilled plus three terminals, what Accepted freezes, and amendment as the only route for a shortfall. | accepted |
-| [Package and product lifecycles](../.konspekt/instance/artifacts/artifact-product-lifecycle.md) | The two machines that run after the freeze: the digest-keyed **package** machine (Accepted → Built → Adopted, or Rejected) and the lineage-keyed **product** machine (Active, Sunset, Retired), plus the renewal loop. | accepted |
-| [Evidence bundle](../.konspekt/instance/artifacts/artifact-evidence-bundle.md) | The **perimeter interface**: the delivery manifest, the issuer-assembled evidence core, and the bank-assembled ingest envelope — what crosses, who seals it, and which clock applies. | accepted |
-| [Data model](../.konspekt/instance/artifacts/artifact-data-model.md) | The **records axis**: one schema per state, organized by facets. Immutable content-addressed records versus the append-only operational log and the projections replayed from it. | accepted |
-| [Deployment topology](../.konspekt/instance/artifacts/artifact-deployment-topology.md) | The physical stores behind the logical model, and the air-gap cadence. | accepted |
-| [Operating model](../.konspekt/instance/artifacts/artifact-operating-model.md) | The **operating layer**: twenty-nine activities with their actors and traces, the roles inside each party, validity windows against service levels, and the eight exception paths. Its §7 values carry owners and are *not* settled by its acceptance. | accepted |
-| [Reference implementation scope](../.konspekt/instance/artifacts/artifact-reference-implementation.md) | What the walking skeleton must prove, the in/out boundary, the six build phases, and the acceptance criteria. | accepted |
-| [RI fixture spec](../.konspekt/instance/artifacts/artifact-ri-fixtures-spec.md) | The synthetic test corpus: one backpatch with every value fixed, the L0–L9 set, and the known-bad variants each expected to be refused by a named rule. | accepted |
-| [Paper outline](../.konspekt/instance/artifacts/artifact-paper-outline.md) | Structure of the working paper. | accepted |
+| [Architecture & Design](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-architecture.md) | The integrating overview, and home of the **evidence axis**: the L-1…L9 attestation chain, the anchor problem, who verifies, the 16 admission rules, the gate, the ledger, and the component register. Start here. | accepted |
+| [Project lifecycle](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-contract-lifecycle.md) | The **project axis**, issuer-side: Drafted through Fulfilled plus three terminals, what Accepted freezes, and amendment as the only route for a shortfall. | accepted |
+| [Package and product lifecycles](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-product-lifecycle.md) | The two machines that run after the freeze: the digest-keyed **package** machine (Accepted → Built → Adopted, or Rejected) and the lineage-keyed **product** machine (Active, Sunset, Retired), plus the renewal loop. | accepted |
+| [Evidence bundle](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-evidence-bundle.md) | The **perimeter interface**: the delivery manifest, the issuer-assembled evidence core, and the bank-assembled ingest envelope — what crosses, who seals it, and which clock applies. | accepted |
+| [Data model](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-data-model.md) | The **records axis**: one schema per state, organized by facets. Immutable content-addressed records versus the append-only operational log and the projections replayed from it. | accepted |
+| [Deployment topology](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-deployment-topology.md) | The physical stores behind the logical model, and the air-gap cadence. | accepted |
+| [Operating model](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-operating-model.md) | The **operating layer**: twenty-nine activities with their actors and traces, the roles inside each party, validity windows against service levels, and the eight exception paths. Its §7 values carry owners and are *not* settled by its acceptance. | accepted |
+| [Reference implementation scope](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-reference-implementation.md) | What the walking skeleton must prove, the in/out boundary, the six build phases, and the acceptance criteria. | accepted |
+| [RI fixture spec](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-ri-fixtures-spec.md) | The synthetic test corpus: one backpatch with every value fixed, the L0–L9 set, and the known-bad variants each expected to be refused by a named rule. | accepted |
+| [Paper outline](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-paper-outline.md) | Structure of the working paper. | accepted |
 
-Decisions live under `.konspekt/instance/noteworthy/`, the goals and tasks they
-attach to under `.konspekt/instance/nodes/`. The whole graph starts at
-[`project.md`](../.konspekt/instance/project.md).
+Decisions lived under [`.konspekt/instance/noteworthy/`](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/noteworthy), the goals and tasks they
+attached to under `.konspekt/instance/nodes/`. The whole graph starts at
+[`project.md`](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/project.md).
 
 ## The lifecycle note
 
@@ -174,8 +166,8 @@ with the vocabulary already established. `explainer.pdf` beside it is that
 document as rendered.
 
 The mockup realizes
-[`task-lifecycle-mockup`](../.konspekt/instance/nodes/task/task-lifecycle-mockup.md)
-and feeds [`task-lifecycle-ui`](../.konspekt/instance/nodes/task/task-lifecycle-ui.md).
+[`task-lifecycle-mockup`](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/nodes/task/task-lifecycle-mockup.md)
+and feeds [`task-lifecycle-ui`](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/nodes/task/task-lifecycle-ui.md).
 Two gaps against its own brief, stated on the page itself: the refusal case is
 not yet drawn, and it still uses `candidateKey`.
 
@@ -229,9 +221,9 @@ binds the chain, §3.7 for the sixteen rules, §4 for the gate. Then
 for the original framing of why no new verification mechanism is needed.
 
 **"What are we building, and how far along?"** —
-[RI scope](../.konspekt/instance/artifacts/artifact-reference-implementation.md)
+[RI scope](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-reference-implementation.md)
 for the phases and acceptance criteria, then
-[the fixture spec](../.konspekt/instance/artifacts/artifact-ri-fixtures-spec.md)
+[the fixture spec](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-ri-fixtures-spec.md)
 for what Phase 0 emits.
 
 **"What is still unresolved?"** — Architecture §9, the operating model's section

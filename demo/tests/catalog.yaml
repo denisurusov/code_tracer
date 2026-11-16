@@ -1,0 +1,307 @@
+# Test scenario catalog for the FX Quote demo product.
+#
+# Every test in every category has an entry here, keyed by a stable ID. The ID
+# appears at the start of the test's name in its result file, which is how a
+# result is linked back to what the test was meant to verify. Field names follow
+# the test case specification content in ISO/IEC/IEEE 29119-3.
+#
+# This file is referenced by digest from every test-result attestation, so the
+# statement of intent is signed together with the results.
+
+catalog_version: 1
+product:
+  name: fx-quote-demo
+  purl: pkg:maven/demo.codetracer/fx-quote-demo   # versionless; the version comes from each build's jar
+  type: user-facing-app                           # selects the required categories in gate/policy.yaml
+
+requirements:
+  REQ-PRICE:  Quotes apply half the configured spread to the mid rate, against the client.
+  REQ-VALID:  Invalid requests are refused with a clear error and never produce a price.
+  REQ-API:    API responses conform to product/src/main/resources/openapi.json.
+  REQ-UI:     A user can get a quote from the web page without reading documentation.
+  REQ-A11Y:   The web page meets WCAG 2.1 level AA for automated checks.
+  REQ-PERF:   The quote endpoint sustains the target load within latency and error budgets.
+  REQ-SECURE: Source contains no dangerous code patterns or embedded secrets.
+  REQ-DEPS:   Runtime dependencies carry no high or critical known vulnerabilities and use allowed licenses.
+  REQ-DATA:   The rates table is complete and internally consistent.
+
+tests:
+  # ---------- unit (node:test) ----------
+  - id: UNIT-001
+    category: unit
+    objective: Buy price is mid plus half the spread.
+    requirement: REQ-PRICE
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
+    expected: applySpread(1.0, 20, buy) == 1.001
+  - id: UNIT-002
+    category: unit
+    objective: Sell price is mid minus half the spread.
+    requirement: REQ-PRICE
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
+    expected: applySpread(1.0, 20, sell) == 0.999
+  - id: UNIT-003
+    category: unit
+    objective: Zero spread returns mid on both sides.
+    requirement: REQ-PRICE
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
+    expected: price == mid
+  - id: UNIT-004
+    category: unit
+    objective: Invalid mid, spread or side is rejected.
+    requirement: REQ-VALID
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
+    expected: RangeError for each invalid input
+  - id: UNIT-005
+    category: unit
+    objective: Quote rounds price to the pair's decimal places and converted amount to 2 dp.
+    requirement: REQ-PRICE
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
+    expected: EURUSD buy 1000 -> price 1.08485, converted 1084.85
+  - id: UNIT-006
+    category: unit
+    objective: Amount outside (0, 10,000,000] and unknown pairs are rejected.
+    requirement: REQ-VALID
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
+    expected: RangeError
+  - id: UNIT-007
+    category: unit
+    objective: The ObjectMapper has no default typing and non-GET requests are refused before any body is read, so request data is never deserialized. Proof for VEX not_affected claims on Jackson polymorphic-deserialization flaws.
+    requirement: REQ-DEPS
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
+    expected: getDefaultTyper() is null; POST with a typed payload returns 405 on every path
+
+  # ---------- integration (Gherkin, HTTP against a running server) ----------
+  - id: INT-001
+    category: integration
+    objective: Health endpoint reports status and number of pairs loaded from the rates file.
+    requirement: REQ-API
+    scenario: tests/features/integration/service.feature
+    preconditions: Built jar started with its bundled rates table
+    expected: 200, status ok, pairs == 5
+  - id: INT-002
+    category: integration
+    objective: Quote endpoint returns a price computed from the loaded rates.
+    requirement: REQ-PRICE
+    scenario: tests/features/integration/service.feature
+    expected: 200 and the same price as the unit-level calculation
+  - id: INT-003
+    category: integration
+    objective: Invalid query parameters are refused with 400.
+    requirement: REQ-VALID
+    scenario: tests/features/integration/service.feature
+    expected: 400 with an error message for each invalid example
+  - id: INT-004
+    category: integration
+    objective: Unknown pair is refused with 404.
+    requirement: REQ-VALID
+    scenario: tests/features/integration/service.feature
+    expected: 404 with an error message
+
+  # ---------- contract (Gherkin, responses validated against OpenAPI) ----------
+  - id: API-001
+    category: contract
+    objective: GET /api/health response matches the Health schema.
+    requirement: REQ-API
+    scenario: tests/features/contract/openapi.feature
+    expected: schema-valid body
+  - id: API-002
+    category: contract
+    objective: GET /api/pairs response matches the Pairs schema.
+    requirement: REQ-API
+    scenario: tests/features/contract/openapi.feature
+    expected: schema-valid body
+  - id: API-003
+    category: contract
+    objective: GET /api/quote 200 response matches the Quote schema for both sides.
+    requirement: REQ-API
+    scenario: tests/features/contract/openapi.feature
+    expected: schema-valid body
+  - id: API-004
+    category: contract
+    objective: Error responses (400, 404) match the Error schema.
+    requirement: REQ-API
+    scenario: tests/features/contract/openapi.feature
+    expected: schema-valid body
+
+  # ---------- end-to-end (Playwright, real browser) ----------
+  - id: E2E-001
+    category: e2e
+    objective: Page loads and lists all supported pairs.
+    requirement: REQ-UI
+    scenario: tests/e2e/quote.spec.mjs
+    expected: 5 options in the pair selector
+  - id: E2E-002
+    category: e2e
+    objective: Submitting the form shows a quote for the chosen pair, side and amount.
+    requirement: REQ-UI
+    scenario: tests/e2e/quote.spec.mjs
+    expected: result text contains the price and converted amount
+  - id: E2E-003
+    category: e2e
+    objective: An invalid amount shows an error and no price.
+    requirement: REQ-VALID
+    scenario: tests/e2e/quote.spec.mjs
+    expected: alert text present, result shows "No quote."
+
+  # ---------- UAT, scripted (Gherkin driving a real browser) ----------
+  - id: UAT-001
+    category: uat
+    objective: A trader can price a EUR purchase and sees what they will pay in USD.
+    requirement: REQ-UI
+    scenario: tests/features/uat/trader.feature
+    expected: quote shown with converted USD amount
+  - id: UAT-002
+    category: uat
+    objective: Selling returns a lower price than buying for the same pair.
+    requirement: REQ-PRICE
+    scenario: tests/features/uat/trader.feature
+    expected: sell price < buy price
+  - id: UAT-003
+    category: uat
+    objective: A mistyped amount is caught and explained.
+    requirement: REQ-VALID
+    scenario: tests/features/uat/trader.feature
+    expected: error explains the problem
+
+  # ---------- accessibility (Playwright + axe-core, WCAG 2.1 AA) ----------
+  - id: A11Y-001
+    category: accessibility
+    objective: Page in its initial state has no WCAG 2.1 A/AA violations detectable by axe-core.
+    requirement: REQ-A11Y
+    scenario: tests/a11y/a11y.spec.mjs
+    expected: 0 violations
+  - id: A11Y-002
+    category: accessibility
+    objective: Page showing a quote and showing an error has no WCAG 2.1 A/AA violations.
+    requirement: REQ-A11Y
+    scenario: tests/a11y/a11y.spec.mjs
+    expected: 0 violations
+
+  # ---------- load (autocannon; thresholds below are the pass criteria) ----------
+  - id: LOAD-001
+    category: load
+    objective: p99 latency of GET /api/quote under target load.
+    requirement: REQ-PERF
+    scenario: tests/load/load.mjs
+    preconditions: Environment described by the captured environment spec
+    expected: p99 <= 250 ms
+  - id: LOAD-002
+    category: load
+    objective: Error rate (non-2xx plus socket errors) under target load.
+    requirement: REQ-PERF
+    scenario: tests/load/load.mjs
+    expected: error rate == 0
+  - id: LOAD-003
+    category: load
+    objective: Sustained throughput under target load.
+    requirement: REQ-PERF
+    scenario: tests/load/load.mjs
+    expected: mean >= 500 requests/second
+
+  # ---------- SAST (semgrep, one check per rule) ----------
+  - id: SAST-001
+    category: sast
+    objective: No dynamic code evaluation (JS eval / Function, Java ScriptEngine.eval).
+    requirement: REQ-SECURE
+    scenario: tests/sast/rules.yml
+    expected: 0 findings for rule SAST-001
+  - id: SAST-002
+    category: sast
+    objective: No process execution from product code (JS child_process, Java Runtime.exec / ProcessBuilder).
+    requirement: REQ-SECURE
+    scenario: tests/sast/rules.yml
+    expected: 0 findings for rule SAST-002
+  - id: SAST-003
+    category: sast
+    objective: No HTML injection sinks (innerHTML, outerHTML, document.write).
+    requirement: REQ-SECURE
+    scenario: tests/sast/rules.yml
+    expected: 0 findings for rule SAST-003
+  - id: SAST-004
+    category: sast
+    objective: TLS certificate or hostname verification is never disabled.
+    requirement: REQ-SECURE
+    scenario: tests/sast/rules.yml
+    expected: 0 findings for rule SAST-004
+  - id: SAST-005
+    category: sast
+    objective: No unsafe deserialization (Jackson default typing, Java ObjectInputStream).
+    requirement: REQ-SECURE
+    scenario: tests/sast/rules.yml
+    expected: 0 findings for rule SAST-005
+
+  # ---------- secrets (gitleaks default rules) ----------
+  - id: SEC-001
+    category: secrets
+    objective: No credentials, keys or tokens in product source.
+    requirement: REQ-SECURE
+    scenario: tests/secrets/gitleaks.toml
+    expected: 0 findings
+
+  # ---------- dependency vulnerabilities (npm audit, runtime deps only) ----------
+  - id: SCA-001
+    category: sca
+    objective: No high or critical OSV advisories against runtime dependencies in the SBOM.
+    requirement: REQ-DEPS
+    scenario: tests/sca/policy.json
+    expected: 0 high or critical advisories (after OpenVEX)
+  - id: SCA-002
+    category: sca
+    objective: Moderate and low advisories are reported as warnings.
+    requirement: REQ-DEPS
+    scenario: tests/sca/policy.json
+    expected: 0 moderate (else WARNED)
+
+  # ---------- licenses (runtime deps) + SBOM ----------
+  - id: LIC-001
+    category: license
+    objective: Every runtime dependency's license is on the allowlist.
+    requirement: REQ-DEPS
+    scenario: tests/license/allowlist.json
+    expected: 0 dependencies outside the allowlist
+  - id: LIC-002
+    category: license
+    objective: A CycloneDX SBOM is produced, identifies the product by the catalog purl, and lists every runtime dependency.
+    requirement: REQ-DEPS
+    scenario: tests/license/allowlist.json
+    expected: SBOM metadata.component.purl == product purl; SBOM components == Maven runtime dependencies
+
+  # ---------- data quality (rates table) ----------
+  - id: DATA-001
+    category: data-quality
+    objective: Pairs are unique 6-letter ISO codes.
+    requirement: REQ-DATA
+    scenario: tests/data/rates.rules.mjs
+    expected: no duplicates, all match ^[A-Z]{6}$
+  - id: DATA-002
+    category: data-quality
+    objective: Mid rates are positive and spreads are within 0-50 bps.
+    requirement: REQ-DATA
+    scenario: tests/data/rates.rules.mjs
+    expected: all rows in range
+  - id: DATA-003
+    category: data-quality
+    objective: Decimal places match market convention (3 for JPY quote currency, else 5).
+    requirement: REQ-DATA
+    scenario: tests/data/rates.rules.mjs
+    expected: all rows match
+  - id: DATA-004
+    category: data-quality
+    objective: All rows come from one snapshot with a valid timestamp.
+    requirement: REQ-DATA
+    scenario: tests/data/rates.rules.mjs
+    expected: single asOf value, valid ISO 8601
+
+  # ---------- named human sign-offs ----------
+  - id: UX-001
+    category: ux-signoff
+    objective: Moderated usability study run to the protocol; no severity-1 findings open.
+    requirement: REQ-UI
+    scenario: tests/ux/protocol.md
+    expected: Signed by an allowlisted UX reviewer, result PASSED
+  - id: UATS-001
+    category: uat-signoff
+    objective: Business owner accepts the release on the basis of the UAT run and their own checks.
+    requirement: REQ-UI
+    scenario: tests/features/uat/trader.feature
+    expected: Signed by an allowlisted business owner, result PASSED

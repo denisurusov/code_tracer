@@ -1,0 +1,275 @@
+#!/usr/bin/env node
+// Negative cases for the gate, plus one positive VEX case. Each case copies the
+// demo (with its evidence) to a temporary directory, applies one change, rebuilds
+// the bundle and runs the gate. A negative case passes when the gate refuses and
+// the refusal names the expected rule; the positive case passes when it admits.
+//
+// Run after `npm run evidence` and the sign-offs, so out/ holds a full set.
+import { cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync, appendFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { verify, RULES } from "./verify.mjs";
+import { certificateIdentity, generateKeyPair, signStatement as signWithKey, statementOf } from "../evidence/lib/cosign.mjs";
+import { signStatement } from "../evidence/lib/signing.mjs";
+import { ensureKeys, IDENTITIES } from "../evidence/lib/keys.mjs";
+import { delivered } from "../evidence/lib/product.mjs";
+import { readdirSync } from "node:fs";
+
+process.env.DEMO_SIGNING = "key"; // re-signing in the cases below always uses the demo keys
+import { fileDigest } from "../evidence/lib/digest.mjs";
+import { writeBundle } from "../evidence/lib/bundle.mjs";
+import { spawnSync } from "node:child_process";
+
+const CWD = process.cwd();
+
+function copyDemo(from) {
+  const dir = mkdtempSync(join(tmpdir(), "gate-neg-"));
+  cpSync(from, dir, { recursive: true, filter: (p) => !p.startsWith(join(from, "node_modules")) && !p.startsWith(join(from, "out/cache")) });
+  symlinkSync(join(CWD, "node_modules"), join(dir, "node_modules"));
+  return dir;
+}
+
+// The base every case starts from: a re-keyed copy of this run's evidence.
+const BASE = copyDemo(CWD);
+rekey(BASE);
+
+const att = (dir, c) => join(dir, "out/attestations", `${c}.sigstore.json`);
+const readStatement = (dir, c) => statementOf(JSON.parse(readFileSync(att(dir, c), "utf8")));
+const resign = (dir, c, statement, signerId) =>
+  signStatement(statement, signerId, att(dir, c), { keyDir: join(dir, ".keys") });
+
+// Re-run the SCA category inside the copy against the fixture OSV snapshot (one
+// fictional high-severity advisory on jackson-databind) and an optional VEX document.
+function rerunSca(dir, { vex } = {}) {
+  const env = { ...process.env, DEMO_SIGNING: "key", DEMO_OSV_SNAPSHOT: "tests/sca/fixtures/osv-snapshot-demo", ...(vex ? { DEMO_VEX: vex } : {}) };
+  const r = spawnSync(process.execPath, ["evidence/run.mjs", "sca"], { cwd: dir, env, encoding: "utf8" });
+  if (r.error) throw r.error;
+}
+const jarPath = (d) => delivered(d).path;
+
+// Re-sign every attestation in a copy with the demo keys of the identity that
+// signed it. Keyless CI bundles become key-signed, so the cases below can
+// re-sign tampered statements and still test the gate's rules (not Sigstore).
+function rekey(dir) {
+  ensureKeys(join(dir, ".keys"));
+  const attDir = join(dir, "out/attestations");
+  for (const f of readdirSync(attDir).filter((x) => x.endsWith(".sigstore.json"))) {
+    const bundle = JSON.parse(readFileSync(join(attDir, f), "utf8"));
+    const certId = certificateIdentity(bundle);
+    if (!certId) continue;
+    const id = Object.entries(IDENTITIES).find(([, x]) => x.keyless && certId.startsWith(`${x.keyless.workflow}@`))?.[0];
+    if (!id) throw new Error(`no identity for certificate ${certId}`);
+    signStatement(statementOf(bundle), id, join(attDir, f), { keyDir: join(dir, ".keys") });
+  }
+  writeBundle(dir);
+}
+
+const CASES = [
+  {
+    name: "product source changed after testing",
+    expect: "G05",
+    apply: (d) => appendFileSync(join(d, "product/src/main/java/demo/fxquote/Quote.java"), "\n// patched after the tests ran\n"),
+  },
+  {
+    name: "product source changed after the build; the gate's own rebuild disagrees",
+    expect: "G15",
+    rebuild: true,
+    apply: (d) => writeFileSync(join(d, "product/src/main/java/demo/fxquote/Quote.java"),
+      readFileSync(join(d, "product/src/main/java/demo/fxquote/Quote.java"), "utf8").replace('"20000"', '"10000"')),
+  },
+  {
+    name: "build is not reproducible (rebuild digest differs from provenance)",
+    expect: "G15",
+    rebuild: "0".repeat(64),
+    apply: () => {},
+  },
+  {
+    name: "delivered jar replaced after the build",
+    expect: "G14",
+    apply: (d) => appendFileSync(jarPath(d), Buffer.from([0])),
+  },
+  {
+    name: "tests ran against a different jar than the provenance covers (properly signed)",
+    expect: "G14",
+    apply: (d) => {
+      const st = readStatement(d, "unit");
+      st.subject[0].digest.sha256 = "1".repeat(64);
+      resign(d, "unit", st, "ci-pipeline");
+      writeFileSync(jarPath(d), readFileSync(jarPath(d))); // delivered jar unchanged
+    },
+  },
+  {
+    name: "build provenance signed by the CI pipeline instead of the build service",
+    expect: "G03",
+    apply: (d) => resign(d, "build", readStatement(d, "build"), "ci-pipeline"),
+  },
+  {
+    name: "built in an image that is not on the policy's allowlist",
+    expect: "G16",
+    apply: (d) => {
+      const st = readStatement(d, "build");
+      st.predicate.buildDefinition.internalParameters.builder = "container";
+      st.predicate.buildDefinition.internalParameters.image = `docker.io/library/maven:latest@sha256:${"0".repeat(64)}`;
+      resign(d, "build", st, "build-service");
+    },
+  },
+  {
+    name: "built on the host, not in a pinned build image",
+    expect: "G16",
+    env: { DEMO_ALLOW_HOST_BUILD: "0" },
+    apply: (d) => {
+      const st = readStatement(d, "build");
+      st.predicate.buildDefinition.internalParameters.builder = "host";
+      delete st.predicate.buildDefinition.internalParameters.image;
+      resign(d, "build", st, "build-service");
+    },
+  },
+  {
+    name: "build provenance missing",
+    expect: "G12",
+    apply: (d) => rmSync(att(d, "build")),
+  },
+  {
+    name: "attestation payload edited without re-signing",
+    expect: "G01",
+    apply: (d) => {
+      const bundle = JSON.parse(readFileSync(att(d, "unit"), "utf8"));
+      const st = statementOf(bundle);
+      st.predicate.url = "https://example.com/a-different-run";
+      bundle.dsseEnvelope.payload = Buffer.from(JSON.stringify(st)).toString("base64");
+      writeFileSync(att(d, "unit"), JSON.stringify(bundle));
+    },
+  },
+  {
+    name: "attestation signed by an unknown key",
+    expect: "G02",
+    apply: (d) => {
+      const k = generateKeyPair(join(d, ".keys", "mallory"));
+      signWithKey(readStatement(d, "e2e"), k.key, att(d, "e2e"), join(d, ".keys/signing-config.offline.json"));
+    },
+  },
+  {
+    name: "UX sign-off signed by a trusted person not authorized for UX",
+    expect: "G03",
+    apply: (d) => resign(d, "ux-signoff", readStatement(d, "ux-signoff"), "raj.patel"),
+  },
+  {
+    name: "load results signed by the CI pipeline instead of the perf environment",
+    expect: "G03",
+    apply: (d) => resign(d, "load", readStatement(d, "load"), "ci-pipeline"),
+  },
+  {
+    name: "catalog changed after testing (intent rewritten)",
+    expect: "G06",
+    apply: (d) => appendFileSync(join(d, "tests/catalog.yaml"), "\n# objective reworded after the run\n"),
+  },
+  {
+    name: "scenario file changed after testing",
+    expect: "G07",
+    apply: (d) => appendFileSync(join(d, "tests/features/integration/service.feature"), "\n# edited\n"),
+  },
+  {
+    name: "report file swapped",
+    expect: "G08",
+    apply: (d) => writeFileSync(join(d, "out/results/sast/semgrep.sarif"), JSON.stringify({ version: "2.1.0", runs: [] })),
+  },
+  {
+    name: "a catalog test silently dropped from the results (properly signed)",
+    expect: "G09",
+    apply: (d) => {
+      const st = readStatement(d, "contract");
+      st.predicate.passedTests = st.predicate.passedTests.filter((id) => id !== "API-004");
+      resign(d, "contract", st, "ci-pipeline");
+    },
+  },
+  {
+    name: "a test failed (properly signed)",
+    expect: "G10",
+    apply: (d) => {
+      const st = readStatement(d, "unit");
+      st.predicate.passedTests = st.predicate.passedTests.filter((id) => id !== "UNIT-005");
+      st.predicate.failedTests = ["UNIT-005"];
+      st.predicate.result = "FAILED";
+      resign(d, "unit", st, "ci-pipeline");
+    },
+  },
+  {
+    name: "load environment spec missing fields (properly signed)",
+    expect: "G11",
+    apply: (d) => {
+      const specPath = join(d, "out/results/load/env-spec.json");
+      const spec = JSON.parse(readFileSync(specPath, "utf8"));
+      delete spec.compute;
+      writeFileSync(specPath, JSON.stringify(spec, null, 2));
+      const st = readStatement(d, "load");
+      const desc = st.predicate.configuration.find((x) => x.annotations.role === "environment-spec");
+      desc.digest.sha256 = fileDigest(specPath);
+      resign(d, "load", st, "perf-env");
+    },
+  },
+  {
+    name: "required category missing (no accessibility evidence)",
+    expect: "G12",
+    apply: (d) => rmSync(att(d, "accessibility")),
+  },
+  {
+    name: "high-severity OSV advisory on a runtime dependency, no VEX",
+    expect: "G10",
+    apply: (d) => rerunSca(d),
+  },
+  {
+    name: "advisory suppressed by an OpenVEX not_affected statement that cites no proof",
+    expect: "G13",
+    apply: (d) => rerunSca(d, { vex: "tests/sca/fixtures/vex-jackson-no-proof.openvex.json" }),
+  },
+  {
+    name: "advisory suppressed by VEX citing a proof test that failed",
+    expect: "G13",
+    apply: (d) => {
+      rerunSca(d, { vex: "tests/sca/fixtures/vex-jackson-not-affected.openvex.json" });
+      const st = readStatement(d, "unit");
+      st.predicate.passedTests = st.predicate.passedTests.filter((id) => id !== "UNIT-007");
+      st.predicate.failedTests = ["UNIT-007"];
+      st.predicate.result = "FAILED";
+      resign(d, "unit", st, "ci-pipeline");
+    },
+  },
+  {
+    name: "POSITIVE: advisory suppressed by VEX citing a passed proof test (UNIT-007)",
+    expectVerdict: "ADMIT",
+    apply: (d) => rerunSca(d, { vex: "tests/sca/fixtures/vex-jackson-not-affected.openvex.json" }),
+  },
+];
+
+// One real rebuild for the baseline; cases reuse its digest unless they ask to rebuild.
+const baseline = verify({ root: BASE, rebuild: true });
+console.log(`baseline: ${baseline.verdict} (rebuilt jar ${baseline.rebuildDigest})`);
+if (baseline.verdict !== "ADMIT") {
+  console.error("Baseline evidence is not admitted; run the full demo first.");
+  process.exit(1);
+}
+
+const rows = [];
+for (const c of CASES) {
+  const dir = copyDemo(BASE);
+  try {
+    c.apply(dir);
+    writeBundle(dir);
+    const saved = Object.fromEntries(Object.keys(c.env ?? {}).map((k) => [k, process.env[k]]));
+    Object.assign(process.env, c.env ?? {});
+    const r = verify({ root: dir, rebuild: c.rebuild ?? baseline.rebuildDigest });
+    for (const [k, v] of Object.entries(saved)) v === undefined ? delete process.env[k] : (process.env[k] = v);
+    const rules = [...new Set(r.failures.map((f) => f.rule))];
+    const ok = c.expectVerdict === "ADMIT" ? r.verdict === "ADMIT" : r.verdict === "REFUSE" && rules.includes(c.expect);
+    const first = r.failures.find((f) => f.rule === c.expect) ?? r.failures[0];
+    rows.push({ case: c.name, expected: c.expect ? `${c.expect} ${RULES[c.expect]}` : "ADMIT", verdict: r.verdict, "rules failed": rules.join(" "), ok: ok ? "✓" : "✗" });
+    if (first) console.log(`- ${c.name}\n    ${first.rule} ${first.name} [${first.category}]: ${first.detail}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+console.table(rows);
+rmSync(BASE, { recursive: true, force: true });
+const bad = rows.filter((r) => r.ok !== "✓").length;
+console.log(bad ? `${bad} case(s) did not behave as expected` : `All ${rows.length} cases behaved as expected (each refusal by the expected rule).`);
+process.exitCode = bad ? 1 : 0;

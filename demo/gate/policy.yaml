@@ -1,0 +1,72 @@
+# Bank ingestion gate policy for test evidence (demo).
+#
+# Signers are identity IDs from the trust store. In production these would be
+# Sigstore certificate identities: a workflow path pinned to a ref for automated
+# categories, a corporate email for named sign-offs.
+policy_version: 1
+
+# Git refs a keyless workflow identity may have run from (the part of the
+# certificate identity after "@"). DEMO_GATE_PROFILE selects the profile; the
+# default is release. Bank-bound builds are releases: tags demo-v<version>.
+trusted_refs:
+  release:
+    - refs/tags/demo-v[0-9][^/]*
+  development:
+    - refs/tags/demo-v[0-9][^/]*
+    - refs/heads/.+
+    - refs/pull/[0-9]+/merge
+
+product_types:
+  library:          [build, unit, sast, sca, secrets, license]
+  cli-tool:         [build, unit, integration, sast, sca, secrets, license]
+  backend-service:  [build, unit, integration, contract, sast, sca, secrets, license, load]
+  user-facing-app:  [build, unit, integration, contract, e2e, uat, accessibility, load, sast, sca, secrets, license, ux-signoff, uat-signoff]
+  data-pipeline:    [build, unit, integration, sast, sca, secrets, license, load, data-quality]
+
+categories:
+  # SLSA provenance for the delivered jar, from an isolated build identity.
+  build:
+    signers: [build-service]
+    predicate_type: "https://slsa.dev/provenance/v1"
+    # G16: the build (and the gate's rebuild) must run in one of these images, pinned by digest.
+    # Host builds are refused unless DEMO_ALLOW_HOST_BUILD=1 (local runs without Docker).
+    allowed_images:
+      - docker.io/library/maven:3.9.16-eclipse-temurin-21@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320
+  unit:            { signers: [ci-pipeline] }
+  integration:     { signers: [ci-pipeline] }
+  contract:        { signers: [ci-pipeline] }
+  e2e:             { signers: [ci-pipeline] }
+  uat:             { signers: [ci-pipeline] }
+  accessibility:   { signers: [ci-pipeline] }
+  sast:            { signers: [ci-pipeline] }
+  secrets:         { signers: [ci-pipeline] }
+  sca:             { signers: [ci-pipeline], allow_warned: true }
+  license:         { signers: [ci-pipeline] }
+  data-quality:    { signers: [ci-pipeline] }
+  load:
+    signers: [perf-env]
+    # The bank accepts externally run load tests when the environment is specified.
+    environment_spec_required_fields:
+      - captured_at
+      - environment_name
+      - system_under_test.artifact_digest
+      - system_under_test.source_digest
+      - system_under_test.runtime
+      - compute.cpu_model
+      - compute.vcpu
+      - compute.memory_gb
+      - compute.os
+      - compute.instances
+      - network.topology
+      - data.dataset
+      - load_generator.tool
+      - load_generator.location
+      - profile.connections
+      - profile.duration_seconds
+      - thresholds
+  ux-signoff:      { signers: [alice.chen] }
+  uat-signoff:     { signers: [raj.patel] }
+
+# Categories outside the product type's required list are still verified if
+# present, and a failure in them refuses admission.
+verify_optional_categories: true

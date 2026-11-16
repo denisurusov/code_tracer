@@ -1,0 +1,4 @@
+{
+  "description": "SPDX license identifiers allowed for runtime dependencies.",
+  "allowed": ["MIT", "ISC", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "0BSD", "Unlicense", "BlueOak-1.0.0"]
+}

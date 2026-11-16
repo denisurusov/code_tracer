@@ -1,0 +1,48 @@
+name: demo tests
+
+# Reusable workflow: runs every automated test category except load against the
+# built jar and signs each result with cosign keyless. Its own file so the Fulcio
+# certificate names this workflow (the "ci-pipeline" identity in the gate).
+
+on:
+  workflow_call:
+    inputs:
+      ref: { type: string, required: true }
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: demo
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/demo-setup
+        with:
+          java: "true"
+          scanners: "true"
+      - uses: actions/download-artifact@v8
+        with:
+          name: demo-build
+          path: demo/out
+      # Playwright (JS and Java) uses the Google Chrome preinstalled on ubuntu-latest.
+      - name: Run the test categories against the jar and sign (keyless)
+        env:
+          DEMO_SIGNING: keyless
+        run: node evidence/run.mjs unit integration contract uat e2e accessibility sast secrets sca license data-quality
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: demo-tests
+          path: |
+            demo/out/attestations
+            demo/out/results
+            !demo/out/attestations/build.sigstore.json
+          if-no-files-found: error
+          retention-days: 90

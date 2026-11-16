@@ -1,0 +1,40 @@
+name: demo test evidence
+
+# Development builds of the test-evidence demo: every pull request that touches
+# the demo, and manual dispatch. Each run is one build with its own version
+# (0.1.0-ci.<run number>), gated under the development profile; the gate job
+# also checks that the same evidence is refused under the release profile.
+# Bank-bound builds are releases: see demo-release.yml.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ["demo/**", ".github/workflows/demo-*.yml", ".github/actions/demo-setup/**", "!demo/EVIDENCE.md", "!demo/records/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-test-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vars:
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.v.outputs.ref }}
+      revision: ${{ steps.v.outputs.revision }}
+    steps:
+      - id: v
+        run: |
+          echo "ref=${{ github.head_ref || github.ref_name }}" >> "$GITHUB_OUTPUT"
+          echo "revision=0.1.0-ci.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+  pipeline:
+    needs: vars
+    permissions: { contents: write, packages: write, id-token: write }
+    uses: ./.github/workflows/demo-pipeline.yml
+    with:
+      ref: ${{ needs.vars.outputs.ref }}
+      revision: ${{ needs.vars.outputs.revision }}
+      profile: development

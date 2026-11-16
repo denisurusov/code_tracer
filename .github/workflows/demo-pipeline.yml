@@ -1,0 +1,211 @@
+name: demo pipeline
+
+# One build of the test-evidence demo, end to end. Called by
+# demo-test-evidence.yml (pull requests, development gate profile) and
+# demo-release.yml (demo-v<version> tags, release gate profile).
+#
+#   provider side
+#     build    (demo-build.yml)  reproducible jar in the pinned Maven image + SLSA provenance, keyless
+#     tests    (demo-tests.yml)  every automated category except load, against the jar, keyless
+#     load     (demo-load.yml)   load test against the jar, keyless
+#     publish                    named sign-offs; jar + evidence + reports to GitHub Packages
+#   bank side
+#     gate                       fresh runner: clone at the ref, fetch the build from GitHub Packages
+#                                by coordinates, gate it (cosign, rebuild in the pinned image, Rego),
+#                                write records/<version>.md, run the negative cases, and for a
+#                                release create the GitHub Release; commit the record
+
+on:
+  workflow_call:
+    inputs:
+      ref: { type: string, required: true }
+      revision: { type: string, required: true }
+      profile: { type: string, required: true }
+      release: { type: boolean, default: false }
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    permissions: { contents: read, id-token: write }
+    uses: ./.github/workflows/demo-build.yml
+    with:
+      ref: ${{ inputs.ref }}
+      revision: ${{ inputs.revision }}
+
+  tests:
+    needs: build
+    permissions: { contents: read, id-token: write }
+    uses: ./.github/workflows/demo-tests.yml
+    with:
+      ref: ${{ inputs.ref }}
+
+  load:
+    needs: build
+    permissions: { contents: read, id-token: write }
+    uses: ./.github/workflows/demo-load.yml
+    with:
+      ref: ${{ inputs.ref }}
+
+  publish:
+    needs: [tests, load]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    defaults:
+      run:
+        working-directory: demo
+    env:
+      DEMO_MAVEN_REPO_URL: https://maven.pkg.github.com/${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/demo-setup
+        with:
+          java: "true"
+          maven-server: "true"
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: demo-*
+          merge-multiple: true
+          path: demo/out
+      - name: Named sign-offs (demo reviewers, cosign keys)
+        run: npm run signoffs
+      - name: Publish the jar, the evidence and the reports to GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run publish:maven
+      # Demo stand-in for the bank's directory of reviewer identities: the
+      # reviewers' public keys only. Private keys never leave this job.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: reviewer-trust
+          path: demo/.keys/trust.json
+          retention-days: 90
+
+  gate:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # commit the record; create the release
+      packages: read    # fetch the build from GitHub Packages
+    defaults:
+      run:
+        working-directory: demo
+    env:
+      DEMO_MAVEN_REPO_URL: https://maven.pkg.github.com/${{ github.repository }}
+      DEMO_GATE_PROFILE: ${{ inputs.profile }}
+      DEMO_REBUILD_OFFLINE: "0"   # Maven Central stands in for the bank's dependency mirror
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - uses: ./.github/actions/demo-setup
+        with:
+          java: "true"
+          scanners: "true"
+      - uses: actions/download-artifact@v8
+        with:
+          name: reviewer-trust
+          path: demo/.keys
+
+      - name: Fetch the build from GitHub Packages by coordinates
+        run: node evidence/fetch.mjs --version "${{ inputs.revision }}"
+
+      - name: Gate policy tests (Rego)
+        run: npm run policy:test
+
+      - name: Gate (${{ inputs.profile }} profile)
+        run: npm run gate
+
+      - if: inputs.profile != 'release'
+        name: The same evidence must be refused under the release profile
+        run: |
+          if DEMO_GATE_PROFILE=release node gate/verify.mjs --no-rebuild --no-write > /tmp/release-check.txt; then
+            echo "a development build was admitted under the release profile"; cat /tmp/release-check.txt; exit 1
+          fi
+          grep -q "G02 signer-trusted" /tmp/release-check.txt
+          grep "G02" /tmp/release-check.txt | head -3
+
+      - if: inputs.release
+        name: Create the GitHub Release
+        run: |
+          echo "DEMO_RELEASE_URL=https://github.com/${{ github.repository }}/releases/tag/${{ inputs.ref }}" >> "$GITHUB_ENV"
+          gh release create "${{ inputs.ref }}" --verify-tag --title "fx-quote-demo ${{ inputs.revision }}" \
+            --notes "Bank-bound build ${{ inputs.revision }} of the test-evidence demo. Evidence record: demo/records/${{ inputs.revision }}.md" \
+            out/artifacts/*.jar out/evidence.intoto.jsonl out/evidence-files.tar.gz
+
+      - name: Evidence record
+        run: npm run manifest
+
+      - if: inputs.release
+        name: Attach the record and the VSA to the release
+        run: gh release upload "${{ inputs.ref }}" "records/${{ inputs.revision }}.md" out/vsa.sigstore.json
+
+      - name: Gate negative cases
+        run: npm run gate:negative
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Test evidence — ${{ inputs.revision }} (${{ inputs.profile }} profile)"
+            echo
+            echo "| category | result | signer |"
+            echo "|---|---|---|"
+            for f in out/attestations/*.sigstore.json; do
+              node -e '
+                const b = JSON.parse(require("fs").readFileSync(process.argv[1]));
+                const s = JSON.parse(Buffer.from(b.dsseEnvelope.payload, "base64"));
+                const vm = b.verificationMaterial;
+                const keyless = !!(vm.certificate || vm.x509CertificateChain);
+                const cat = s.predicateType === "https://slsa.dev/provenance/v1" ? "build (SLSA provenance)" : s.predicate["x-code-tracer"].category;
+                console.log(`| ${cat} | ${s.predicate.result ?? "—"} | ${keyless ? "keyless, Rekor " + (vm.tlogEntries?.[0]?.logIndex ?? "?") : "cosign key"} |`);
+              ' "$f"
+            done
+            echo
+            [ -f out/gate-report.json ] && node -e 'const r = require("./out/gate-report.json"); console.log(`**Gate verdict:** ${r.verdict} for ${r.productPurl}`)'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-evidence
+          path: |
+            demo/out/evidence.intoto.jsonl
+            demo/out/evidence-files.tar.gz
+            demo/out/fetched.json
+            demo/out/artifacts
+            demo/out/attestations
+            demo/out/results
+            demo/out/vsa.sigstore.json
+            demo/out/gate-report.json
+            demo/records
+            demo/EVIDENCE.md
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Commit the record to the branch
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # A tag has no branch: commit to the branch that contains the tagged commit.
+          branch="${{ inputs.ref }}"
+          if git show-ref --verify --quiet "refs/tags/$branch"; then
+            branch=$(git branch -r --contains HEAD | grep -v -- '->' | sed 's#^ *origin/##' | head -1)
+            cp "records/${{ inputs.revision }}.md" /tmp/record.md
+            git checkout -q -f -B "$branch" "origin/$branch"
+            mkdir -p records && cp /tmp/record.md "records/${{ inputs.revision }}.md"
+            node -e 'import("./evidence/lib/records-index.mjs").then((m) => m.writeIndex())'
+          fi
+          git add records EVIDENCE.md
+          if git diff --cached --quiet; then echo "record unchanged"; exit 0; fi
+          git commit -m "Record test evidence for ${{ inputs.revision }} [skip ci]"
+          git pull --rebase origin "$branch"
+          git push origin "HEAD:$branch"

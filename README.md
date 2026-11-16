@@ -63,7 +63,7 @@ policy the verifier enforces.
 
 The project machine it drives — drafted, proposed, accepted, delivered,
 fulfilled — is
-[`artifact-contract-lifecycle`](.konspekt/instance/artifacts/artifact-contract-lifecycle.md).
+[`artifact-contract-lifecycle`](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-contract-lifecycle.md).
 
 ## Two zones
 
@@ -101,7 +101,7 @@ Three properties do the heavy lifting:
   needing a weaker tier.
 
 Full chain, the sixteen admission rules, and the reasoning:
-[`artifact-architecture`](.konspekt/instance/artifacts/artifact-architecture.md) §3.
+[`artifact-architecture`](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-architecture.md) §3.
 
 ## The gate
 
@@ -225,39 +225,28 @@ docs/                   publications — anything written for a reader
                         built from and never edited — plus explainer.html,
                         which is authored and its own source
   historical/           working-group notes, frozen at reconstruction
-.konspekt/              project state in konspekt format: goals, tasks,
-                        decisions, artifacts, and the edges between them
-lib/                    konspekt conformance checker and validator
-.github/                conformance CI and notification workflows
+.konspekt/NOTES.md      human scratchpad
+demo/                   runnable test-evidence demo: a Java product, its build
+                        provenance, tests in every category, signed in-toto
+                        results, and the gate
+.github/                the demo's evidence workflow
 ```
 
-The dividing line: if it has an id, a review state and edges it is a **record**
-and lives in `.konspekt/`; if it is written for a reader it is a **publication**
-and lives in `docs/`. [`docs/README.md`](docs/README.md) indexes the second, and
-[`docs/build/README.md`](docs/build/README.md) says which files in that one
-directory are derived and which are authored — a rebuild overwrites the first kind
-without asking.
+The design records (goals, decisions, artifacts and their edges) were kept as a
+konspekt instance under `.konspekt/instance/` until commit
+[`9217e03`](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c), and have since been removed from the tree. Links to them in this
+README point at that commit. [`docs/README.md`](docs/README.md) indexes the
+publications, and [`docs/build/README.md`](docs/build/README.md) says which files
+in that one directory are derived and which are authored.
 
-### Design state lives in `.konspekt/`
+### Test-evidence demo
 
-This repo carries its own design state as data rather than prose. Goals decompose
-into tasks, decisions are recorded as first-class records with their rejected
-alternatives, and everything is append-only and hash-anchored.
-
-Start at [`.konspekt/instance/project.md`](.konspekt/instance/project.md); the
-architecture, the three lifecycle machines, the data model, the evidence bundle,
-the deployment topology, the operating model and the reference-implementation
-scope are under `.konspekt/instance/artifacts/`.
-
-Validate the instance:
-
-```sh
-node lib/validate.mjs
-```
-
-The maintenance loop and the rules governing it are in
-[`.konspekt/OPERATING.md`](.konspekt/OPERATING.md). The short version: proposals
-are made continuously, but only a human command accepts them.
+[`demo/`](demo/README.md) runs the chain's provider-side build and test evidence
+(L3 provenance and L4 test results, split by category) and the bank-side gate
+check (L8, including its own rebuild) end to end on a small Java product: a
+reproducible Maven build, tests in every category against the built jar, results
+in CTRF, SARIF and OSV, each category signed as an in-toto test-result
+attestation, and a gate that admits or refuses.
 
 ## Status
 
@@ -275,11 +264,11 @@ known-bad variant yields a refusal naming the rule it failed; and two runs
 produce byte-identical verdicts with no network.
 
 Scope and phases:
-[`artifact-reference-implementation`](.konspekt/instance/artifacts/artifact-reference-implementation.md).
+[`artifact-reference-implementation`](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-reference-implementation.md).
 
 ## Known gaps
 
-Named rather than hidden — each is tracked in `.konspekt/`:
+Named rather than hidden — each was tracked in the design records ([commit `9217e03`](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c)):
 
 - **Alliance governance policy.** The trust-root *mechanism* is settled: a
   threshold of parties co-signs the root, and bilateral work runs under a
@@ -308,6 +297,6 @@ attestations and layouts, DSSE envelopes, SLSA provenance, CycloneDX SBOMs, VEX
 for exploitability, Sigstore signing, TUF trust roots, Package URL coordinates,
 and Rego for policy.
 
-Current register: [`artifact-architecture`](.konspekt/instance/artifacts/artifact-architecture.md)
+Current register: [`artifact-architecture`](https://github.com/denisurusov/code_tracer/blob/9217e039501b148ad5ca43a093c0ebe59601a92c/.konspekt/instance/artifacts/artifact-architecture.md)
 §7. The original working-group survey, kept for its framing, is
 [`docs/historical/osera-standards-register.md`](docs/historical/osera-standards-register.md).
