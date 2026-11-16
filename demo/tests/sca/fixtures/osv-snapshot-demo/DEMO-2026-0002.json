@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.6.0",
+  "id": "DEMO-2026-0002",
+  "modified": "2026-11-15T00:00:00Z",
+  "summary": "FICTIONAL demo advisory fixed long before the version in use (must NOT match)",
+  "affected": [
+    {
+      "package": { "ecosystem": "Maven", "name": "com.fasterxml.jackson.core:jackson-core", "purl": "pkg:maven/com.fasterxml.jackson.core/jackson-core" },
+      "ranges": [{ "type": "ECOSYSTEM", "events": [{ "introduced": "0" }, { "fixed": "2.15.0" }] }]
+    }
+  ],
+  "database_specific": { "severity": "CRITICAL" }
+}

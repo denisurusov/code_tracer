@@ -1,9 +1,9 @@
-// Data quality rules over product/data/rates.json, run with node:test.
+// Data quality rules over product/src/main/resources/data/rates.json, run with node:test.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const rows = JSON.parse(readFileSync(new URL("../../product/data/rates.json", import.meta.url), "utf8"));
+const rows = JSON.parse(readFileSync(new URL("../../product/src/main/resources/data/rates.json", import.meta.url), "utf8"));
 
 test("DATA-001 pairs are unique 6-letter codes", () => {
   const pairs = rows.map((r) => r.pair);

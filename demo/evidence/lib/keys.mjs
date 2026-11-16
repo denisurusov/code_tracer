@@ -8,6 +8,11 @@ export const KEY_DIR = ".keys";
 export const TRUST_PATH = `${KEY_DIR}/trust.json`;
 
 export const IDENTITIES = {
+  "build-service": {
+    kind: "workflow",
+    name: "org/test-evidence/.github/workflows/build.yml@refs/tags/v1",
+    note: "Stands for an isolated build workflow's Sigstore identity; signs SLSA provenance only.",
+  },
   "ci-pipeline": {
     kind: "workflow",
     name: "org/test-evidence/.github/workflows/evidence.yml@refs/tags/v1",

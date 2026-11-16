@@ -7,12 +7,16 @@
 #   policy          gate/policy.yaml as JSON
 #   catalog         tests/catalog.yaml as JSON
 #   source_digest   sha256 of the clone's source manifest
-#   attestations[]  { category, predicate, environment_spec, vex_document }
+#   artifact_digest sha256 of the delivered jar
+#   attestations[]  { category, kind (test-result | provenance), predicate, environment_spec, vex_document }
 package codetracer.gate
 
 import rego.v1
 
-atts := {a.category: a | some a in input.attestations}
+# Every admitted attestation (for G12), and the test-result ones (for G09-G11, G13).
+all_atts := {a.category: a | some a in input.attestations}
+
+atts := {a.category: a | some a in input.attestations; a.kind == "test-result"}
 
 required := {c | some c in input.policy.product_types[input.catalog.product.type]}
 
@@ -81,9 +85,18 @@ deny contains {"rule": "G11", "category": cat, "detail": "spec describes a diffe
 	spec.system_under_test.source_digest != concat("", ["sha256:", input.source_digest])
 }
 
+deny contains {"rule": "G11", "category": cat, "detail": "spec describes a different artifact than the delivered jar"} if {
+	some cat, a in atts
+	spec_fields(cat)
+	spec := a.environment_spec
+	spec != null
+	input.artifact_digest != null
+	spec.system_under_test.artifact_digest != concat("", ["sha256:", input.artifact_digest])
+}
+
 # ---------- G12 required-categories-present ----------
 deny contains {"rule": "G12", "category": "*", "detail": sprintf("missing for %s: %s", [input.catalog.product.type, concat(", ", sort(missing))])} if {
-	missing := {c | some c in required; not atts[c]}
+	missing := {c | some c in required; not all_atts[c]}
 	count(missing) > 0
 }
 
@@ -100,7 +113,7 @@ justifications := {
 }
 
 passed_anywhere(id) if {
-	some a in input.attestations
+	some a in atts
 	id in a.predicate.passedTests
 }
 

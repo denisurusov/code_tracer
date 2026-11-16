@@ -6,7 +6,7 @@ import rego.v1
 import data.codetracer.gate
 
 base_policy := {
-	"product_types": {"library": ["unit", "sca"]},
+	"product_types": {"library": ["build", "unit", "sca"]},
 	"categories": {
 		"unit": {"signers": ["ci-pipeline"]},
 		"sca": {"signers": ["ci-pipeline"], "allow_warned": true},
@@ -26,12 +26,15 @@ base_catalog := {
 
 att(category, passed, warned, failed, result) := {
 	"category": category,
+	"kind": "test-result",
 	"predicate": {"result": result, "passedTests": passed, "warnedTests": warned, "failedTests": failed},
 	"environment_spec": null,
 	"vex_document": null,
 }
 
-input_with(atts) := {"policy": base_policy, "catalog": base_catalog, "source_digest": "abc", "attestations": atts}
+provenance := {"category": "build", "kind": "provenance", "predicate": {"passedTests": [], "warnedTests": [], "failedTests": []}}
+
+input_with(atts) := {"policy": base_policy, "catalog": base_catalog, "source_digest": "abc", "artifact_digest": null, "attestations": array.concat([provenance], atts)}
 
 rules(denies) := {d.rule | some d in denies}
 
@@ -107,4 +110,22 @@ test_vex_without_proof_is_g13 if {
 test_vex_with_unknown_proof_is_g13 if {
 	denies := gate.deny with input as input_with([att("unit", ["UNIT-001", "UNIT-002"], [], [], "PASSED"), sca_with_vex(["UNIT-999"])])
 	rules(denies) == {"G13"}
+}
+
+test_missing_build_provenance_is_g12 if {
+	denies := gate.deny with input as {"policy": base_policy, "catalog": base_catalog, "source_digest": "abc", "artifact_digest": null, "attestations": [
+		att("unit", ["UNIT-001", "UNIT-002"], [], [], "PASSED"),
+		att("sca", ["SCA-001"], [], [], "PASSED"),
+	]}
+	some d in denies
+	d.rule == "G12"
+	contains(d.detail, "build")
+}
+
+test_provenance_is_not_judged_as_a_test_result if {
+	denies := gate.deny with input as input_with([
+		att("unit", ["UNIT-001", "UNIT-002"], [], [], "PASSED"),
+		att("sca", ["SCA-001"], [], [], "PASSED"),
+	])
+	count(denies) == 0
 }

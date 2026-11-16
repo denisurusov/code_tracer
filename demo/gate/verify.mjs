@@ -5,21 +5,25 @@
 //   - the evidence bundle (out/evidence.intoto.jsonl) and result files that came with it.
 //
 // Two layers, as in the architecture:
-//   structural  (this file)          signatures, signer identity, purl + digest binding, file digests
+//   structural  (this file)          signatures, signer identity, purl + digest binding, file digests,
+//                                    build provenance, and a rebuild of the jar from the clone
 //   semantic    (gate/policy/*.rego) coverage, results, environment spec, required categories, VEX
 //
 // Every refusal names the rule it failed. The gate signs a SLSA VSA either way.
 //
-//   node gate/verify.mjs [--root .] [--evidence out] [--policy gate/policy.yaml] [--trust .keys/trust.json]
-import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+//   node gate/verify.mjs [--root .] [--evidence out] [--policy gate/policy.yaml] [--trust .keys/trust.json] [--no-rebuild]
+import { execFileSync, spawnSync } from "node:child_process";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { fileDigest, sha256, sourceDigest } from "../evidence/lib/digest.mjs";
 import { signEnvelope, verifyEnvelope } from "../evidence/lib/dsse.mjs";
-import { TEST_RESULT_TYPE, STATEMENT_TYPE } from "../evidence/lib/statement.mjs";
+import { TEST_RESULT_TYPE, STATEMENT_TYPE, SOURCE_URI } from "../evidence/lib/statement.mjs";
+
+const PROVENANCE_TYPE = "https://slsa.dev/provenance/v1";
 import { BUNDLE_NAME, readBundle } from "../evidence/lib/bundle.mjs";
 
 export const RULES = {
@@ -36,6 +40,8 @@ export const RULES = {
   G11: "environment-spec-complete",
   G12: "required-categories-present",
   G13: "vex-backed-by-proof",
+  G14: "provenance-consistent",
+  G15: "rebuild-matches",
 };
 const SEMANTIC = ["G09", "G10", "G11", "G12", "G13"];
 const POLICY_DIR = fileURLToPath(new URL("./policy", import.meta.url));
@@ -46,12 +52,40 @@ function evalRego(input) {
   return JSON.parse(out).result?.[0]?.expressions?.[0]?.value ?? [];
 }
 
-export function verify({ root = ".", evidence = "out", policyPath = "gate/policy.yaml", trustPath = ".keys/trust.json" } = {}) {
+/**
+ * Rebuild the jar from the clone's product/ (excluding target/) in a scratch
+ * directory, offline against the local Maven repository, and return its sha256.
+ * The bank's own rebuild: digest equality is what makes the provider's build
+ * claim checkable (Reproducible Builds).
+ */
+export function rebuildJar(root, artifactName) {
+  const work = mkdtempSync(join(tmpdir(), "gate-rebuild-"));
+  try {
+    cpSync(join(root, "product"), join(work, "product"), { recursive: true, filter: (p) => !p.includes(`${join(root, "product", "target")}`) });
+    const r = spawnSync("mvn", ["-B", "-q", "-o", "-f", join(work, "product/pom.xml"), "clean", "package", "-DskipTests"], { encoding: "utf8" });
+    if (r.status !== 0) return { error: `rebuild failed: ${(r.stdout + r.stderr).split("\n").filter((l) => l.includes("ERROR")).slice(0, 3).join(" ") || `exit ${r.status}`}` };
+    return { digest: fileDigest(join(work, "product/target", artifactName)) };
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+}
+
+const pomCoordinates = (pom) => {
+  const top = pom.replace(/<parent>[\s\S]*?<\/parent>/, "").replace(/<dependencies>[\s\S]*$/, "");
+  const tag = (t) => top.match(new RegExp(`<${t}>([^<]+)</${t}>`))?.[1];
+  return { groupId: tag("groupId"), artifactId: tag("artifactId"), version: tag("version") };
+};
+
+export function verify({ root = ".", evidence = "out", policyPath = "gate/policy.yaml", trustPath = ".keys/trust.json", rebuild = true } = {}) {
   const policy = parse(readFileSync(join(root, policyPath), "utf8"));
   const trust = JSON.parse(readFileSync(join(root, trustPath), "utf8"));
   const catalog = parse(readFileSync(join(root, "tests/catalog.yaml"), "utf8"));
-  const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+  const coords = pomCoordinates(readFileSync(join(root, "product/pom.xml"), "utf8"));
   const productPurl = catalog.product.purl;
+  const jarPurl = `${productPurl}?type=jar`;
+  const artifactName = catalog.product.artifact.split("/").pop();
+  const deliveredPath = join(root, evidence, "artifacts", artifactName);
+  const deliveredDigest = existsSync(deliveredPath) ? fileDigest(deliveredPath) : null;
   const src = sourceDigest(root);
   const bundlePath = join(root, evidence, BUNDLE_NAME);
   const envelopes = readBundle(bundlePath);
@@ -62,15 +96,20 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
   const admitted = []; // attestations that passed G01/G02, handed to the semantic layer
   const seen = new Map();
 
-  // The catalog's purl must name this package, or the subject binding means nothing.
-  const expectedPurl = `pkg:npm/${pkg.name}@${pkg.version}`;
-  if (productPurl !== expectedPurl) fail("*", "G05", `catalog purl ${productPurl} does not match package.json (${expectedPurl})`);
+  // The catalog's purl must name this Maven project, or the subject binding means nothing.
+  const expectedPurl = `pkg:maven/${coords.groupId}/${coords.artifactId}@${coords.version}`;
+  if (productPurl !== expectedPurl) fail("*", "G05", `catalog purl ${productPurl} does not match product/pom.xml (${expectedPurl})`);
+  if (!deliveredDigest) fail("*", "G05", `delivered artifact ${join(evidence, "artifacts", artifactName)} is missing`);
+  let provenance = null;
+  let report_rebuild = null;
+  const testJarDigests = [];
 
   envelopes.forEach((envelope, i) => {
     const v = verifyEnvelope(envelope, trust);
     const st = v.statement ?? {};
     const p = st.predicate ?? {};
-    const category = p["x-code-tracer"]?.category ?? `#${i}`;
+    const isProvenance = st.predicateType === PROVENANCE_TYPE;
+    const category = isProvenance ? "build" : p["x-code-tracer"]?.category ?? `#${i}`;
 
     if (v.trusted === false) return fail(category, "G02", v.reason);
     pass(category, "G02");
@@ -83,15 +122,28 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
       ? pass(category, "G03")
       : fail(category, "G03", `${v.identity.id} (${v.identity.name}) may not sign ${category}; allowed: ${catPolicy.signers.join(", ")}`);
 
-    st._type === STATEMENT_TYPE && st.predicateType === TEST_RESULT_TYPE
-      ? pass(category, "G04") : fail(category, "G04", `predicateType ${st.predicateType}`);
+    const expectedType = catPolicy?.predicate_type ?? TEST_RESULT_TYPE;
+    st._type === STATEMENT_TYPE && st.predicateType === expectedType
+      ? pass(category, "G04") : fail(category, "G04", `predicateType ${st.predicateType}, expected ${expectedType}`);
 
-    const subj = st.subject?.[0];
+    // Subjects: the delivered jar by purl, and (for test results) the source it was built from.
+    const jarSubj = (st.subject ?? []).find((x) => x.name === jarPurl);
+    const srcSubj = (st.subject ?? []).find((x) => x.name === SOURCE_URI);
     const subjectProblems = [
-      subj?.name !== productPurl && `subject ${subj?.name} is not ${productPurl}`,
-      subj?.digest?.sha256 !== src.digest && `attested ${subj?.digest?.sha256}, clone has ${src.digest}`,
+      !jarSubj && `no subject named ${jarPurl}`,
+      jarSubj && deliveredDigest && jarSubj.digest?.sha256 !== deliveredDigest && `attested jar ${jarSubj.digest?.sha256}, delivered jar is ${deliveredDigest}`,
+      !isProvenance && !srcSubj && `no subject named ${SOURCE_URI}`,
+      srcSubj && srcSubj.digest?.sha256 !== src.digest && `attested source ${srcSubj.digest?.sha256}, clone has ${src.digest}`,
     ].filter(Boolean);
     subjectProblems.length ? fail(category, "G05", subjectProblems.join("; ")) : pass(category, "G05");
+
+    if (isProvenance) {
+      provenance = { jar: jarSubj?.digest?.sha256, source: (p.buildDefinition?.resolvedDependencies ?? []).find((d) => d.uri === SOURCE_URI)?.digest?.sha256 };
+      admitted.push({ category, kind: "provenance", predicate: { passedTests: [], warnedTests: [], failedTests: [] } });
+      seen.set(category, { index: i, digest: sha256(JSON.stringify(envelope)), signer: v.identity });
+      return;
+    }
+    if (jarSubj) testJarDigests.push({ category, digest: jarSubj.digest?.sha256 });
 
     // Every configuration descriptor must match the file in the clone or the evidence dir.
     const byRole = (...roles) => (p.configuration ?? []).filter((d) => roles.includes(d.annotations?.role));
@@ -113,6 +165,7 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
     const readIfMatching = (d) => (d && mismatches([d]).length === 0 ? JSON.parse(readFileSync(join(root, d.name), "utf8")) : null);
     admitted.push({
       category,
+      kind: "test-result",
       predicate: { passedTests: [], warnedTests: [], failedTests: [], ...p },
       environment_spec: readIfMatching(byRole("environment-spec")[0]),
       vex_document: readIfMatching(byRole("vex")[0]),
@@ -120,17 +173,33 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
     seen.set(category, { index: i, digest: sha256(JSON.stringify(envelope)), signer: v.identity });
   });
 
+  // Build provenance: links the delivered jar, the source, and every test attestation.
+  if (provenance) {
+    const problems = [
+      provenance.source !== src.digest && `provenance built from source ${provenance.source}, clone has ${src.digest}`,
+      deliveredDigest && provenance.jar !== deliveredDigest && `provenance is for jar ${provenance.jar}, delivered jar is ${deliveredDigest}`,
+      ...testJarDigests.filter((t) => t.digest !== provenance.jar).map((t) => `${t.category} tested jar ${t.digest}, provenance is for ${provenance.jar}`),
+    ].filter(Boolean);
+    problems.length ? fail("build", "G14", problems.join("; ")) : pass("build", "G14");
+
+    // The bank's rebuild. `rebuild` may be a precomputed digest (the negative cases reuse one rebuild).
+    const rb = typeof rebuild === "string" ? { digest: rebuild } : rebuild ? rebuildJar(root, artifactName) : null;
+    report_rebuild = rb?.digest ?? null;
+    if (rb?.error) fail("build", "G15", rb.error);
+    else if (rb) rb.digest === provenance.jar ? pass("build", "G15") : fail("build", "G15", `rebuilt jar ${rb.digest}, provenance says ${provenance.jar}`);
+  }
+
   // Semantic layer: Rego.
-  const denies = evalRego({ policy, catalog, source_digest: src.digest, attestations: admitted });
+  const denies = evalRego({ policy, catalog, source_digest: src.digest, artifact_digest: deliveredDigest, attestations: admitted });
   for (const d of denies) fail(d.category, d.rule, d.detail);
   const denied = new Set(denies.map((d) => `${d.rule}|${d.category}`));
-  for (const a of admitted) for (const r of SEMANTIC) if (r !== "G12" && !denied.has(`${r}|${a.category}`)) pass(a.category, r);
+  for (const a of admitted) for (const r of SEMANTIC) if (a.kind === "test-result" && r !== "G12" && !denied.has(`${r}|${a.category}`)) pass(a.category, r);
   if (!denied.has("G12|*")) pass("*", "G12");
 
   const failures = checks.filter((c) => !c.ok);
   return {
     verdict: failures.length ? "REFUSE" : "ADMIT",
-    productType: catalog.product.type, productPurl, sourceDigest: src.digest,
+    productType: catalog.product.type, productPurl, jarPurl, sourceDigest: src.digest, artifactDigest: deliveredDigest, rebuildDigest: report_rebuild,
     bundle: { path: join(evidence, BUNDLE_NAME), digest: existsSync(bundlePath) ? fileDigest(bundlePath) : null },
     categories: [...seen.keys()], attestations: Object.fromEntries(seen), checks, failures,
   };
@@ -139,12 +208,15 @@ export function verify({ root = ".", evidence = "out", policyPath = "gate/policy
 export function vsa(report, { root = ".", policyPath = "gate/policy.yaml" } = {}) {
   return {
     _type: STATEMENT_TYPE,
-    subject: [{ name: report.productPurl, digest: { sha256: report.sourceDigest } }],
+    subject: [
+      { name: report.jarPurl, digest: { sha256: report.artifactDigest } },
+      { name: SOURCE_URI, digest: { sha256: report.sourceDigest } },
+    ],
     predicateType: "https://slsa.dev/verification_summary/v1",
     predicate: {
       verifier: { id: "https://example.com/bank/ingestion-gate/demo" },
       timeVerified: new Date().toISOString(),
-      resourceUri: report.productPurl,
+      resourceUri: report.jarPurl,
       policy: { uri: policyPath, digest: { sha256: fileDigest(join(root, policyPath)) } },
       inputAttestations: [{ uri: report.bundle.path, digest: { sha256: report.bundle.digest } }],
       verificationResult: report.verdict === "ADMIT" ? "PASSED" : "FAILED",
@@ -173,8 +245,9 @@ export function printReport(r) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { values } = parseArgs({ options: { root: { type: "string", default: "." }, evidence: { type: "string", default: "out" },
-    policy: { type: "string", default: "gate/policy.yaml" }, trust: { type: "string", default: ".keys/trust.json" } } });
-  const opts = { root: values.root, evidence: values.evidence, policyPath: values.policy, trustPath: values.trust };
+    policy: { type: "string", default: "gate/policy.yaml" }, trust: { type: "string", default: ".keys/trust.json" },
+    "no-rebuild": { type: "boolean", default: false } } });
+  const opts = { root: values.root, evidence: values.evidence, policyPath: values.policy, trustPath: values.trust, rebuild: !values["no-rebuild"] };
   const report = verify(opts);
   printReport(report);
   const gateKey = readFileSync(join(values.root, ".keys/bank-gate.key"), "utf8");

@@ -226,8 +226,9 @@ docs/                   publications — anything written for a reader
                         which is authored and its own source
   historical/           working-group notes, frozen at reconstruction
 .konspekt/NOTES.md      human scratchpad
-demo/                   runnable test-evidence demo: a small product, tests in
-                        every category, signed in-toto results, and the gate
+demo/                   runnable test-evidence demo: a Java product, its build
+                        provenance, tests in every category, signed in-toto
+                        results, and the gate
 .github/                the demo's evidence workflow
 ```
 
@@ -240,10 +241,12 @@ in that one directory are derived and which are authored.
 
 ### Test-evidence demo
 
-[`demo/`](demo/README.md) runs the provider-side test evidence (the chain's L4
-record, split by test category) and the bank-side gate check (L8) end to end on a
-small product: tests in every category, results in CTRF and SARIF, each category
-signed as an in-toto test-result attestation, and a gate that admits or refuses.
+[`demo/`](demo/README.md) runs the chain's provider-side build and test evidence
+(L3 provenance and L4 test results, split by category) and the bank-side gate
+check (L8, including its own rebuild) end to end on a small Java product: a
+reproducible Maven build, tests in every category against the built jar, results
+in CTRF, SARIF and OSV, each category signed as an in-toto test-result
+attestation, and a gate that admits or refuses.
 
 ## Status
 

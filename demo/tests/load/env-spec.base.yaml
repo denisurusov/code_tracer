@@ -4,13 +4,13 @@
 # missing any field listed under required_fields in gate/policy.yaml.
 environment_name: demo-local
 network:
-  topology: load generator and service on the same host, loopback interface
+  topology: load generator and service (java -jar) on the same host, loopback interface
   region: n/a (single host)
 dependencies:
   - name: rates table
-    mode: local file (product/data/rates.json)
+    mode: local file (product/src/main/resources/data/rates.json)
 data:
-  dataset: product/data/rates.json (5 pairs)
+  dataset: product/src/main/resources/data/rates.json (5 pairs)
 load_generator:
   tool: autocannon
   location: same host, separate process from the service

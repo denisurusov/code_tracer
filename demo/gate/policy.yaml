@@ -6,13 +6,15 @@
 policy_version: 1
 
 product_types:
-  library:          [unit, sast, sca, secrets, license]
-  cli-tool:         [unit, integration, sast, sca, secrets, license]
-  backend-service:  [unit, integration, contract, sast, sca, secrets, license, load]
-  user-facing-app:  [unit, integration, contract, e2e, uat, accessibility, load, sast, sca, secrets, license, ux-signoff, uat-signoff]
-  data-pipeline:    [unit, integration, sast, sca, secrets, license, load, data-quality]
+  library:          [build, unit, sast, sca, secrets, license]
+  cli-tool:         [build, unit, integration, sast, sca, secrets, license]
+  backend-service:  [build, unit, integration, contract, sast, sca, secrets, license, load]
+  user-facing-app:  [build, unit, integration, contract, e2e, uat, accessibility, load, sast, sca, secrets, license, ux-signoff, uat-signoff]
+  data-pipeline:    [build, unit, integration, sast, sca, secrets, license, load, data-quality]
 
 categories:
+  # SLSA provenance for the delivered jar, from an isolated build identity.
+  build:           { signers: [build-service], predicate_type: "https://slsa.dev/provenance/v1" }
   unit:            { signers: [ci-pipeline] }
   integration:     { signers: [ci-pipeline] }
   contract:        { signers: [ci-pipeline] }
@@ -30,6 +32,7 @@ categories:
     environment_spec_required_fields:
       - captured_at
       - environment_name
+      - system_under_test.artifact_digest
       - system_under_test.source_digest
       - system_under_test.runtime
       - compute.cpu_model

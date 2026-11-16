@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.6.0",
+  "id": "DEMO-2026-0001",
+  "modified": "2026-11-15T00:00:00Z",
+  "published": "2026-11-15T00:00:00Z",
+  "summary": "FICTIONAL demo advisory: remote code execution through polymorphic deserialization when default typing is enabled",
+  "details": "Not a real vulnerability. Used by the code_tracer demo to exercise OpenVEX handling at the gate.",
+  "affected": [
+    {
+      "package": { "ecosystem": "Maven", "name": "com.fasterxml.jackson.core:jackson-databind", "purl": "pkg:maven/com.fasterxml.jackson.core/jackson-databind" },
+      "ranges": [{ "type": "ECOSYSTEM", "events": [{ "introduced": "2.0.0" }, { "fixed": "2.99.0" }] }]
+    }
+  ],
+  "references": [{ "type": "ADVISORY", "url": "https://example.com/advisories/DEMO-2026-0001" }],
+  "database_specific": { "severity": "HIGH", "cwe_ids": ["CWE-502"] }
+}

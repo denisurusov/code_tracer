@@ -3,6 +3,8 @@
 // (and SARIF where it is a scan), check coverage against the catalog, build an
 // in-toto test-result statement and sign it as a DSSE envelope.
 //
+// Run `npm run build` first: the jar in out/artifacts/ is a subject of every attestation.
+//
 //   node evidence/run.mjs all            every automated category
 //   node evidence/run.mjs unit load ...  selected categories
 //
@@ -63,6 +65,7 @@ for (const category of selected) {
     ...scenariosFor(catalog, category).map((p) => descriptor(p, { role: "scenario" })),
     ...(ev.extraConfig ?? []).map((p) => descriptor(p, { role: "scenario" })),
     ...(ev.vex ? [descriptor(ev.vex, { role: "vex", format: "OpenVEX" })] : []),
+    ...(ev.snapshot ? [ev.snapshot] : []),
     ...(envSpecPath ? [descriptor(envSpecPath, { role: "environment-spec" })] : []),
     descriptor(ctrfPath, { role: "report", format: "CTRF" }),
     ...reportPaths.map((p) => descriptor(p, { role: "report", format: p.endsWith(".sarif") ? "SARIF" : "native" })),

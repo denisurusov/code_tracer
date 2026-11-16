@@ -1,0 +1,27 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://example.com/vex/fx-quote-demo/0.1.0/DEMO-2026-0001-unproven",
+  "author": "fx-quote-demo maintainers",
+  "timestamp": "2026-11-15T00:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": {
+        "name": "DEMO-2026-0001"
+      },
+      "products": [
+        {
+          "@id": "pkg:maven/demo.codetracer/fx-quote-demo@0.1.0",
+          "subcomponents": [
+            {
+              "@id": "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.23.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "We believe the vulnerable path is not reachable."
+    }
+  ]
+}

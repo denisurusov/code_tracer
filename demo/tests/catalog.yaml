@@ -11,13 +11,14 @@
 catalog_version: 1
 product:
   name: fx-quote-demo
-  purl: pkg:npm/fx-quote-demo@0.1.0   # attestation subject identity; must match package.json and the SBOM
-  type: user-facing-app               # selects the required categories in gate/policy.yaml
+  purl: pkg:maven/demo.codetracer/fx-quote-demo@0.1.0   # must match product/pom.xml and the SBOM
+  artifact: product/target/fx-quote-demo-0.1.0.jar        # the delivered artifact (shaded, runnable)
+  type: user-facing-app                                   # selects the required categories in gate/policy.yaml
 
 requirements:
   REQ-PRICE:  Quotes apply half the configured spread to the mid rate, against the client.
   REQ-VALID:  Invalid requests are refused with a clear error and never produce a price.
-  REQ-API:    API responses conform to product/openapi.json.
+  REQ-API:    API responses conform to product/src/main/resources/openapi.json.
   REQ-UI:     A user can get a quote from the web page without reading documentation.
   REQ-A11Y:   The web page meets WCAG 2.1 level AA for automated checks.
   REQ-PERF:   The quote endpoint sustains the target load within latency and error budgets.
@@ -31,44 +32,44 @@ tests:
     category: unit
     objective: Buy price is mid plus half the spread.
     requirement: REQ-PRICE
-    scenario: tests/unit/quote.test.mjs
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
     expected: applySpread(1.0, 20, buy) == 1.001
   - id: UNIT-002
     category: unit
     objective: Sell price is mid minus half the spread.
     requirement: REQ-PRICE
-    scenario: tests/unit/quote.test.mjs
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
     expected: applySpread(1.0, 20, sell) == 0.999
   - id: UNIT-003
     category: unit
     objective: Zero spread returns mid on both sides.
     requirement: REQ-PRICE
-    scenario: tests/unit/quote.test.mjs
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
     expected: price == mid
   - id: UNIT-004
     category: unit
     objective: Invalid mid, spread or side is rejected.
     requirement: REQ-VALID
-    scenario: tests/unit/quote.test.mjs
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
     expected: RangeError for each invalid input
   - id: UNIT-005
     category: unit
     objective: Quote rounds price to the pair's decimal places and converted amount to 2 dp.
     requirement: REQ-PRICE
-    scenario: tests/unit/quote.test.mjs
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
     expected: EURUSD buy 1000 -> price 1.08485, converted 1084.85
   - id: UNIT-006
     category: unit
     objective: Amount outside (0, 10,000,000] and unknown pairs are rejected.
     requirement: REQ-VALID
-    scenario: tests/unit/quote.test.mjs
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
     expected: RangeError
   - id: UNIT-007
     category: unit
-    objective: Request handling never compiles a schema; the only ajv schema is the static query schema. Proof for VEX not_affected claims on ajv schema-injection flaws.
+    objective: The ObjectMapper has no default typing and non-GET requests are refused before any body is read, so request data is never deserialized. Proof for VEX not_affected claims on Jackson polymorphic-deserialization flaws.
     requirement: REQ-DEPS
-    scenario: tests/unit/quote.test.mjs
-    expected: exactly one compile at module load, none per request
+    scenario: product/src/test/java/demo/fxquote/QuoteTest.java
+    expected: getDefaultTyper() is null; POST with a typed payload returns 405 on every path
 
   # ---------- integration (Gherkin, HTTP against a running server) ----------
   - id: INT-001
@@ -76,7 +77,7 @@ tests:
     objective: Health endpoint reports status and number of pairs loaded from the rates file.
     requirement: REQ-API
     scenario: tests/features/integration/service.feature
-    preconditions: Server started with product/data/rates.json
+    preconditions: Built jar started with its bundled rates table
     expected: 200, status ok, pairs == 5
   - id: INT-002
     category: integration
@@ -201,13 +202,13 @@ tests:
   # ---------- SAST (semgrep, one check per rule) ----------
   - id: SAST-001
     category: sast
-    objective: No eval or Function constructor.
+    objective: No dynamic code evaluation (JS eval / Function, Java ScriptEngine.eval).
     requirement: REQ-SECURE
     scenario: tests/sast/rules.yml
     expected: 0 findings for rule SAST-001
   - id: SAST-002
     category: sast
-    objective: No child_process execution.
+    objective: No process execution from product code (JS child_process, Java Runtime.exec / ProcessBuilder).
     requirement: REQ-SECURE
     scenario: tests/sast/rules.yml
     expected: 0 findings for rule SAST-002
@@ -219,10 +220,16 @@ tests:
     expected: 0 findings for rule SAST-003
   - id: SAST-004
     category: sast
-    objective: TLS certificate verification is never disabled.
+    objective: TLS certificate or hostname verification is never disabled.
     requirement: REQ-SECURE
     scenario: tests/sast/rules.yml
     expected: 0 findings for rule SAST-004
+  - id: SAST-005
+    category: sast
+    objective: No unsafe deserialization (Jackson default typing, Java ObjectInputStream).
+    requirement: REQ-SECURE
+    scenario: tests/sast/rules.yml
+    expected: 0 findings for rule SAST-005
 
   # ---------- secrets (gitleaks default rules) ----------
   - id: SEC-001
@@ -235,10 +242,10 @@ tests:
   # ---------- dependency vulnerabilities (npm audit, runtime deps only) ----------
   - id: SCA-001
     category: sca
-    objective: No high or critical known vulnerabilities in runtime dependencies.
+    objective: No high or critical OSV advisories against runtime dependencies in the SBOM.
     requirement: REQ-DEPS
     scenario: tests/sca/policy.json
-    expected: 0 high or critical advisories
+    expected: 0 high or critical advisories (after OpenVEX)
   - id: SCA-002
     category: sca
     objective: Moderate and low advisories are reported as warnings.
@@ -258,7 +265,7 @@ tests:
     objective: A CycloneDX SBOM is produced, identifies the product by the catalog purl, and lists every runtime dependency.
     requirement: REQ-DEPS
     scenario: tests/license/allowlist.json
-    expected: SBOM metadata.component.purl == product purl; SBOM components == installed runtime packages
+    expected: SBOM metadata.component.purl == product purl; SBOM components == Maven runtime dependencies
 
   # ---------- data quality (rates table) ----------
   - id: DATA-001

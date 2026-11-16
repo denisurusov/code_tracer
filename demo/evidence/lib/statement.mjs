@@ -8,16 +8,20 @@
 //     carrying the category, time window, runner and coverage detail.
 import { execFileSync } from "node:child_process";
 import os from "node:os";
-import { sourceDigest } from "./digest.mjs";
+import { existsSync } from "node:fs";
+import { fileDigest, sourceDigest } from "./digest.mjs";
 import { loadCatalog } from "./catalog.mjs";
 
 export const TEST_RESULT_TYPE = "https://in-toto.io/attestation/test-result/v0.1";
 export const STATEMENT_TYPE = "https://in-toto.io/Statement/v1";
 
-function gitCommit() {
+export const SOURCE_URI = "git+https://github.com/denisurusov/code_tracer#demo/product";
+export const ARTIFACT_PATH = (catalog) => `out/artifacts/${catalog.product.artifact.split("/").pop()}`;
+
+export function gitCommit() {
   try {
     const sha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
-    const dirty = execFileSync("git", ["status", "--porcelain", "--", "."], { encoding: "utf8" }).trim();
+    const dirty = execFileSync("git", ["status", "--porcelain", "--", "product"], { encoding: "utf8" }).trim();
     return dirty ? undefined : sha; // only bind the commit when the tree matches it
   } catch {
     return undefined;
@@ -29,11 +33,20 @@ export function runUrl() {
   return s && r && id ? `${s}/${r}/actions/runs/${id}` : `local://${os.hostname()}/runs/${Date.now()}`;
 }
 
+/**
+ * Two subjects: the delivered jar, named by purl (architecture §7: subjects are
+ * purl + digest), and the product source it was built from.
+ */
 export function subject() {
+  const catalog = loadCatalog();
+  const jar = ARTIFACT_PATH(catalog);
+  if (!existsSync(jar)) throw new Error(`${jar} not found; run \`npm run build\` first`);
   const src = sourceDigest();
   const commit = gitCommit();
-  // Subject name is the product's purl (architecture §7: subjects are purl + digest).
-  return [{ name: loadCatalog().product.purl, digest: { sha256: src.digest, ...(commit ? { gitCommit: commit } : {}) } }];
+  return [
+    { name: `${catalog.product.purl}?type=jar`, digest: { sha256: fileDigest(jar) } },
+    { name: SOURCE_URI, digest: { sha256: src.digest, ...(commit ? { gitCommit: commit } : {}) } },
+  ];
 }
 
 /**

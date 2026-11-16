@@ -4,11 +4,11 @@
 //   out/raw/load/ctrf.json         one CTRF test per threshold (LOAD-001..003)
 //   out/raw/load/env-spec.json     declared + measured environment spec
 import autocannon from "autocannon";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import { parse } from "yaml";
-import { sourceDigest } from "../../evidence/lib/digest.mjs";
+import { fileDigest, sourceDigest } from "../../evidence/lib/digest.mjs";
 
 const OUT = "out/raw/load";
 const PORT = Number(process.env.DEMO_LOAD_PORT || 4320);
@@ -16,9 +16,10 @@ const cfg = parse(readFileSync("tests/load/profile.yaml", "utf8"));
 const base = parse(readFileSync("tests/load/env-spec.base.yaml", "utf8"));
 mkdirSync(OUT, { recursive: true });
 
-const server = spawn(process.execPath, ["product/server.mjs"], { env: { ...process.env, PORT: String(PORT) }, stdio: "ignore" });
+const JAR = process.env.FXQUOTE_JAR ?? "out/artifacts/fx-quote-demo-0.1.0.jar";
+const server = spawn("java", ["-jar", JAR], { env: { ...process.env, PORT: String(PORT) }, stdio: "ignore" });
 const url = `http://127.0.0.1:${PORT}`;
-for (let i = 0; i < 50; i++) {
+for (let i = 0; i < 100; i++) {
   try { if ((await fetch(`${url}/api/health`)).ok) break; } catch {}
   await new Promise((r) => setTimeout(r, 100));
 }
@@ -66,14 +67,21 @@ writeFileSync(`${OUT}/ctrf.json`, JSON.stringify({
   results: { tool: { name: "autocannon", version: "9" }, summary, tests },
 }, null, 2));
 
+function javaVersion() {
+  const r = spawnSync("java", ["-version"], { encoding: "utf8" });
+  return (r.stderr || r.stdout).split("\n").find((l) => l.includes("version"))?.trim() ?? "java (unknown)";
+}
+
 const cpus = os.cpus();
 const envSpec = {
   env_spec_version: 1,
   captured_at: new Date(started).toISOString(),
   ...base,
   system_under_test: {
+    artifact: JAR.split("/").pop(),
+    artifact_digest: `sha256:${fileDigest(JAR)}`,
     source_digest: `sha256:${sourceDigest().digest}`,
-    runtime: `node ${process.version}`,
+    runtime: javaVersion(),
   },
   compute: {
     cpu_model: cpus[0]?.model ?? "unknown",

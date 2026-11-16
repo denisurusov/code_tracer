@@ -18,7 +18,7 @@ const SRC = process.cwd();
 
 function copyDemo() {
   const dir = mkdtempSync(join(tmpdir(), "gate-neg-"));
-  cpSync(SRC, dir, { recursive: true, filter: (p) => !p.startsWith(join(SRC, "node_modules")) });
+  cpSync(SRC, dir, { recursive: true, filter: (p) => !p.startsWith(join(SRC, "node_modules")) && !p.startsWith(join(SRC, "out/cache")) });
   symlinkSync(join(SRC, "node_modules"), join(dir, "node_modules"));
   return dir;
 }
@@ -28,19 +28,58 @@ const readStatement = (dir, c) => JSON.parse(Buffer.from(JSON.parse(readFileSync
 const resign = (dir, c, statement, signerId) =>
   writeFileSync(att(dir, c), JSON.stringify(signEnvelope(statement, readFileSync(join(dir, ".keys", `${signerId}.key`), "utf8")), null, 2));
 
-// Re-run the SCA category inside the copy against a recorded npm audit report and a VEX document.
-function rerunSca(dir, { audit, vex }) {
-  const env = { ...process.env, DEMO_AUDIT_FIXTURE: audit, ...(vex ? { DEMO_VEX: vex } : {}) };
+// Re-run the SCA category inside the copy against the fixture OSV snapshot (one
+// fictional high-severity advisory on jackson-databind) and an optional VEX document.
+function rerunSca(dir, { vex } = {}) {
+  const env = { ...process.env, DEMO_OSV_SNAPSHOT: "tests/sca/fixtures/osv-snapshot-demo", ...(vex ? { DEMO_VEX: vex } : {}) };
   const r = spawnSync(process.execPath, ["evidence/run.mjs", "sca"], { cwd: dir, env, encoding: "utf8" });
   if (r.error) throw r.error;
 }
-const ADVISORY = "tests/sca/fixtures/audit-ajv-advisory.json";
+const jarPath = (d) => join(d, "out/artifacts/fx-quote-demo-0.1.0.jar");
 
 const CASES = [
   {
     name: "product source changed after testing",
     expect: "G05",
-    apply: (d) => appendFileSync(join(d, "product/lib/quote.mjs"), "\n// patched after the tests ran\n"),
+    apply: (d) => appendFileSync(join(d, "product/src/main/java/demo/fxquote/Quote.java"), "\n// patched after the tests ran\n"),
+  },
+  {
+    name: "product source changed after the build; the gate's own rebuild disagrees",
+    expect: "G15",
+    rebuild: true,
+    apply: (d) => writeFileSync(join(d, "product/src/main/java/demo/fxquote/Quote.java"),
+      readFileSync(join(d, "product/src/main/java/demo/fxquote/Quote.java"), "utf8").replace('"20000"', '"10000"')),
+  },
+  {
+    name: "build is not reproducible (rebuild digest differs from provenance)",
+    expect: "G15",
+    rebuild: "0".repeat(64),
+    apply: () => {},
+  },
+  {
+    name: "delivered jar replaced after the build",
+    expect: "G14",
+    apply: (d) => appendFileSync(jarPath(d), Buffer.from([0])),
+  },
+  {
+    name: "tests ran against a different jar than the provenance covers (properly signed)",
+    expect: "G14",
+    apply: (d) => {
+      const st = readStatement(d, "unit");
+      st.subject[0].digest.sha256 = "1".repeat(64);
+      resign(d, "unit", st, "ci-pipeline");
+      writeFileSync(jarPath(d), readFileSync(jarPath(d))); // delivered jar unchanged
+    },
+  },
+  {
+    name: "build provenance signed by the CI pipeline instead of the build service",
+    expect: "G03",
+    apply: (d) => resign(d, "build", readStatement(d, "build"), "ci-pipeline"),
+  },
+  {
+    name: "build provenance missing",
+    expect: "G12",
+    apply: (d) => rmSync(att(d, "build")),
   },
   {
     name: "attestation payload edited without re-signing",
@@ -123,20 +162,20 @@ const CASES = [
     apply: (d) => rmSync(att(d, "accessibility")),
   },
   {
-    name: "high-severity advisory on a runtime dependency, no VEX",
+    name: "high-severity OSV advisory on a runtime dependency, no VEX",
     expect: "G10",
-    apply: (d) => rerunSca(d, { audit: ADVISORY }),
+    apply: (d) => rerunSca(d),
   },
   {
     name: "advisory suppressed by an OpenVEX not_affected statement that cites no proof",
     expect: "G13",
-    apply: (d) => rerunSca(d, { audit: ADVISORY, vex: "tests/sca/fixtures/vex-ajv-no-proof.openvex.json" }),
+    apply: (d) => rerunSca(d, { vex: "tests/sca/fixtures/vex-jackson-no-proof.openvex.json" }),
   },
   {
     name: "advisory suppressed by VEX citing a proof test that failed",
     expect: "G13",
     apply: (d) => {
-      rerunSca(d, { audit: ADVISORY, vex: "tests/sca/fixtures/vex-ajv-not-affected.openvex.json" });
+      rerunSca(d, { vex: "tests/sca/fixtures/vex-jackson-not-affected.openvex.json" });
       const st = readStatement(d, "unit");
       st.predicate.passedTests = st.predicate.passedTests.filter((id) => id !== "UNIT-007");
       st.predicate.failedTests = ["UNIT-007"];
@@ -147,12 +186,13 @@ const CASES = [
   {
     name: "POSITIVE: advisory suppressed by VEX citing a passed proof test (UNIT-007)",
     expectVerdict: "ADMIT",
-    apply: (d) => rerunSca(d, { audit: ADVISORY, vex: "tests/sca/fixtures/vex-ajv-not-affected.openvex.json" }),
+    apply: (d) => rerunSca(d, { vex: "tests/sca/fixtures/vex-jackson-not-affected.openvex.json" }),
   },
 ];
 
-const baseline = verify({ root: SRC });
-console.log(`baseline: ${baseline.verdict}`);
+// One real rebuild for the baseline; cases reuse its digest unless they ask to rebuild.
+const baseline = verify({ root: SRC, rebuild: true });
+console.log(`baseline: ${baseline.verdict} (rebuilt jar ${baseline.rebuildDigest})`);
 if (baseline.verdict !== "ADMIT") {
   console.error("Baseline evidence is not admitted; run the full demo first.");
   process.exit(1);
@@ -164,7 +204,7 @@ for (const c of CASES) {
   try {
     c.apply(dir);
     writeBundle(dir);
-    const r = verify({ root: dir });
+    const r = verify({ root: dir, rebuild: c.rebuild ?? baseline.rebuildDigest });
     const rules = [...new Set(r.failures.map((f) => f.rule))];
     const ok = c.expectVerdict === "ADMIT" ? r.verdict === "ADMIT" : r.verdict === "REFUSE" && rules.includes(c.expect);
     const first = r.failures.find((f) => f.rule === c.expect) ?? r.failures[0];

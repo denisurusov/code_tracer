@@ -1,35 +1,68 @@
-# Local semgrep rules. Rule IDs are the catalog IDs, so each rule is one check
-# that passes when it has no findings. Run offline: no registry rules are fetched.
+# Local semgrep rules over product/src/main (Java service + the page's JavaScript).
+# Rule IDs are "<catalog ID>-<language>"; a catalog check passes when none of its
+# rules has a finding. (semgrep keeps only one rule per ID, hence the suffix.) Run offline: no registry rules are fetched.
 rules:
-  - id: SAST-001
-    languages: [javascript]
+  - id: SAST-001-java
+    message: Dynamic code evaluation.
     severity: ERROR
-    message: Dynamic code execution (eval / Function constructor).
+    languages: [java]
+    pattern-either:
+      - pattern: (javax.script.ScriptEngine $E).eval(...)
+      - pattern: $M.getEngineByName(...).eval(...)
+
+  - id: SAST-001-js
+    message: Dynamic code evaluation (eval / Function constructor).
+    severity: ERROR
+    languages: [javascript]
     pattern-either:
       - pattern: eval(...)
       - pattern: new Function(...)
       - pattern: Function(...)
 
-  - id: SAST-002
-    languages: [javascript]
-    severity: ERROR
+  - id: SAST-002-java
     message: Process execution from product code.
+    severity: ERROR
+    languages: [java]
+    pattern-either:
+      - pattern: Runtime.getRuntime().exec(...)
+      - pattern: new ProcessBuilder(...)
+
+  - id: SAST-002-js
+    message: Process execution from product code.
+    severity: ERROR
+    languages: [javascript]
     pattern-regex: (require\(|from\s+|import\()\s*["'](node:)?child_process["']
 
-  - id: SAST-003
-    languages: [javascript]
-    severity: ERROR
+  - id: SAST-003-js
     message: HTML injection sink.
+    severity: ERROR
+    languages: [javascript]
     pattern-either:
       - pattern: $E.innerHTML = $V
       - pattern: $E.outerHTML = $V
       - pattern: document.write(...)
       - pattern: $E.insertAdjacentHTML(...)
 
-  - id: SAST-004
-    languages: [javascript]
+  - id: SAST-004-java
+    message: TLS certificate or hostname verification disabled.
     severity: ERROR
-    message: TLS certificate verification disabled.
+    languages: [java]
     pattern-either:
-      - pattern: "{..., rejectUnauthorized: false, ...}"
-      - pattern: process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+      - pattern: |
+          class $C implements X509TrustManager {
+            ...
+            public void checkServerTrusted(...) {}
+            ...
+          }
+      - pattern: $X.setHostnameVerifier((...) -> true)
+      - pattern: HttpsURLConnection.setDefaultHostnameVerifier((...) -> true)
+
+  - id: SAST-005-java
+    message: Unsafe deserialization (polymorphic default typing or Java serialization).
+    severity: ERROR
+    languages: [java]
+    pattern-either:
+      - pattern: $M.enableDefaultTyping(...)
+      - pattern: $M.activateDefaultTyping(...)
+      - pattern: new ObjectInputStream(...)
+      - pattern: "@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, ...)"

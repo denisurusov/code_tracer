@@ -1,9 +1,12 @@
 name: demo test evidence
 
-# Runs the demo end to end: every test category, conversion to CTRF/SARIF/OSV,
-# signed in-toto test-result attestations bundled as .intoto.jsonl, named
-# sign-offs, the gate (structural checks + Rego policy), and the gate's negative
-# cases. Evidence is uploaded as a run artifact.
+# Runs the demo end to end: a reproducible Maven build of the Java product with
+# signed SLSA provenance, every test category against the built jar, conversion
+# to CTRF/SARIF/OSV (against a freshly downloaded, digest-pinned OSV Maven
+# snapshot), signed in-toto test-result attestations bundled as .intoto.jsonl,
+# named sign-offs, the gate (structural checks, a rebuild of the jar, and the
+# Rego policy), and the gate's negative cases. Evidence is uploaded as a run
+# artifact.
 #
 # Signing uses throwaway Ed25519 keys generated in the job, so the run shows the
 # mechanics; trust does not carry across runs. The optional github-attest job
@@ -40,9 +43,16 @@ jobs:
       run:
         working-directory: demo
     outputs:
-      source-digest: ${{ steps.digest.outputs.sha256 }}
+      jar-digest: ${{ steps.digest.outputs.sha256 }}
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+          cache-dependency-path: demo/product/pom.xml
 
       - uses: actions/setup-node@v4
         with:
@@ -62,8 +72,11 @@ jobs:
           sudo chmod +x /usr/local/bin/opa
           gitleaks version && semgrep --version && opa version | head -1
 
-      # Playwright uses the Google Chrome preinstalled on ubuntu-latest (channel "chrome").
-      - name: Run all test categories and sign the evidence
+      - name: Build the jar and sign SLSA provenance
+        run: npm run build
+
+      # Playwright (JS and Java) uses the Google Chrome preinstalled on ubuntu-latest (channel "chrome").
+      - name: Run all test categories against the jar and sign the evidence
         run: npm run evidence
 
       - name: Named sign-offs (demo reviewers)
@@ -79,8 +92,8 @@ jobs:
         run: npm run gate:negative
 
       - id: digest
-        name: Source digest
-        run: echo "sha256=$(node -e "import('./evidence/lib/digest.mjs').then(m=>console.log(m.sourceDigest().digest))")" >> "$GITHUB_OUTPUT"
+        name: Jar digest
+        run: echo "sha256=$(sha256sum out/artifacts/fx-quote-demo-0.1.0.jar | cut -c1-64)" >> "$GITHUB_OUTPUT"
 
       - name: Summary
         if: always()
@@ -93,8 +106,10 @@ jobs:
             for f in out/attestations/*.dsse.json; do
               node -e '
                 const e = JSON.parse(require("fs").readFileSync(process.argv[1]));
-                const p = JSON.parse(Buffer.from(e.payload, "base64")).predicate;
-                console.log(`| ${p["x-code-tracer"].category} | ${p.result} | ${p.passedTests.length} | ${p.warnedTests.length} | ${p.failedTests.length} |`);
+                const s = JSON.parse(Buffer.from(e.payload, "base64"));
+                const p = s.predicate;
+                if (s.predicateType === "https://slsa.dev/provenance/v1") console.log(`| build (SLSA provenance) | ${s.subject[0].digest.sha256.slice(0, 12)}… | | | |`);
+                else console.log(`| ${p["x-code-tracer"].category} | ${p.result} | ${p.passedTests.length} | ${p.warnedTests.length} | ${p.failedTests.length} |`);
               ' "$f"
             done
             echo
@@ -107,6 +122,7 @@ jobs:
           name: test-evidence
           path: |
             demo/out/evidence.intoto.jsonl
+            demo/out/artifacts
             demo/out/attestations
             demo/out/results
             demo/out/vsa.dsse.json
@@ -139,7 +155,7 @@ jobs:
           ' "evidence/out/attestations/${{ matrix.category }}.dsse.json"
       - uses: actions/attest@v2
         with:
-          subject-name: pkg:npm/fx-quote-demo@0.1.0
-          subject-digest: sha256:${{ needs.evidence.outputs.source-digest }}
+          subject-name: pkg:maven/demo.codetracer/fx-quote-demo@0.1.0?type=jar
+          subject-digest: sha256:${{ needs.evidence.outputs.jar-digest }}
           predicate-type: https://in-toto.io/attestation/test-result/v0.1
           predicate-path: predicate.json

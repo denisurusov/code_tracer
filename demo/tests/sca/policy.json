@@ -1,5 +1,5 @@
 {
-  "description": "Dependency vulnerability policy for runtime dependencies (npm audit --omit=dev).",
+  "description": "Dependency vulnerability policy for runtime dependencies (CycloneDX SBOM matched against a pinned OSV Maven snapshot).",
   "scope": "runtime",
   "checks": {
     "SCA-001": { "fail_on": ["critical", "high"] },
